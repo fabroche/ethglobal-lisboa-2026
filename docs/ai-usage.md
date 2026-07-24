@@ -27,7 +27,10 @@ disclosure.
 | `src/registry/**` | ⬜ | To fill when built (M4). |
 | `src/scheduler/**` | ⬜ | To fill when built (M5). |
 | `src/evaluator/**` | ⬜ | To fill when built (M6). |
-| `src/attest/**` · `scripts/spike-attest.ts` | ⬜ | To fill when built (M7) — the Friday-night spike; human-verified against the 0G booth answers. |
+| `src/evaluator/canonical.ts` (+ test) | ✅ | M7/S0.3. Canonical serialization for the signed bytes, drafted with Claude Code under human direction. Safety-critical (determinism) — 16 unit tests, human-reviewed. |
+| `src/evaluator/attest.ts` (+ test) | ✅ | M7/S0.3. Independent `verifyEnvelope` — signature recovery + fail-closed gate. Drafted with Claude Code; the design decision to drop the unresolvable vendor package and verify with general-purpose crypto was made explicitly (spec-03 §1). 24 unit tests. |
+| `src/evaluator/attest-testkit.ts` | ✅ | M7/S0.3. Ephemeral-key signing helpers for the spike + tests. **Not a production path** — Seam never signs anything. |
+| `scripts/spike-attest.ts` | ✅ | M7/S0.3, the Friday-night spike. PART A (offline) passes; PART B (live 0G) pending credentials + booth answers. Human-verified against the 0G booth answers. |
 | `src/web/**` | ⬜ | To fill when built (M8). |
 | Submission video | ❌ | Human narration only (no AI voiceover — track rule). |
 

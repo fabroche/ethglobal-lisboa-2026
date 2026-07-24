@@ -9,6 +9,22 @@ terms. **No database, no smart contract, no Solidity.**
 > backlog `S0.3`) is the whole gamble: if the attestation can't be verified independently, the core
 > claim collapses — surface it that night, not Sunday.
 
+## Status — the gamble is half won (S0.3, 24 Jul)
+`npm run spike` **PART A: GO.** We verify a TEE signature with general-purpose crypto only
+(`@noble/*`) — **no 0G code in the trust path**. Tampered payload, tampered signature and wrong
+pinned key are all rejected; 40 unit tests green. The vendor package `@foundryprotocol/0gkit-attestation`
+turned out to be unresolvable, so **we implement `verifyEnvelope` ourselves** — which satisfies
+RNF-M7-001 more convincingly anyway (spec-03 §1).
+
+**PART B (live 0G) has never run** — needs `OG_KEY`/`OG_MODEL`/`OG_ENCLAVE_PUBKEY` in `.env.local`.
+So the *design* is proven and the *wire format* is not. Two booth answers can still move us:
+whether the signature **covers the input** (if not, the pitch needs rewording), and whether the
+enclave pubkey is **stable across requests** (if not, it can't be a static env var). See
+`docs/spec-03-attest.md` §8.
+
+**We verify the last link and pin the enclave key** — no TDX quote parsing / cert-chain walk to an
+Intel root. Say it that way in the Q&A; overstating it is how this demo loses (spec-03 §5).
+
 ## 🧭 If you are a Claude working on this repo, read in this order
 1. **This file** (context + hard rules).
 2. **`docs/branching-strategy.md`** — how we use Git (pull-based, no squash, commit every ~30 min).

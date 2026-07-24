@@ -2,8 +2,9 @@
 
 Status: 🟩 ready · backlog **S0.2 / S0.3** · sponsor **0G** · **THE FRIDAY-NIGHT SPIKE**.
 
-> Spec committed **before** the code (spec-driven-workflow rule). Implemented by `src/attest/`
-> (module **M7**) and exercised by `scripts/spike-attest.ts`. **This is the whole bet:** if the
+> Spec committed **before** the code (spec-driven-workflow rule). Implemented by
+> `src/evaluator/attest.ts` + `src/evaluator/canonical.ts` (module **M7**, paths per `M7-attest.md` §6)
+> and exercised by `scripts/spike-attest.ts`. **This is the whole bet:** if the
 > attestation cannot be verified independently, the core claim collapses and we need to know Friday,
 > not Sunday.
 

@@ -31,7 +31,7 @@
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
 |----|-----------|------|---------|-----------|-------|:------:|
 | S1.1 | `spec-01-session.md` | spec for room + deadline + commitments | Hedera | S0.1 | | ⬜ |
-| S1.2 | `session` | create room, publish expiry to HCS **before** any write, issue link | Hedera | S1.1 | | ⬜ |
+| S1.2 | `session` | create room, publish expiry to HCS **before** any write, issue link | Hedera | S1.1 | dylan | 🟡 |
 | S1.3 | `registry.write` | `sha256(ciphertext)` + timestamp to HCS topic (versioned messages) | Hedera | S1.1 | | ⬜ |
 | S1.4 | `seal` (client) | encrypt position in-browser to enclave pubkey (hybrid) | 0G | S0.3 | | ⬜ |
 | S1.5 | `worldid` | Selfie Check, one nullifier per room per side | World | S0.1 | | ⬜ |

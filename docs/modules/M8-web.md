@@ -83,6 +83,12 @@ sequenceDiagram
 | Read | `readVerdict` | `{ roomId }` | `{ verdict }` \| pending | none | Mirror Node (M4) |
 
 ## 9. UI components (Definition of Done)
+
+> **Wireframes, sitemap, room state machine and the full component inventory live in
+> [`../ux/screens-and-sitemap.md`](../ux/screens-and-sitemap.md)** (ES mirror:
+> `../ux/screens-and-sitemap.es.md`). That document extends this table to 24 components across five
+> routes and marks which eight are on the demo critical path. The six below are the core of the three
+> screens; anything added there must be reflected here before it is built.
 | Component | Story | RTL test | Status |
 |-----------|:-----:|:--------:|--------|
 | `create-room-form` | ⬜ | ⬜ | 🟧 |

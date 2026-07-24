@@ -26,6 +26,9 @@ is reused from `home-os`, minus Supabase.
   IDs (`S0.x`…`S5.x`).
 - **TRANSVERSAL** (`transversal/`) — the three sponsor integrations (0G, Hedera, World), the
   security & privacy threat model, design system, mobile-first, quality & testing, infra/DevOps.
+- **UX** (`ux/`) — screens, sitemap, wireframes and the sponsor-visibility map, for the design
+  discussion between the two workstreams. **Bilingual** (EN canonical + ES mirror) — the one
+  deliberate exception to D2.
 - **SPECS** (`spec-0x-*.md`) — short spec stubs committed **before** the code (spec-driven rule).
 - **COMPLIANCE & PRIMERS** — `ai-usage.md`, `web3-concepts.md`, `seam-flow-example.md`.
 - **TEMPLATES** (`_templates/`) — base for new modules and features.
@@ -36,6 +39,7 @@ docs/
   00-overview/{00-vision-scope,01-architecture,02-data-model,03-sponsors-prizes,04-conventions,05-open-decisions}.md
   modules/{M1-session,M2-seal,M3-worldid,M4-registry,M5-scheduler,M6-evaluator,M7-attest,M8-web}.md
   transversal/{integration-0g,integration-hedera,integration-worldid,security-and-privacy,design-system,mobile-first,quality-and-testing,infra-devops}.md
+  ux/{README,screens-and-sitemap,screens-and-sitemap.es}.md
   spec-01-session.md · spec-02-evaluator.md · spec-03-attest.md
   ai-usage.md · web3-concepts.md · seam-flow-example.md
   _templates/{module,feature}.md
@@ -68,6 +72,7 @@ docs/
 | T-MF | Mobile-first | 🟧 draft |
 | T-QA | Quality & testing | 🟧 draft |
 | T-IN | Infra & DevOps (deploy TBD) | 🟧 draft |
+| T-UX | UX — screens, sitemap & sponsor value (`ux/`, EN + ES) | 🟧 draft |
 | C-AI | AI-usage attribution | 🟧 draft |
 
 ---

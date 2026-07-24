@@ -1,70 +1,102 @@
-# Documentación técnica — ETHGlobal Lisboa 2026
+# Seam — Technical Documentation
 
-Documentación de diseño **previa a la implementación** para la hackathon **ETHGlobal Lisbon 2026**
-(36h). Proyecto de **finanzas cripto**: un agente IA que lee datos **on-chain** (solo lectura) y
-razona sobre ellos en lenguaje natural, **sin escribir smart contracts**. Reutiliza la arquitectura
-y el método de documentación de `home-os` (Next.js + Supabase + cola de jobs IA + Claude Code headless),
-apuntada a lecturas on-chain vía **The Graph** y **viem**.
+**ETHGlobal Lisbon 2026** · submission deadline **Sunday 26 July, 09:00 WEST**.
 
-> **Nivel de detalle:** diseño para hackathon. El overview y los transversales están más cerrados;
-> los **módulos son esbozos/plantillas** deliberadamente incompletos.
+Pre-implementation design documentation for **Seam**: sealed two-party negotiation.
+Two sides write their negotiating position in plain language; a model inside a **0G TEE
+(sealed inference)** reads both and returns **one enum verdict to both** — `workable` /
+`not_workable` (optionally the single blocking `gap:*` dimension if **both** opted in).
+Neither side, nor the operator, ever sees the other's terms.
 
-> **Estado (2026-07-24): FASE DE DECISIÓN DE IDEA.** La idea NO está cerrada. Todo el bloque de
-> módulos está marcado **🟦 TENTATIVO — sujeto a decisión de idea**. La recomendación actual (a debatir
-> con el socio, ver `00-overview/05-decisiones-abiertas.md`) es **"Crypto Copilot / Contador On-Chain"**:
-> leer una wallet → calcular PnL/base de costo → generar borradores de reporte fiscal. El andamiaje de
-> estos docs es **neutro**: orientado a esa idea pero fácil de pivotar.
+**No database. No smart contract. No Solidity.** Storage *is* an Hedera Consensus Service
+(HCS) topic. The stack (Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · Zod)
+is reused from `home-os`, minus Supabase.
 
-## Organización (híbrido en 2 niveles)
-- **GLOBAL** (`00-overview/`) — visión, arquitectura C4, **ER global** tentativo, **mapa de premios de sponsors**
-  (doc estrella de la hackathon), convenciones y **decisiones abiertas**.
-- **MÓDULO** (`modules/`) — un documento por módulo (todos tentativos), con una sección por funcionalidad.
-- **TRANSVERSAL** (`transversal/`) — integraciones (The Graph, on-chain/viem/ENS), IA headless, infra/DevOps,
-  diseño, **mobile-first**, calidad.
-- **PLANTILLAS** (`_templates/`) — base para nuevos módulos y funcionalidades.
+> **Level of detail:** hackathon design docs. The overview and transversal docs are the most
+> closed; module specs follow the RF/RNF house format and are proportional to module size.
+
+---
+
+## Organisation (2-level hybrid)
+
+- **OVERVIEW** (`00-overview/`) — vision & scope, layered/C4 architecture, the HCS message
+  schemas (there is **no relational data model**), the sponsor/prize map, conventions, and
+  the open-decisions ledger.
+- **MODULES** (`modules/`) — one RF/RNF document per module (`M1`…`M8`), mapped to backlog
+  IDs (`S0.x`…`S5.x`).
+- **TRANSVERSAL** (`transversal/`) — the three sponsor integrations (0G, Hedera, World), the
+  security & privacy threat model, design system, mobile-first, quality & testing, infra/DevOps.
+- **SPECS** (`spec-0x-*.md`) — short spec stubs committed **before** the code (spec-driven rule).
+- **COMPLIANCE & PRIMERS** — `ai-usage.md`, `web3-concepts.md`, `seam-flow-example.md`.
+- **TEMPLATES** (`_templates/`) — base for new modules and features.
 
 ```
 docs/
   README.md
-  00-overview/{00-vision-y-alcance,01-arquitectura-c4,02-modelo-datos-global,03-mapa-premios-sponsors,04-convenciones,05-decisiones-abiertas}.md
-  modules/{M1-ingesta-onchain,M2-motor-pnl,M3-reportes-ia,M4-asistente-ia,M5-mcp-thegraph}.md
-  transversal/{integracion-thegraph,integracion-onchain,ia-runtime-headless,sistema-de-diseno,mobile-first,calidad-y-pruebas,infra-devops}.md
-  _templates/{modulo,funcionalidad}.md
+  00-overview/{00-vision-scope,01-architecture,02-data-model,03-sponsors-prizes,04-conventions,05-open-decisions}.md
+  modules/{M1-session,M2-seal,M3-worldid,M4-registry,M5-scheduler,M6-evaluator,M7-attest,M8-web}.md
+  transversal/{integration-0g,integration-hedera,integration-worldid,security-and-privacy,design-system,mobile-first,quality-and-testing,infra-devops}.md
+  spec-01-session.md · spec-02-evaluator.md · spec-03-attest.md
+  ai-usage.md · web3-concepts.md · seam-flow-example.md
+  _templates/{module,feature}.md
 ```
 
-## Mapa de módulos (todos 🟦 TENTATIVOS)
-| ID | Módulo | Estado |
-|----|--------|:------:|
-| M1 | Ingesta on-chain (leer wallets/posiciones · The Graph + viem, read-only) | 🟦 tentativo |
-| M2 | Motor de PnL (base de costo, realizado/no realizado · manda el socio contador) | 🟦 tentativo |
-| M3 | Reportes IA (borradores fiscales / PnL en lenguaje natural) | 🟦 tentativo |
-| M4 | Asistente IA (cola `ai_jobs` + runner Claude Code headless + contratos Zod) | 🟦 tentativo |
-| M5 | MCP The Graph (server/skill para consultar DeFi vía subgraphs — cimiento del resto) | 🟦 tentativo |
-| T-TG | Integración The Graph (subgraphs/GraphQL + Subgraph MCP) | 🟧 borrador |
-| T-OC | Integración on-chain (viem: ENS, balances, lectura ERC-20, read-only) | 🟧 borrador |
-| T-IA | IA de runtime headless (Claude Code, sin API key) | 🟧 borrador |
-| T-DS | Sistema de diseño | 🟧 borrador |
-| T-MF | Mobile-first | 🟧 borrador |
-| T-QA | Calidad y pruebas | 🟧 borrador |
-| T-IN | Infra & DevOps (deploy por decidir) | 🟧 borrador |
+---
 
-## Ledger de decisiones de arquitectura
-| # | Decisión | Detalle |
-|---|----------|---------|
-| D1 | Stack = Next.js 16 · React 19 · TS · Tailwind v4 · shadcn · Supabase | Reutilizado casi 1:1 de `home-os`. |
-| D2 | **Monolingüe (español)** | Términos web3 (wallet, subgraph, swap, PnL, on-chain, MCP) en inglés por convención del ecosistema. |
-| D3 | **Sin Solidity / sin smart contracts propios** | Se leen datos on-chain; **no se despliega nada**. Equipo con cero experiencia en Solidity. |
-| D4 | **On-chain = SOLO LECTURA en el MVP** | Cero manejo de private keys; wallets **read-only**. No se firma ni envía ninguna transacción. |
-| D5 | **Datos on-chain vía The Graph + viem** | The Graph (subgraphs/GraphQL + **Subgraph MCP**) para datos DeFi; **viem** (RPC público) para ENS y lecturas puntuales. |
-| D6 | **IA de runtime = Claude Code headless** | Suscripción, **sin API key**. Cola `ai_jobs` + runner en el worker. Engine-agnóstico. |
-| D7 | **Supabase (Postgres + Auth + RLS)** | Almacén/espejo/analítica de lo leído on-chain + cola de jobs. |
-| D8 | **Sin Notion, sin correo, sin calendar** | A diferencia de `home-os`. No hay integración Notion/Gmail/IMAP/Calendar. |
-| D9 | Diagramas en **Mermaid** | Embebidos, versionables por PR. |
-| D10 | **date-fns** (no Moment) | Manejo de fechas de transacciones/timestamps on-chain. |
-| D11 | **Deploy por decidir** | Vercel (rápido para hackathon) vs VPS Hostinger + Dokploy + Docker (como `home-os`). Ver `transversal/infra-devops.md`. |
-| D12 | **Cadenas objetivo = empezar con 1 red** | P. ej. Ethereum mainnet vía The Graph. Multi-chain = stretch. Ver `05-decisiones-abiertas.md`. |
-| D13 | **ENS para identidad de agente** | Premio de bajo riesgo web3 apilable sobre el núcleo (resolver nombre↔dirección con viem). |
+## Module map
 
-## Estados de documento
-`⬜ pendiente` → `🟧 borrador` → `🟨 en revisión` → `🟩 aprobado`
-`🟦 tentativo` = sujeto a la **decisión de idea** de la hackathon (aún no comprometido).
+| ID | Module | Backlog | Sponsor | Status |
+|----|--------|---------|---------|:------:|
+| M1 | `session` — create room, publish deadline to HCS **before** any write, issue link/QR | S1.2 | Hedera | 🟧 draft |
+| M2 | `seal` (client) — in-browser hybrid encryption to enclave key; deterministic commitment | S1.4 | 0G | 🟧 draft |
+| M3 | `worldid` — Selfie Check, one nullifier per room per side | S1.5 | World | 🟧 draft |
+| M4 | `registry` — write commitments + verdict to HCS, read via Mirror Node, versioned messages | S1.3 / S2.5 / S2.6 | Hedera | 🟧 draft |
+| M5 | `scheduler` — arm + listen for the scheduled reveal | S2.4 | Hedera | 🟧 draft |
+| M6 | `evaluator` — 0G call, pinned model, temp 0, constrained enum output | S2.2 | 0G | 🟧 draft |
+| M7 | `attest` — verify the TEE signature independently, fail closed (Friday-night spike) | S0.3 / S2.3 | 0G | 🟧 draft |
+| M8 | `web` — three screens (create · write+seal · verdict), two-browser E2E + QR | S3.x | web | 🟧 draft |
+
+### Transversal & compliance
+
+| ID | Document | Status |
+|----|----------|:------:|
+| T-0G | Integration — 0G sealed inference | 🟧 draft |
+| T-HE | Integration — Hedera (HCS · Schedule · Mirror) | 🟧 draft |
+| T-WO | Integration — World Selfie Check | 🟧 draft |
+| T-SEC | Security & privacy (threat model) | 🟧 draft |
+| T-DS | Design system | 🟧 draft |
+| T-MF | Mobile-first | 🟧 draft |
+| T-QA | Quality & testing | 🟧 draft |
+| T-IN | Infra & DevOps (deploy TBD) | 🟧 draft |
+| C-AI | AI-usage attribution | 🟧 draft |
+
+---
+
+## Architecture decision ledger
+
+| # | Decision | Detail |
+|---|----------|--------|
+| D1 | **Stack reused from `home-os`, Supabase-free** | Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · Zod. No Supabase, no Postgres, no ORM. |
+| D2 | **English only** | Docs, code, commits, UI in English. Web3/crypto terms (TEE, enclave, attestation, nullifier, HCS) stay as-is. |
+| D3 | **No Solidity / no smart contracts** | Zero contracts written or deployed. All three sponsors are used through native SDKs/services. This *is* the Hedera "No Solidity Allowed" track. |
+| D4 | **No database — storage IS the HCS topic** | No relational DB, no ORM, no server-side store of terms. The Hedera Consensus Service topic holds the three versioned message types (expiry, commitments, verdict). |
+| D5 | **Sealed inference via 0G** | The comparison runs inside a 0G TeeML enclave; the operator cannot see the inputs. This is the whole reason the product is trustable, not a feature. |
+| D6 | **Hedera = three native services** | HCS (commitments + verdict log), Schedule Service (the deadline clock), Mirror Node (read path). Testnet account; keys are **ours only**. |
+| D7 | **World = one seat per side, not login** | Selfie Check as an anti-probing abuse signal. Nullifier scoped **per room per side**, not app-wide. |
+| D8 | **No user private keys** | We hold only our own Hedera testnet account key. Users never sign anything; there are no wallets in the flow. |
+| D9 | **Constrained enum output** | The enclave emits `workable` / `not_workable` (+ opt-in `gap:*`) and never free text. Enum in, enum out — the leak control. |
+| D10 | **Fail closed** | A verdict is published only if the TEE attestation verifies **independently** of the 0G SDK (`verifyEnvelope`). Bad signature ⇒ no verdict. |
+| D11 | **Zod at all boundaries** | Every external response (0G, Hedera SDK, Mirror Node REST, World) is validated with Zod before use. No `as any`. |
+| D12 | **Deterministic commitment** | `sha256(ciphertext)` over canonically serialised bytes; no clock timestamp inside the committed bytes, so the verifier recomputes the same hash. |
+| D13 | **Mermaid diagrams** | All diagrams embedded as Mermaid, versioned per PR. |
+| D14 | **date-fns** | Deadlines / consensus timestamps handled with date-fns (no Moment). |
+| D15 | **Deploy TBD — Vercel vs VPS** | Vercel is fast for the hackathon; a Hostinger VPS + Dokploy path exists as the fallback. No worker, no DB either way. See `transversal/infra-devops.md`. |
+
+---
+
+## Document states
+
+`⬜ pending` → `🟧 draft` → `🟨 review` → `🟩 approved`
+
+Prize amounts are marked **"approx — confirm at booth"** wherever they appear; sponsor pages
+changed once mid-event, so re-read them before submitting.

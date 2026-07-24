@@ -1,74 +1,80 @@
-# Mobile-first · Adaptabilidad y UX móvil
+# T · Mobile-first — adaptability & mobile UX
 
-Norma **transversal y obligatoria** para todos los módulos. Complementa el sistema de diseño
-(`transversal/sistema-de-diseno.md`): este documento es *cómo* cada pantalla debe sentirse en móvil.
+Status: 🟧 draft · **transversal and mandatory** rule for every screen. Complements the design system
+(`transversal/design-system.md`): this document is *how* each screen must feel on a phone.
 
-> **Principio.** La app se demuestra y se consume tanto en escritorio como en el teléfono (un juez puede
-> abrir la demo en su móvil). Diseñamos **mobile-first**: la base de estilos es la vista móvil y se *escala
-> hacia arriba* con breakpoints (`sm:`, `md:`, `lg:`). Nunca al revés. Ninguna pantalla se considera
-> terminada si en el teléfono se siente como un escritorio comprimido.
+> **Principle.** Seam is demoed and consumed on both desktop and phone (**a judge may scan the QR and
+> open a room on their own phone**). We design **mobile-first**: the base of every class is the mobile
+> view and it *scales up* with breakpoints (`sm:`, `md:`, `lg:`). Never the other way round. No screen
+> is done if on a phone it feels like a compressed desktop.
 
 ## Breakpoints (Tailwind v4, defaults)
-| Prefijo | Ancho min | Uso típico |
-|---------|-----------|------------|
-| *(base)* | 0 | **Móvil. Es el punto de partida de toda clase.** |
-| `sm:` | 40rem (640px) | móvil grande / tablet vertical |
-| `md:` | 48rem (768px) | tablet / desktop pequeño — **corte nav y tablas** |
+| Prefix | Min width | Typical use |
+|--------|-----------|-------------|
+| *(base)* | 0 | **Mobile. The starting point of every class.** |
+| `sm:` | 40rem (640px) | large phone / portrait tablet |
+| `md:` | 48rem (768px) | tablet / small desktop — **breakpoint for nav and dense layouts** |
 | `lg:` | 64rem (1024px) | desktop |
 
-Regla práctica: escribe primero la versión móvil sin prefijo y añade `sm:`/`md:`/`lg:` solo para *agrandar*
-o *reorganizar* en pantallas mayores.
+Rule of thumb: write the mobile version first with no prefix, then add `sm:`/`md:`/`lg:` only to
+*grow* or *reorganise* on larger screens.
 
-## Patrones obligatorios
-### 1. Navegación
-- **Móvil:** bottom tab bar fija al viewport, al alcance del pulgar (icono + etiqueta, activo en color de marca).
-- **Desktop:** nav-píldora del header.
-- **Fuente única** de secciones (`nav-items.tsx`): header y bottom bar la consumen; nunca duplicar la lista.
-- El layout reserva padding inferior en móvil = alto de la barra + `safe-area-inset-bottom`.
+## Mandatory patterns
+### 1. Navigation
+- Seam is a **short three-screen flow** (create · write+seal · verdict), not a dashboard, so navigation
+  is mostly linear. Any persistent controls (theme toggle, "new room") stay within thumb reach.
+- **Single source** of any nav items (`nav-items.tsx`) if a header/bottom bar is used; never duplicate the list.
+- The layout reserves bottom padding on mobile = bar height + `safe-area-inset-bottom` when a fixed bar exists.
 
-### 2. Tablas densas → tarjetas apiladas
-Una tabla de movimientos on-chain (fecha, tipo, token, cantidad, precio, PnL) es ilegible encogida. Debajo de
-`md` se refluye a **tarjetas apiladas**, una por fila, con cada celda etiquetada por su `data-label`.
+### 2. Dense blocks → stacked cards
+The general tool for any block that would be unreadable when squeezed is `.reflow-cards`: below `md`
+it reflows to **stacked cards**, one per row, each cell labelled by its `data-label`.
 ```html
 <table class="reflow-cards w-full text-sm">
   …
-  <td data-label="PnL">…</td>   <!-- el label aparece a la izquierda en móvil -->
+  <td data-label="Side">…</td>   <!-- the label appears on the left on mobile -->
 ```
+In Seam this applies to the **room-status list** (side A committed? side B committed? deadline) rather
+than a data table — but the pattern is the same.
 
-### 3. Tipografía fluida
-La base es el tamaño **móvil**; se agranda en `sm:`/`lg:`. Cuerpo legible ≥14px.
+### 3. Fluid typography
+The base is the **mobile** size; it grows on `sm:`/`lg:`. Readable body ≥14px.
 ```html
 <h1 class="text-3xl sm:text-4xl">
-<div class="text-2xl sm:text-3xl">…</div>  <!-- número de KPI (valor de cartera / PnL) -->
+<div class="text-2xl sm:text-3xl">…</div>  <!-- the one-line verdict / countdown -->
 ```
+The **verdict** (`workable` / `not_workable`) and the **countdown** must be legible at **360px** — they
+are the payoff of the whole flow.
 
 ### 4. Touch targets ≥ 44px
-Controles táctiles ≥44px. Botones `size="sm"` se elevan en móvil (`max-sm:h-11 max-sm:px-5`). Nada depende
-**solo** de `hover` (no existe en táctil): toda acción hover tiene equivalente tap/visible.
+Touch controls ≥44px. `size="sm"` buttons grow on mobile (`max-sm:h-11 max-sm:px-5`). Nothing depends
+**only** on `hover` (it does not exist on touch): every hover action has a tap/visible equivalent.
 
-### 5. Inputs y filtros
-Full-width en móvil, ancho natural en desktop; barras de filtros con `flex-wrap`.
+### 5. Inputs and the position textarea
+The **write-position textarea** is full-width on mobile, natural width on desktop; the "seal" button is
+a full-width primary on mobile. Any filter/option rows use `flex-wrap`.
 
-### 6. Layout y safe-area
-- `container-app` con padding lateral responsive.
-- Respetar el notch / barra inferior con `env(safe-area-inset-*)` cuando haya elementos fijos.
-- Grids: 1 columna en móvil → `sm:grid-cols-2` → `lg:grid-cols-4`.
+### 6. Layout and safe-area
+- `container-app` with responsive side padding.
+- Respect the notch / bottom bar with `env(safe-area-inset-*)` when there are fixed elements (e.g. a
+  sticky "seal" CTA on the write screen).
+- Grids: 1 column on mobile → `sm:grid-cols-2` where it helps (e.g. side A / side B status).
 
 ### 7. Light + dark
-Toda pantalla se prueba en ambos temas (tokens semánticos, nunca colores sueltos).
+Every screen is tested in both themes (semantic verdict tokens, never loose colours).
 
-## DoD móvil (checklist antes de mergear)
-- [ ] Probado a **360–390px** de ancho en light **y** dark.
-- [ ] **Sin scroll horizontal** accidental.
-- [ ] Tablas densas reflujadas (`.reflow-cards`) o con scroll **intencional** e indicado.
-- [ ] Touch targets ≥44px; ninguna acción depende solo de `hover`.
-- [ ] Navegación principal alcanzable con el pulgar.
-- [ ] Tipografía legible (cuerpo ≥14px) y titulares escalados.
-- [ ] `safe-area` respetada si hay elementos fijos.
-- [ ] Cubierto por test RTL (DoD general) y, si aplica, story en Storybook.
+## Mobile DoD (checklist before merge)
+- [ ] Tested at **360–390px** wide in light **and** dark.
+- [ ] **No accidental horizontal scroll.**
+- [ ] Dense blocks reflowed (`.reflow-cards`) or with **intentional**, indicated scroll.
+- [ ] Touch targets ≥44px; no action depends on `hover` alone.
+- [ ] The **QR to join** is scannable and centred; the **verdict + countdown** legible at 360px.
+- [ ] Readable typography (body ≥14px) and scaled headings.
+- [ ] `safe-area` respected if there are fixed elements.
+- [ ] Covered by RTL test (general DoD) and, where applicable, a Storybook story.
 
-## Anti-patrones (NO hacer)
-- Diseñar desktop y "encoger".
-- Tablas de 5–6 columnas sin reflow ni scroll intencional.
-- Tamaños fijos en px que no escalan; texto < 14px en cuerpo.
-- Acciones disponibles solo en `hover`.
+## Anti-patterns (do NOT)
+- Design desktop and "shrink" it.
+- Dense blocks with no reflow and no intentional scroll.
+- Fixed px sizes that don't scale; body text < 14px.
+- Actions available only on `hover`.

@@ -1,55 +1,59 @@
 # T · Infra & DevOps
 
-> **🟦 Deploy por decidir (D11 / DA7).** Dos caminos; se elige según el tiempo de la hackathon.
+> Status: 🟧 draft · **Deploy TBD (D15).** Two paths; pick based on hackathon time.
 
-## Opción A — Vercel (rápido para hackathon) · *recomendado tentativo*
-- **App web** (Next.js) desplegada en **Vercel**: push → deploy automático, TLS y dominio gratis, cero
-  configuración de servidor. Ideal para iterar rápido durante 36h.
-- **Worker + runner IA**: Vercel no encaja bien para procesos long-running / cron con `claude -p`. Opción:
-  correr el **worker en local** (drena `ai_jobs` de Supabase) durante la demo. La app en Vercel encola; el
-  runner local procesa. Esto además esquiva el riesgo de auth headless en servidor.
-- **Env** en el panel de Vercel (nunca en el repo).
+**Key difference from home-os:** Seam has **no worker and no database** (D4). Storage *is* the HCS
+topic; there is no `ai_jobs` queue and no headless runner. The app is a **stateless Next.js app** that
+calls 0G (sealed inference), Hedera (HCS · Schedule · Mirror) and World. That makes the Vercel path
+cleaner than it was for home-os.
 
-## Opción B — VPS Hostinger + Dokploy + Docker (como home-os)
-- **Hostinger VPS** con **Dokploy** (PaaS sobre Docker) desplegando `docker-compose.yml`:
-  - `app` (Next.js standalone, `Dockerfile`) — puerto 3000, healthcheck.
-  - `worker` (`worker.Dockerfile`) — cron + runner IA.
-- Dominio + TLS por Dokploy (Traefik). Más control, pero más setup para una hackathon.
+## Option A — Vercel (fast for hackathon) · *tentatively recommended*
+- **Web app** (Next.js) on **Vercel**: push → automatic deploy, free TLS and domain, zero server config.
+  Ideal for iterating fast over 36h.
+- **No long-running process to host** — there is no worker and no cron. The three sponsor calls happen
+  inside Server Actions / route handlers on demand.
+- **Env** in the Vercel panel (never in the repo).
+
+## Option B — Hostinger VPS + Dokploy + Docker (like home-os)
+- **Hostinger VPS** with **Dokploy** (PaaS over Docker) deploying a single `app` service
+  (Next.js standalone, `Dockerfile`) — port 3000, healthcheck.
+- Domain + TLS via Dokploy (Traefik). More control, but more setup for a hackathon, and Seam gains
+  little from it because there is no background process to run.
 
 ```mermaid
 flowchart TB
-  subgraph A[Opción A - Vercel]
-    v[App en Vercel]
-    wl[Worker local - runner IA]
+  subgraph A[Option A - Vercel · recommended]
+    v[Stateless Next.js app]
   end
-  subgraph B[Opción B - VPS]
-    d[Dokploy: app + worker en Docker]
+  subgraph B[Option B - VPS]
+    d[Dokploy: single app container]
   end
-  supa[(Supabase)]
-  v --> supa
-  wl --> supa
-  d --> supa
+  og[0G router]
+  he[(Hedera HCS · Schedule · Mirror)]
+  wo[World Selfie Check]
+  v --> og
+  v --> he
+  v --> wo
+  d --> og
+  d --> he
+  d --> wo
 ```
 
-## Supabase
-- Gestionado (cloud) — más simple para hackathon — o self-host. La app/worker se conectan por URL + keys.
-- Migraciones versionadas; RLS por `user_id` desde el día uno.
+## State
+- **No database.** All session state — expiry, commitments, verdict — lives on the **HCS topic** and is
+  read back through the **Mirror Node** (D4). The app holds no decryptable copy of any position (D5/D8).
 
-## Variables de entorno
-- En el panel del proveedor (Vercel/Dokploy), **no en el repo**. Plantilla: `.env.example`.
-- Sensibles solo en el entorno del servidor: `SUPABASE_SERVICE_ROLE`, `THE_GRAPH_API_KEY`, `RPC_URL`,
-  `CLAUDE_CODE_OAUTH_TOKEN`.
-- **Jamás** private keys / seed phrases en env ni repo (D4). Las direcciones de wallet son públicas y OK.
+## Environment variables
+- In the provider panel (Vercel/Dokploy), **not in the repo**. Template: `.env.example`.
+- Sensitive, server-side only: `OG_KEY`, `HEDERA_PRIVATE_KEY` (**our own testnet account**),
+  `WORLD_APP_ID`, plus `OG_ROUTER_URL`, `OG_MODEL`, `OG_ENCLAVE_PUBKEY`, `HEDERA_ACCOUNT_ID`,
+  `HEDERA_TOPIC_ID`, `WORLD_ACTION`.
+- **Never** any user private key or seed phrase (D8). We hold only our own Hedera testnet account key.
 
-## IA de runtime headless (lo delicado)
-- El runner invoca **Claude Code** (`claude -p --output-format json`) con la **suscripción** (sin API key).
-- Debe estar **autenticado** donde corra el worker (`~/.claude` / `CLAUDE_CODE_OAUTH_TOKEN`).
-- **Riesgo**: auth headless 24/7 en servidor puede no ser estable. **Mitigación (hackathon)**: correr el
-  runner en **local**. El sistema es agnóstico: migrar a `ANTHROPIC_API_KEY` = cambiar solo el runner.
+## Observability
+- Provider logs (Vercel/Dokploy). App healthcheck. Session state is publicly auditable on the HCS topic
+  itself (the "public receipt" of the demo).
 
-## Observabilidad
-- Logs del proveedor (Vercel/Dokploy). Healthcheck de la app. Estado de `ai_jobs` visible en la propia app.
-
-## Recomendación para las 36h
-**App en Vercel + worker/runner IA en local + Supabase cloud.** Máxima velocidad de iteración, mínimo setup,
-y esquiva el riesgo de la IA headless en servidor. Reevaluar si la demo necesita el worker 24/7.
+## Recommendation for the 36h
+**App on Vercel + env in the panel.** The whole app is stateless because state lives on Hedera — maximum
+iteration speed, minimum setup. Re-read the sponsor pages before submitting (they changed once mid-event).

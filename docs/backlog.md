@@ -1,0 +1,107 @@
+# Backlog — Seam
+
+> Pull-based. Finish a component, claim the next. Ordered by the build plan and by
+> dependencies. This file is the single source of truth for who is on what.
+
+## How to claim an item
+
+1. Pick the **top unclaimed** item whose dependencies are `🟩 done`.
+2. Set its **Status → 🟡 wip** and **Owner → your name** (`frank` / `dylan`), and
+   **commit that change first** (`chore(backlog): claim S2.2`) before writing code.
+   The commit is what reserves it — if you didn't commit the claim, it's not yours.
+3. **WIP limit = 1 per person.** Don't claim a second item until yours is `🟩 done` (merged to `develop`).
+4. Don't claim an item another person is already `🟡 wip` on.
+5. When merged to `develop`, set **Status → 🟩 done**.
+
+**Legend:** ⬜ todo · 🟡 wip · 🟩 done · ⛔ blocked
+**Initial lean** (not a rule, just to reduce context-switching): 0G items → `frank`, Hedera/World items → `dylan`. Anyone can pull anything.
+
+---
+
+## Phase 0 — Foundations & the gamble · Friday night
+> The Friday spike is the whole bet. If `attest` can't be verified independently, we know tonight.
+
+| ID | Component | What | Sponsor | Depends on | Owner | Status |
+|----|-----------|------|---------|-----------|-------|:------:|
+| S0.1 | repo setup | branches, `.env.example`, README skeleton, spec folder | — | — | integrator | 🟩 |
+| S0.2 | `spec-03-attest.md` | spec for independent attestation check (before code) | 0G | S0.1 | | ⬜ |
+| S0.3 | **`spike-attest.ts`** | one sealed 0G call, verify signature **outside** the SDK (`verifyEnvelope`) | 0G | S0.2 | | ⬜ |
+
+## Phase 1 — Lock-in · Saturday AM
+| ID | Component | What | Sponsor | Depends on | Owner | Status |
+|----|-----------|------|---------|-----------|-------|:------:|
+| S1.1 | `spec-01-session.md` | spec for room + deadline + commitments | Hedera | S0.1 | | ⬜ |
+| S1.2 | `session` | create room, publish expiry to HCS **before** any write, issue link | Hedera | S1.1 | | ⬜ |
+| S1.3 | `registry.write` | `sha256(ciphertext)` + timestamp to HCS topic (versioned messages) | Hedera | S1.1 | | ⬜ |
+| S1.4 | `seal` (client) | encrypt position in-browser to enclave pubkey (hybrid) | 0G | S0.3 | | ⬜ |
+| S1.5 | `worldid` | Selfie Check, one nullifier per room per side | World | S0.1 | | ⬜ |
+
+## Phase 2 — Core loop closes · Saturday PM
+| ID | Component | What | Sponsor | Depends on | Owner | Status |
+|----|-----------|------|---------|-----------|-------|:------:|
+| S2.1 | `spec-02-evaluator.md` | spec for sealed evaluation + constrained output | 0G | S0.1 | | ⬜ |
+| S2.2 | `evaluator` | 0G call, pinned model, temp 0, **enum output only** | 0G | S1.4, S2.1 | | ⬜ |
+| S2.3 | `attest` (module) | verify TEE signature on every verdict, **fail closed** | 0G | S0.3 | | ⬜ |
+| S2.4 | `scheduler` | arm + listen for the scheduled reveal | Hedera | S1.2 | | ⬜ |
+| S2.5 | `registry.read` | read verdict via Mirror Node REST | Hedera | S1.3 | | ⬜ |
+| S2.6 | topic versioning | 3 message types per session (expiry/commitments/verdict), versioned from commit 1 | Hedera | S1.3 | | ⬜ |
+
+## Phase 3 — Usable · Saturday evening
+| ID | Component | What | Sponsor | Depends on | Owner | Status |
+|----|-----------|------|---------|-----------|-------|:------:|
+| S3.1 | `web` create | screen: open a room, set deadline, get QR/link | web | S1.2 | | ⬜ |
+| S3.2 | `web` write+seal | screen: write position, seal in-browser | web | S1.4 | | ⬜ |
+| S3.3 | `web` verdict | screen: countdown + one-line verdict (Mirror) | web | S2.5 | | ⬜ |
+| S3.4 | two-browser E2E | full flow across two browsers, QR to join | web | S3.1–S3.3 | | ⬜ |
+
+## Phase 4 — Demo & track requirements · Saturday late
+| ID | Component | What | Sponsor | Depends on | Owner | Status |
+|----|-----------|------|---------|-----------|-------|:------:|
+| S4.1 | `inspect.ts` | demo: show our store holds only ciphertext (no key) | demo | S1.3 | | ⬜ |
+| S4.2 | `demo-naive.ts` | demo: same product w/o enclave → plaintext leaks | demo | S2.2 | | ⬜ |
+| S4.3 | World testing doc | developer friction + user friction (track requirement) | World | S1.5 | | ⬜ |
+| S4.4 | README (final) | what/why, architecture, how to run, sponsors | compliance | — | | ⬜ |
+| S4.5 | `ai-usage.md` | which files were AI-assisted (keep updated all weekend) | compliance | — | | ⬜ |
+| S4.6 | output vocabulary | enum verdicts + opt-in `gap:*` consent logic | 0G/web | S2.2 | | ⬜ |
+
+## Phase 5 — Submit · Saturday 22:00 → Sunday 07:00
+| ID | Component | What | Sponsor | Depends on | Owner | Status |
+|----|-----------|------|---------|-----------|-------|:------:|
+| S5.1 | video | record 2:30, 720p+, no AI voiceover, feature freeze first | compliance | all | | ⬜ |
+| S5.2 | submit | re-read sponsor pages, submit ~2h early | integrator | S5.1 | | ⬜ |
+
+---
+
+## Critical path
+`S0.2 → S0.3 (spike)` gates everything on 0G. In parallel, Hedera side can start `S1.1 → S1.2/S1.3`
+without waiting. The core loop (`S2.2` + `S2.3` + `S2.5`) is the "it works" milestone; the web UI and
+the two demo scripts (`S4.1`, `S4.2`) are what actually win the room.
+
+---
+
+## Definition of Done (every item)
+
+An item is `🟩 done` only when ALL of these hold. **This is the merge gate** — same discipline as our
+previous project (test + story + document, every time).
+
+**Tests** (see `docs/transversal/quality-and-testing.md`)
+- Non-trivial component → implementation + **RTL test (Vitest)**, co-located.
+- Module logic (seal/commitment **determinism**, registry parsing, `attest` verify) → **unit tests**.
+- Critical flow → **Playwright E2E** (the two-browser session).
+- Mock 0G/Hedera/World in unit tests; use real services in E2E where feasible.
+
+**Stories**
+- Non-trivial UI component → a **Storybook story** (variants/states), co-located.
+
+**Docs — document after each item (do NOT skip this)**
+- Update the item's **module doc** (`docs/modules/Mx-*.md`): tick its RF/RNF, record any decision made.
+- Update **`CLAUDE.md`** status if the item changes how the system works.
+- Log AI-assisted files in **`docs/ai-usage.md`**.
+- The spec (`docs/spec-*.md`) was committed **before** the code (spec-driven rule).
+
+**Green + safe**
+- `typecheck` + `lint` + `test` + `build` all pass.
+- Guardrails respected: no free text from the enclave, **fail closed**, no user private keys, no secrets committed.
+
+Then: set Status → 🟩 `done`, open a PR to `develop` (**no squash**), the integrator reviews and merges.
+A component isn't "done" because it runs — it's done when it's **tested, story'd, documented, and green**.

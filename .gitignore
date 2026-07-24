@@ -1,0 +1,53 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# production
+/build
+/worker/dist
+
+# testing
+/coverage
+/playwright-report
+/test-results
+/.playwright
+
+# env & secretos — NUNCA commitear credenciales ni private keys
+.env
+.env.*
+!.env.example
+# claves / wallets / seed phrases descargadas — jamás al repo
+*.key
+*.pem
+*.keystore
+wallet*.json
+secrets*.json
+
+# logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*~
+.idea/
+.vs/
+.vscode/*
+!.vscode/extensions.json
+
+# misc
+.turbo
+
+*storybook.log
+storybook-static
+
+# scratchpad de trabajo (prompts, borradores; no es código del proyecto)
+/scratchpad

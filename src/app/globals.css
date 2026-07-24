@@ -1,0 +1,115 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Modo oscuro por clase (next-themes con attribute="class"). */
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Sistema de diseño editorial (inspirado en home-os), adaptado a estética cripto/ETHGlobal.
+  - Sans: Inter Tight (--font-sans, inyectada por next/font en layout.tsx)
+  - Serif de acento: Instrument Serif italic (--font-serif)
+  - Marca: violeta/índigo. Light + dark. Base shadcn/ui = slate.
+  Tokens Tailwind v4 en @theme (NO usar tailwind.config.js).
+*/
+
+:root {
+  --radius: 0.65rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.03 264);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.03 264);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.03 264);
+
+  /* Marca violeta/índigo */
+  --primary: oklch(0.52 0.24 277);
+  --primary-foreground: oklch(0.98 0.01 280);
+
+  --secondary: oklch(0.97 0.01 265);
+  --secondary-foreground: oklch(0.28 0.03 264);
+  --muted: oklch(0.97 0.01 265);
+  --muted-foreground: oklch(0.55 0.02 264);
+  --accent: oklch(0.95 0.03 280);
+  --accent-foreground: oklch(0.32 0.09 277);
+
+  --destructive: oklch(0.58 0.23 27);
+  --destructive-foreground: oklch(0.98 0.01 280);
+
+  --border: oklch(0.92 0.01 265);
+  --input: oklch(0.92 0.01 265);
+  --ring: oklch(0.52 0.24 277);
+}
+
+.dark {
+  --background: oklch(0.19 0.02 264);
+  --foreground: oklch(0.97 0.01 265);
+  --card: oklch(0.23 0.02 264);
+  --card-foreground: oklch(0.97 0.01 265);
+  --popover: oklch(0.23 0.02 264);
+  --popover-foreground: oklch(0.97 0.01 265);
+
+  --primary: oklch(0.68 0.19 277);
+  --primary-foreground: oklch(0.18 0.03 277);
+
+  --secondary: oklch(0.28 0.02 264);
+  --secondary-foreground: oklch(0.97 0.01 265);
+  --muted: oklch(0.28 0.02 264);
+  --muted-foreground: oklch(0.7 0.02 264);
+  --accent: oklch(0.32 0.06 277);
+  --accent-foreground: oklch(0.97 0.01 265);
+
+  --destructive: oklch(0.63 0.22 27);
+  --destructive-foreground: oklch(0.97 0.01 265);
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.68 0.19 277);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Acento editorial: serif itálica para destacados (títulos, cifras clave). */
+.serif-accent {
+  font-family: var(--font-serif);
+  font-style: italic;
+}

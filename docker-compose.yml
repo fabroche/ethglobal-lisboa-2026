@@ -1,0 +1,18 @@
+# Despliegue app + worker (tentativo — para hackathon quizá Vercel sea más rápido).
+# Ver docs/transversal/infra-devops.md.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker.Dockerfile
+    env_file: .env
+    restart: unless-stopped

@@ -15,7 +15,7 @@ import { hkdf } from "@noble/hashes/hkdf";
 import { sha256 } from "@noble/hashes/sha256";
 import { z } from "zod";
 
-import { canonicalize } from "../evaluator/canonical";
+import { canonicalize } from "../lib/canonical";
 import { DEFAULT_SUITE, SEAL_SUITES, kemFor, type SealSuite } from "./suites";
 
 export { DEFAULT_SUITE, SEAL_SUITES, type SealSuite };

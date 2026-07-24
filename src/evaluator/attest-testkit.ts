@@ -13,7 +13,7 @@ import { secp256k1 } from "@noble/curves/secp256k1";
 import { ed25519 } from "@noble/curves/ed25519";
 
 import { addressFromPublicKey, digestFor, type Envelope, type SignatureScheme } from "./attest";
-import { canonicalBytes } from "./canonical";
+import { canonicalBytes } from "../lib/canonical";
 
 export type TestKeyPair = {
   scheme: SignatureScheme;

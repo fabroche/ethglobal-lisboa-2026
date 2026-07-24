@@ -1,9 +1,17 @@
 /**
- * Canonical serialization — spec-03 §3.
+ * Canonical serialization — spec-03 §3. **THE ONE IMPLEMENTATION.**
  *
  * A signature is over bytes. Signer and verifier must agree on exactly one
  * payload -> bytes function, stable across runs, machines and key insertion
  * order. This is one of the two hard parts named in CLAUDE.md.
+ *
+ * It lives in `lib/` because more than one module depends on the bytes being
+ * identical: `evaluator/attest` verifies a signature over them, `seal` binds
+ * them as AEAD additional data, and `registry` writes them to the HCS topic.
+ * A second implementation anywhere is a latent bug — the verdict record crosses
+ * all three boundaries, and if two of them disagree on a single byte then what
+ * was signed is not what was published, which is the exact claim Seam sells.
+ * If you are about to write another `canonicalise`, extend this one instead.
  *
  * JCS (RFC 8785) in spirit, restricted to the subset Seam actually uses, and
  * written by hand so it stays auditable in one screen with no dependency.

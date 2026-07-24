@@ -30,7 +30,7 @@ import {
   type AttestResult,
   type SignatureScheme,
 } from "../src/evaluator/attest";
-import { canonicalize } from "../src/evaluator/canonical";
+import { canonicalize } from "../src/lib/canonical";
 import { generateEnclaveKey, signEnvelope, tamperHex } from "../src/evaluator/attest-testkit";
 
 // ---------------------------------------------------------------- env + output
@@ -247,6 +247,24 @@ async function partBLive(env: OgEnv): Promise<void> {
     }
     body = JSON.parse(text);
     check("0G router reachable", true, `HTTP ${response.status}`);
+
+    // 0G docs: the verification handle arrives as a `ZG-Res-Key` HEADER (or as
+    // `data.id`), not necessarily in the body. Dump every header so we can see
+    // what we actually got rather than guess.
+    const headers = Object.fromEntries(response.headers.entries());
+    console.log(`  ${c.dim}response headers: ${Object.keys(headers).join(", ")}${c.reset}`);
+    const resKey = headers["zg-res-key"];
+    if (resKey) {
+      console.log(`  ${c.green}ZG-Res-Key present${c.reset} ${c.dim}= ${resKey.slice(0, 32)}…${c.reset}`);
+      console.log(
+        `  ${c.dim}This is the chatID. Per 0G docs the SDK verifies it via\n` +
+          `  broker.inference.processResponse(providerAddress, chatID) — we must NOT\n` +
+          `  use that (it is the SDK trust path). Ask the booth which endpoint serves\n` +
+          `  the raw signature + attestation for a chatID so we can verify it ourselves.${c.reset}`,
+      );
+    } else {
+      console.log(`  ${c.yellow}no ZG-Res-Key header${c.reset} ${c.dim}— check data.id in the body${c.reset}`);
+    }
   } catch (error) {
     check("0G router reachable", false, error instanceof Error ? error.message : String(error));
     return;

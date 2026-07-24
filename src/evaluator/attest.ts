@@ -22,7 +22,7 @@ import { ed25519 } from "@noble/curves/ed25519";
 import { keccak_256 } from "@noble/hashes/sha3";
 import { z } from "zod";
 
-import { canonicalBytes, NotCanonicalError } from "./canonical";
+import { canonicalBytes, NotCanonicalError } from "../lib/canonical";
 
 /** Signature schemes, spec-03 §4. Always explicit — never inferred from length. */
 export const SIGNATURE_SCHEMES = ["secp256k1-eth", "secp256k1-raw", "ed25519"] as const;

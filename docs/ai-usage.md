@@ -22,7 +22,7 @@ disclosure.
 | Project scaffold (Next.js 16 · Tailwind v4 · shadcn) | ✅ | Boilerplate generated; config reviewed by a human. |
 | `src/session/**` | ✅ | M1/S1.2 domain layer (messages, room, createRoom orchestrator, commitment gate) + co-located Vitest unit tests. Drafted with Claude Code under human direction; human-reviewed. |
 | `src/seal/**` | ⬜ | To fill when built (M2) — the deterministic commitment is safety-critical; expect close human review. |
-| `src/worldid/**` | ⬜ | To fill when built (M3). |
+| `src/worldid/**` | ✅ | M3/S1.5 verify + seat logic (per-room-per-side action scoping, `WorldVerifier` port, one-seat gate, fail-closed `claimSeat`, isolated `verifyCloudProof` adapter) + co-located Vitest tests. Drafted with Claude Code under human direction; human-reviewed. |
 | `src/registry/**` | ✅ | M4 write path (S1.3: canonical JSON, Hedera SDK boundary, `createRegistry`→`RegistryPort`) + read path (S2.5: Mirror Node boundary, `createReader`, base64/Zod decode, sequence-gap check) + co-located Vitest unit/integration tests. Drafted with Claude Code under human direction; human-reviewed. |
 | `src/scheduler/**` | ⬜ | To fill when built (M5). |
 | `src/evaluator/**` | ⬜ | To fill when built (M6). |

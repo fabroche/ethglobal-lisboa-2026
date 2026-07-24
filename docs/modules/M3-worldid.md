@@ -6,7 +6,7 @@
 | Field | Value |
 |-------|-------|
 | **ID** | M3 |
-| **Status** | 🟧 draft |
+| **Status** | 🟡 wip (S1.5 — verify + seat logic landed) |
 | **Backlog** | S1.5 |
 | **Sponsor** | World |
 | **Depends on** | S0.1 repo setup |
@@ -74,8 +74,26 @@ flowchart TD
 **Rules / validations:** verify the World proof server-side; one nullifier ⇒ one commitment per
 `(room, side)`.
 **Acceptance criteria:**
-- [ ] Given a valid Selfie Check, when a side submits, then exactly one commitment is accepted.
-- [ ] Given a second attempt with the same seat, then it is rejected.
+- [x] Given a valid Selfie Check, when a side submits, then exactly one commitment is accepted. _(claimSeat → reserveSeat, unit-tested)_
+- [x] Given a second attempt with the same seat, then it is rejected. _(reserveSeat throws on taken seat, unit-tested)_
+
+### Implementation notes (S1.5 — verify + seat logic)
+Landed in `src/worldid/` with co-located Vitest tests:
+- `action.ts` — `roomActionId(roomId, side)` = `seam-<roomId>-<side>`: the action scoped **per room
+  per side** (RF-M3-001, RNF-M3-001) so the nullifier isn't app-wide.
+- `verify.ts` — `WorldProof` (+ Zod) and the `WorldVerifier` port. Only the opaque
+  `nullifier_hash` is handled — never identity (RNF-M3-002).
+- `seats.ts` — pure seat registry: **one seat per `(room, side)`** (`reserveSeat` throws on a
+  taken seat, RF-M3-003); scoped per room.
+- `claim.ts` — `claimSeat` orchestrator: verifies server-side and **fails closed** (a failed proof
+  throws, no seat reserved), then reserves the seat; returns the `nullifierRef` M4 stamps on the
+  commitment.
+- `cloud-verifier.ts` — the only file importing `@worldcoin/idkit` (`verifyCloudProof`), isolated
+  like the Hedera SDK boundary so the logic/tests never pull the widget bundle.
+
+**Deferred:** the `selfie-check-gate` React widget (`IDKitWidget`) + its Storybook story/RTL test
+mount in the web write+seal screen (M8 / S3.2); the **World testing doc** is its own item
+(**S4.3**, RNF-M3-003). The real `cloudWorldVerifier` is covered by E2E/manual (no live calls in units).
 
 ## 8. Endpoints / Server Actions / Integrations / Jobs
 | Type | Name | Input | Output | Auth | Notes |

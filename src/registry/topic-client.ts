@@ -2,11 +2,11 @@ import "server-only";
 import {
   Client,
   AccountId,
-  PrivateKey,
   TopicId,
   TopicMessageSubmitTransaction,
 } from "@hashgraph/sdk";
 import { env, requireEnv } from "@/config/env";
+import { parseOperatorKey } from "@/lib/hedera-key";
 
 /**
  * The Hedera SDK boundary. `write.ts` depends on this narrow interface, never on the SDK
@@ -33,8 +33,7 @@ export function hederaTopicClient(): TopicClient {
 
   const client = Client.forName(env.HEDERA_NETWORK).setOperator(
     AccountId.fromString(accountId),
-    // Testnet accounts are commonly ECDSA; swap to fromStringED25519 if the wired key is ED25519.
-    PrivateKey.fromStringECDSA(privateKey),
+    parseOperatorKey(privateKey),
   );
 
   return {

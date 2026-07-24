@@ -89,8 +89,8 @@ sequenceDiagram
 | `room-qr` | ✅ | ✅ | 🟢 (S3.1 — scannable QR via `react-qr-code` + copy) |
 | `seal-position-form` | ⬜ | ⬜ | 🟧 |
 | `selfie-check-gate` | ⬜ | ⬜ | 🟧 |
-| `countdown` | ⬜ | ⬜ | 🟧 |
-| `verdict-panel` | ⬜ | ⬜ | 🟧 |
+| `countdown` | ✅ | ✅ | 🟢 (S3.3) |
+| `verdict-panel` | ✅ | ✅ | 🟢 (S3.3) |
 
 ### Implementation notes (S3.1 — create screen)
 Landed with co-located Storybook stories (CSF3) + RTL tests, tokenized via `globals.css` + `cn()`,
@@ -103,7 +103,21 @@ mobile-first (full-width, ≥44px targets, theme-aware):
   `createRoom` Server Action to M1 `session` + M4 `registry.write` (`hederaTopicClient`).
 
 **Deferred:** arming the scheduled reveal in the action (M5 `armReveal` — needs the reveal tx from
-M6/M7). Screens S3.2 (write+seal) and S3.3 (verdict) remain.
+M6/M7). Screen S3.2 (write+seal) remains (blocked on M2 seal).
+
+### Implementation notes (S3.3 — verdict screen)
+`/room/[roomId]/verdict` reads the room's expiry + verdict from Mirror Node (M4 `registry.read`) at
+load, then the client polls for the verdict until it lands:
+- `src/components/web/countdown.tsx` — live time-to-reveal (`formatRemaining` pure helper; tick starts
+  post-mount so no hydration mismatch; "Reveal due" past the deadline). Story + RTL.
+- `src/components/web/verdict-panel.tsx` — pending (sealed) → `workable` / `not_workable` (neutral, not
+  alarming) / `gap:*`. Story + RTL. Uses Tailwind emerald/amber/neutral until the semantic verdict
+  tokens (`--workable`/`--not-workable`/`--pending`) are added to `globals.css`.
+- `src/components/web/verdict-view.tsx` — composes them and polls `readVerdict` while pending.
+- `src/app/room/[roomId]/verdict/{page,actions}.ts` — server read + `readVerdict` Server Action.
+
+Works end-to-end **now** with a live countdown + pending state; real verdicts render once M6/M7 write
+them to the topic. RF-M8-003 (countdown → verdict via Mirror) satisfied for the read side.
 
 ## 10. Module acceptance criteria
 - [ ] The two-browser E2E passes with QR join (S3.4).

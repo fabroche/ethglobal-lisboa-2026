@@ -6,7 +6,7 @@
 | Field | Value |
 |-------|-------|
 | **ID** | M5 |
-| **Status** | 🟧 draft |
+| **Status** | 🟡 wip (S2.4 — arm/fire logic landed) |
 | **Backlog** | S2.4 |
 | **Sponsor** | Hedera |
 | **Depends on** | M1 (`session` — arms the reveal at room creation) |
@@ -62,8 +62,23 @@ flowchart TD
   D --> E[Trigger evaluator M6]
 ```
 **Acceptance criteria:**
-- [ ] The scheduled tx is armed at room creation, before any commitment.
-- [ ] When the deadline is reached, evaluation is triggered exactly once.
+- [x] The scheduled tx is armed at room creation, before any commitment. _(armReveal, future-only; wired by M1/web)_
+- [x] When the deadline is reached, evaluation is triggered exactly once. _(onRevealFired idempotent — unit-tested)_
+
+### Implementation notes (S2.4 — arm/fire logic)
+Landed in `src/scheduler/` with co-located Vitest tests:
+- `service.ts` — the `ScheduleService` port (`arm`, `status`).
+- `reveal.ts` — `armReveal` (validates a **future** deadline via `@/session` `assertFutureDeadline`,
+  then arms), `onRevealFired` (idempotent trigger ⇒ evaluation fires **exactly once**, RF-M5-003),
+  `isDeadlineReached` (the **DA5 fallback** server-side timer that still honours the committed deadline).
+- `hedera-schedule.ts` — the only file importing the SDK, `server-only`. Uses a long-term scheduled
+  transaction (`expirationTime = deadline`, `waitForExpiry(true)`) so Hedera enforces the reveal time
+  (RNF-M5-001). The transaction that fires (the verdict write) is **injected** once M6/M7 exist.
+
+**Deferred:** wiring `armReveal` into `session.createRoom`/the web create flow, and supplying the real
+reveal transaction (needs M6/M7). **Open decision DA5** (scheduled-tx signature never arrives) is
+confirmed at the Hedera booth; `isDeadlineReached` is the committed fallback. Real adapter covered by
+E2E/manual (no live calls in units).
 
 ## 8. Endpoints / Server Actions / Integrations / Jobs
 | Type | Name | Input | Output | Auth | Notes |

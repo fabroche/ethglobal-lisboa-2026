@@ -6,7 +6,7 @@
 | Field | Value |
 |-------|-------|
 | **ID** | M1 |
-| **Status** | 🟧 draft |
+| **Status** | 🟡 wip (S1.2 — domain layer landed) |
 | **Backlog** | S1.2 |
 | **Sponsor** | Hedera |
 | **Depends on** | M4 (`registry.write` — writes the expiry message), M5 (`scheduler` — arms the reveal) |
@@ -85,6 +85,23 @@ consensus before commitments open.
 **Acceptance criteria:**
 - [ ] Given a valid deadline, when the room is created, then the expiry message appears on the topic before any commitment message.
 - [ ] Given the room link/QR, when Side B scans it, then they join the same topic session.
+
+### Implementation notes (S1.2 — domain layer)
+Landed in `src/session/` with co-located Vitest unit tests:
+- `messages.ts` — canonical **versioned** HCS schemas + pure builders for the `expiry` and
+  `commitment` messages (`buildExpiryMessage`, `buildCommitmentMessage`, `parseTopicMessage`).
+- `room.ts` — `createRoomInputSchema`, `assertFutureDeadline` (RF-M1-002), `buildJoinUrl`
+  (leaks only room id + side).
+- `session.ts` — `createRoom(input, deps)` orchestrator. Enforces the **ordering invariant**
+  (RNF-M1-001): validates, then publishes the expiry, then returns join links; publishes
+  nothing on invalid input. It depends on an injected **`RegistryPort`**, so `session` never
+  touches the Hedera SDK directly (arch convention). The real HCS write is **M4 `registry.write`
+  (S1.3)**; arming the scheduled reveal (RF-M1-004) is **M5 `scheduler` (S2.4)**.
+- `commitments.ts` — pure accept-gate: no commitment before expiry, one per side, ≤2 per room.
+
+**Schema reconciliation:** the canonical shapes follow `00-overview/02-data-model.md`
+(`side: "A" | "B"`, field `worldNullifier`), superseding the `spec-01` draft (`"a"/"b"`,
+`nullifierRef`). **Deferred:** on-topic write (M4), QR image render (M8), scheduler arm (M5).
 
 ## 8. Endpoints / Server Actions / Integrations / Jobs
 | Type | Name | Input | Output | Auth | Notes |

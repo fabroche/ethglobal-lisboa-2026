@@ -34,7 +34,7 @@
 | S1.2 | `session` | create room, publish expiry to HCS **before** any write, issue link | Hedera | S1.1 | dylan | 🟩 |
 | S1.3 | `registry.write` | `sha256(ciphertext)` + timestamp to HCS topic (versioned messages) | Hedera | S1.1 | dylan | 🟩 |
 | S1.4 | `seal` (client) | encrypt position in-browser to enclave pubkey (hybrid) | 0G | S0.3 | | ⬜ |
-| S1.5 | `worldid` | Selfie Check, one nullifier per room per side | World | S0.1 | | ⬜ |
+| S1.5 | `worldid` | Selfie Check, one nullifier per room per side | World | S0.1 | dylan | 🟡 |
 
 ## Phase 2 — Core loop closes · Saturday PM
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
@@ -43,7 +43,7 @@
 | S2.2 | `evaluator` | 0G call, pinned model, temp 0, **enum output only** | 0G | S1.4, S2.1 | | ⬜ |
 | S2.3 | `attest` (module) | verify TEE signature on every verdict, **fail closed** | 0G | S0.3 | | ⬜ |
 | S2.4 | `scheduler` | arm + listen for the scheduled reveal | Hedera | S1.2 | | ⬜ |
-| S2.5 | `registry.read` | read verdict via Mirror Node REST | Hedera | S1.3 | dylan | 🟡 |
+| S2.5 | `registry.read` | read verdict via Mirror Node REST | Hedera | S1.3 | dylan | 🟩 |
 | S2.6 | topic versioning | 3 message types per session (expiry/commitments/verdict), versioned from commit 1 | Hedera | S1.3 | | ⬜ |
 
 ## Phase 3 — Usable · Saturday evening

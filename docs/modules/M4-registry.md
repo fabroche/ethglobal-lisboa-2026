@@ -7,7 +7,7 @@
 | Field | Value |
 |-------|-------|
 | **ID** | M4 |
-| **Status** | 🟧 draft |
+| **Status** | 🟡 wip (S1.3 — write path landed) |
 | **Backlog** | S1.3 (`write`) · S2.5 (`read`) · S2.6 (versioning) |
 | **Sponsor** | Hedera |
 | **Depends on** | M1 (session/topic), M2 (produces the commitment), M3 (gates the commitment), M6/M7 (produce the verified verdict) |
@@ -75,6 +75,24 @@ sequenceDiagram
 **Acceptance criteria:**
 - [ ] A commitment appears on the topic with `v`, `type`, side, and `sha256`.
 - [ ] A commitment without a valid World seat is rejected.
+
+### Implementation notes (S1.3 — write path)
+Landed in `src/registry/` with co-located Vitest unit tests:
+- `canonical.ts` — `canonicalJson()`: deterministic serialisation (recursively key-sorted,
+  array order preserved) so any verifier re-derives identical bytes (RNF-M4-001).
+- `topic-client.ts` — the **Hedera SDK boundary** (`TopicClient` + `hederaTopicClient()`),
+  `import "server-only"`; builds the client from env and signs with **our** testnet account
+  (D8). The SDK is confined to this file; nothing else imports `@hashgraph/sdk`.
+- `write.ts` — `createRegistry(client)` returns a `Registry` that **implements M1's
+  `RegistryPort`** (`publishExpiry`) and adds `publishCommitment`. Every message is
+  **re-validated against its Zod schema before submit** (append-only can't be undone) and
+  serialised canonically. An integration test wires it into `session.createRoom`.
+
+**Reuses** the versioned schemas from `src/session/messages.ts` (RNF-M4-002 satisfied from
+message 1). **Deferred:** Mirror Node read path + Zod-validated reads (M4 `read` / S2.5),
+verdict write with fail-closed gate (S2.x / needs M7), World-seat gate on commitment
+(RF-M4-005 / needs M3). The real `TopicClient` is covered by E2E/manual against testnet, not
+unit tests (no live calls in units, per §11).
 
 ### F-M4-2 · Read the session via Mirror Node
 | Field | Value |

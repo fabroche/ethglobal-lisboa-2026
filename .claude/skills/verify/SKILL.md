@@ -1,35 +1,30 @@
 ---
 name: verify
-description: Receta de verificación E2E en local — levantar la app, recorrer flujos reales (conectar wallet read-only → leer posiciones → generar reporte) con Playwright y limpiar. Usar cuando haya que verificar un cambio en la app corriendo, no solo con tests.
+description: Local E2E verification recipe for Seam — run the app, drive the two-browser flow (open room → write+seal → verdict), and check the privacy properties (ciphertext-only store, fail-closed attestation). Use to verify a change in the running app, not only with unit tests.
 ---
 
-# Verificación E2E local
+# Local E2E verification — Seam
 
-> Adaptada del método de home-os. En una hackathon prioriza verificar el **flujo de demo**
-> funcionando de punta a punta, con datos on-chain reales.
+> In a hackathon, prioritise verifying the **demo flow** end-to-end with real services.
 
-## Receta
+## Recipe
 
-1. **Dev server**: `npm run dev` (background). Espera a que la home devuelva 200
-   (`curl -s -o /dev/null -w "%{http_code}" http://localhost:3000`) — la primera compilación
-   de cada ruta es lenta con Turbopack.
+1. **Dev server**: `npm run dev` (background). Wait for the home to return 200
+   (`curl -s -o /dev/null -w "%{http_code}" http://localhost:3000`) — first compile is slow with Turbopack.
 
-2. **Datos de prueba on-chain**: usa una **wallet pública conocida** con actividad (p. ej. una
-   dirección `.eth` famosa) — es **solo lectura**, no hace falta ninguna private key. Así la demo
-   siempre tiene datos ricos sin depender de tu propia cartera.
+2. **Two-browser flow** with Playwright (`@playwright/test`; first time: `npx playwright install chromium`).
+   Open two contexts (company + candidate). Flow: A opens a room (deadline to Hedera) → scan/enter link →
+   both write a position → World Selfie Check → seal + commit → scheduled reveal → both read the same
+   one-line verdict via Mirror Node. Screenshot each step.
 
-3. **Recorrer el flujo** con Playwright (`playwright` viene con `@playwright/test`; instala el
-   navegador la primera vez: `npx playwright install chromium`). Flujo de demo tentativo:
-   introducir dirección/ENS → resolver ENS → leer posiciones/movimientos (The Graph) →
-   generar borrador de reporte (IA headless) → screenshots de cada paso.
+3. **Privacy checks** (this is the point, not just "it works"):
+   - `npm run inspect` — the store holds **ciphertext only**; we hold no key.
+   - `npm run demo:naive` — the same product **without** the enclave leaks both positions (the contrast).
+   - Tamper one byte of the attestation → **no verdict published** (fail closed).
 
-4. **IA de runtime**: para que el paso de reporte funcione en local, el **worker** debe estar
-   corriendo (`npm run worker`) con Claude Code autenticado (`CLAUDE_CODE_OAUTH_TOKEN` o login local).
+4. **Test data**: use two throwaway positions that clearly do / don't overlap (e.g. seller ≥400k vs
+   buyer ≤400k → `workable`; buyer ≤380k → `not_workable`). No private keys anywhere — the flow is sealed.
 
-5. **Limpieza**: si creaste usuario/tester en Supabase, bórralo al terminar (aislado por `user_id`).
-   Las direcciones de wallet son públicas: no hay secretos que limpiar.
-
-## Notas
-- El `.env.local` de dev puede apuntar a un Supabase de hackathon desechable.
-- No metas private keys en ningún paso: el MVP es **solo lectura** on-chain.
-- Graba el recorrido: varios sponsors piden **video demo**.
+## Notes
+- Requires 0G / Hedera testnet / World credentials in `.env.local` (see `.env.example`).
+- Record the run — several sponsors require a **video demo** (2–4 min, 720p+, no AI voiceover).

@@ -1,28 +1,28 @@
-# Banco de contexto — agentes (dev)
+# Dev context — agents
 
-Referencia rápida para los subagentes. Lee el archivo relevante **antes** de trabajar en cada área.
-La documentación exhaustiva está en `docs/`; aquí van chuletas y enrutado.
+Quick reference for the subagents. Read the relevant file **before** working in each area.
+Full specs live in `docs/`; this is routing + cheat-sheets.
 
-| Tema | Lee |
-|------|-----|
-| Visión, alcance, módulos | `docs/00-overview/00-vision-y-alcance.md` |
-| Estrategia de premios (hackathon) | `docs/00-overview/03-mapa-premios-sponsors.md` |
-| Arquitectura y capas | `docs/00-overview/01-arquitectura-c4.md` + `agente/stack.md` |
-| Modelo de datos (ER tentativo) | `docs/00-overview/02-modelo-datos-global.md` |
-| Convenciones de código | `docs/00-overview/04-convenciones.md` |
-| **Reglas web3 (duras)** | `agente/reglas-web3.md` |
-| The Graph (subgraphs + MCP) | `docs/transversal/integracion-thegraph.md` |
-| On-chain (viem, ENS) | `docs/transversal/integracion-onchain.md` |
-| IA runtime (headless) | `docs/transversal/ia-runtime-headless.md` + `agente/stack.md` |
-| Diseño / UI | `docs/transversal/sistema-de-diseno.md` + `docs/transversal/mobile-first.md` |
-| Calidad / tests | `docs/transversal/calidad-y-pruebas.md` |
-| Infra / deploy | `docs/transversal/infra-devops.md` |
-| Decisiones abiertas (idea) | `docs/00-overview/05-decisiones-abiertas.md` |
+| Topic | Read |
+|-------|------|
+| Vision, scope, modules | `docs/00-overview/00-vision-scope.md` |
+| Architecture & layers | `docs/00-overview/01-architecture.md` + `agente/stack.md` |
+| Data model (HCS messages, no DB) | `docs/00-overview/02-data-model.md` |
+| Sponsors & prizes strategy | `docs/00-overview/03-sponsors-prizes.md` |
+| Conventions | `docs/00-overview/04-conventions.md` |
+| **Guardrails (hard rules)** | `agente/guardrails.md` |
+| 0G (sealed inference + attest) | `docs/transversal/integration-0g.md` |
+| Hedera (HCS + Schedule + Mirror) | `docs/transversal/integration-hedera.md` |
+| World (Selfie Check) | `docs/transversal/integration-worldid.md` |
+| Security & privacy (threat model) | `docs/transversal/security-and-privacy.md` |
+| Quality / tests | `docs/transversal/quality-and-testing.md` |
+| **Backlog (what to build next)** | `docs/backlog.md` |
+| **Branching rules** | `docs/branching-strategy.md` |
 
-## Subagentes disponibles (`.claude/agents/`)
-`frontend` · `backend` · `onchain-data` · `ia-agente` · `devops` · `qa-testing`
+## Subagents (`.claude/agents/`)
+`frontend` · `zerog` · `hedera` · `world` · `devops` · `qa-testing`
 
-## Recordatorio de contexto
-Primera hackathon ETH. **Sin Solidity, sin smart contracts propios.** On-chain = **solo lectura**.
-La jugada: reusar la arquitectura de `home-os` apuntada a finanzas cripto. Idea **aún en decisión**
-(ver `docs/00-overview/05-decisiones-abiertas.md`).
+## Reminder
+First ETH hackathon. **No Solidity, no smart contracts. No user private keys.** The AI verdict runs in a
+**0G TEE**; the register lives on **Hedera HCS**; **World** gives one seat per side. Work is pull-based
+from `docs/backlog.md`. Repo language: **English**.

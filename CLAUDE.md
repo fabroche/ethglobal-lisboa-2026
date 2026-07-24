@@ -1,85 +1,87 @@
-# CLAUDE.md — ethglobal-lisboa-2026
+# CLAUDE.md — Seam
 
-## Qué es este repositorio
-Proyecto para la hackathon **ETHGlobal Lisbon 2026**. Un **agente IA sobre datos on-chain**
-(finanzas cripto en lenguaje natural), reusando la arquitectura de `home-os`. **Sin Solidity,
-sin smart contracts propios: on-chain = solo lectura.**
+**Seam** — sealed two-party negotiation, for **ETHGlobal Lisbon 2026**. Two sides write their terms in
+plain language into a sealed session; a model inside a **TEE (0G)** reads both and returns **one line to
+both** — `workable` / `not_workable` — without either side, or the operator, ever seeing the other's
+terms. **No database, no smart contract, no Solidity.**
 
-> **La idea AÚN está en decisión.** Recomendada (tentativa): *Crypto Copilot / "Contador
-> On-Chain"* — leer una wallet (read-only), calcular PnL/base de costo y generar borradores de
-> reporte fiscal. Ver `MEMORIA.md` y `docs/00-overview/05-decisiones-abiertas.md`.
+> Deadline: **Sunday 26 July, 09:00 WEST.** The Friday-night 0G attestation spike (`npm run spike`,
+> backlog `S0.3`) is the whole gamble: if the attestation can't be verified independently, the core
+> claim collapses — surface it that night, not Sunday.
 
-Stack: **Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · Supabase · Zod · The Graph · viem**.
-Monolingüe (español; términos web3 en inglés).
+## 🧭 If you are a Claude working on this repo, read in this order
+1. **This file** (context + hard rules).
+2. **`docs/branching-strategy.md`** — how we use Git (pull-based, no squash, commit every ~30 min).
+3. **`docs/backlog.md`** — claim the next item (commit the claim first) + the **Definition of Done**.
+4. **`docs/modules/Mx-*.md`** + **`docs/spec-*.md`** for the item you claimed.
+5. **`agente/guardrails.md`** — the lines you must never cross.
 
-## Equipo
-- **Dueño del repo (fabroche):** fullstack senior (web2/IA). Primera hackathon ETH, cero Solidity.
-- **Socio:** trader (5+ años cripto) + contador → define las métricas financieras y el "wow" del reporte.
+## Team & workflow
+- **Frank** (Claude, directed by the repo owner) — leans 0G side: `seal`, `evaluator`, `attest`.
+- **Dylan** (Claude, directed by the partner) — leans Hedera + World side: `session`, `registry`,
+  `scheduler`, `worldid`.
+- One **integrator** (repo owner) reviews/merges all PRs. Work is **pull-based** from `docs/backlog.md`;
+  branches `develop-frank` / `develop-dylan` → `develop` → `main`. **Repo language: English** (code, docs,
+  commits, PRs).
 
-## Comandos
+## Commands
 ```powershell
 npm run dev        # dev server (Turbopack)
-npm run build      # build de producción (standalone)
+npm run build      # production build
 npm run lint       # ESLint
 npm run typecheck  # tsc --noEmit
-npm run test       # Vitest (unit + RTL)
-npm run test:e2e   # Playwright
-npm run worker     # worker local (cron + runner IA)
-npm run storybook  # Storybook (:6006)
+npm run test       # Vitest
+npm run test:e2e   # Playwright (two-browser E2E)
+npm run spike      # scripts/spike-attest.ts — the Friday-night 0G go/no-go (S0.3)
+npm run inspect    # demo: our store holds only ciphertext (S4.1)
+npm run demo:naive # demo: same product without the enclave leaks (S4.2)
 ```
 
-## Arquitectura clave
-- **Capas** (dirección única): `app/` → `lib/actions` (Zod) → `lib/services` (dominio) →
-  `lib/{onchain,supabase,ai}` → APIs externas. La UI **no** importa `lib/onchain` directo.
-- **`src/config/env.ts`** — validación de env con Zod (fail-fast). Leer env SIEMPRE de aquí.
-- **`src/lib/onchain/`** — lectura on-chain: `thegraph.ts` (subgraphs vía `graphql-request`) y
-  `viem.ts` (cliente público: ENS, balances, ERC-20 read). **Solo lectura.**
-- **`worker/`** — proceso aparte: cron + **runner IA** (drena `ai_jobs`).
-- **`src/app/globals.css`** — Tailwind v4 `@theme` (sin `tailwind.config.js`). Sistema editorial:
-  Inter Tight + Instrument Serif italic, marca violeta/índigo, light+dark (next-themes).
+## Architecture (nine modules, no DB, no contract)
+- **Layers**: `app/` (UI) → module libs `src/{session,seal,worldid,registry,scheduler,evaluator}` →
+  external SDKs (0G router, `@hashgraph/sdk`, `@worldcoin/idkit`). Env ONLY from `src/config/env.ts`
+  (Zod, fail-fast).
+- **Storage IS the HCS topic.** Three versioned message types per session (expiry, commitments, verdict).
+- **Flow**: open room → publish deadline to Hedera before anyone writes → both write + seal in-browser to
+  the enclave key → World Selfie Check (one seat/side) → commitments (`sha256(ciphertext)`) to HCS →
+  scheduled reveal → sealed eval in 0G (pinned model, temp 0, enum output) → verify attestation
+  (**fail closed**) → verdict to topic → both read via Mirror Node.
 
-## IA de runtime (importante)
-La IA usa **Claude Code headless con la suscripción** (`claude -p`), **sin API key**. La app encola
-tareas en `ai_jobs` (Supabase) y el `worker` las drena. **Engine-agnóstico**: migrar a
-`ANTHROPIC_API_KEY` sería cambiar solo el runner.
+## Hard rules (see `agente/guardrails.md`)
+- **No Solidity / no smart contracts.** SDKs only.
+- **No user private keys, ever.** The only key we hold is our own Hedera testnet account.
+- **Enclave emits enum only** (never free text) — leak control. **Fail closed**: no valid attestation ⇒
+  no verdict published.
+- Validate every external response (0G / Hedera / World) with **Zod**. Secrets never in the repo.
+- The **two hard parts**: `attest` (verify TEE signature outside the SDK, `verifyEnvelope`) and `seal`
+  commitment (deterministic serialisation; hash the ciphertext; no timestamp in committed bytes).
 
-## Reglas transversales
-- **React 19**: `ref` es prop normal (no `forwardRef`).
-- **Server Actions**: `'use server'` + Zod en `src/lib/actions/`.
-- **`cn()`** (`src/lib/utils.ts`) para clases condicionales, siempre.
-- **Tailwind v4**: nunca `tailwind.config.js`; tokens en `globals.css @theme`.
-- **Mobile-first (OBLIGATORIO)**: base móvil; se escala con `sm:`/`md:`/`lg:`.
-- **date-fns** (no Moment).
-- **Reglas web3 duras** (ver `agente/reglas-web3.md`): solo lectura on-chain; **cero private keys**;
-  sin Solidity; validar con **Zod** toda respuesta de subgraph/RPC; paginar; rate-limit + retry.
+## Definition of Done (merge gate — every backlog item)
+Tested (**RTL** for components, **unit** for module logic, **Playwright E2E** for critical flows) ·
+**Storybook story** for non-trivial UI · **documented** (update the module doc + this file's status +
+`docs/ai-usage.md`) · spec committed **before** code · `typecheck`+`lint`+`test`+`build` green. A component
+isn't done because it runs — it's done when it's **tested, story'd, documented, and green**. Full checklist
+in `docs/backlog.md`.
 
-## Estrategia de premios (hackathon)
-Objetivo: **apilar 2–3 sponsors de bajo riesgo web3** con un solo producto. Foco: **The Graph**
-(leer subgraphs + MCP/AI tooling) + **ENS** (identidad de agentes) + **Hedera** opcional. Evitar
-1inch/Sui (Solidity/Move/opcodes). Detalle en `docs/00-overview/03-mapa-premios-sponsors.md`.
+## Sponsors (3 partner slots — the max) — all load-bearing
+| Track | Pool (approx) | Why it can't be removed |
+|---|---|---|
+| 0G — Best AI Product | $6,000 | Sealed inference IS the product |
+| World — Selfie Check Beta | $3,500 | One seat per side; kills the probing attack |
+| Hedera — No Solidity Allowed | $3,000 | HCS + Schedule + Mirror Node, zero Solidity |
 
-## Documentación y subagentes
-- Especificaciones en **`docs/`** (overview + módulos tentativos + transversales). Empezar por `docs/README.md`.
-- Banco de contexto del dev en **`agente/`** (`stack.md`, `reglas-web3.md`).
-- Subagentes en **`.claude/agents/`**: `frontend`, `backend`, `onchain-data`, `ia-agente`, `devops`, `qa-testing`.
-- Skills del proyecto: `the-graph`, `verify` (locales) + `copywriting` (para landing/pitch).
-- **MCP**: The Graph Subgraph MCP en `.mcp.json` (confirmar paquete/endpoint exacto en el booth).
+## Event rules (do not break — they disqualify)
+- **Commit every ~30 min** from hour one. Single giant commits / missing history can disqualify.
+- **AI attribution mandatory** → keep `docs/ai-usage.md` updated; commits carry `Co-Authored-By: Claude`.
+- **Spec-driven** → commit `docs/spec-*.md` before the code. **Never squash** PRs.
+- **Video**: 2–4 min, 720p+, **no AI voiceover**.
 
-## Módulos (TENTATIVOS — sujetos a la decisión de idea)
-| ID | Módulo |
-|----|--------|
-| M1 | Ingesta on-chain (wallets read-only) |
-| M2 | Motor de PnL / base de costo |
-| M3 | Reportes IA (borradores fiscales/PnL) |
-| M4 | Asistente IA (cola `ai_jobs` + runner headless) |
-| M5 | MCP The Graph (cimiento, idea C) |
-
-## Estado actual
-**Andamiaje recién creado** (scaffold + documentación). Idea **en decisión**. Siguiente paso:
-cerrar idea/alcance con el socio (`docs/00-overview/05-decisiones-abiertas.md`), sacar API keys
-(The Graph, RPC), y montar el primer flujo end-to-end (dirección/ENS → leer on-chain → reporte).
+## Map
+- Specs: **`docs/`** (start at `docs/README.md`) — vision, architecture, data model (HCS messages),
+  module docs (RF/RNF), sponsor integrations, security & privacy, conventions, open decisions.
+- Dev context: **`agente/`** (`stack.md`, `guardrails.md`). Primers: `docs/web3-concepts.md`,
+  `docs/seam-flow-example.md`.
+- Subagents: **`.claude/agents/`** — `frontend`, `zerog`, `hedera`, `world`, `devops`, `qa-testing`.
 
 ## Setup
-1. `cp .env.example .env.local` y rellenar (Supabase, The Graph, RPC, Claude token).
-2. `npm install`.
-3. `npm run dev`.
+1. `cp .env.example .env.local` and fill (0G, Hedera testnet, World). 2. `npm install`. 3. `npm run dev`.

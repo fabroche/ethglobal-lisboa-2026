@@ -1,25 +1,26 @@
 ---
 name: frontend
-description: Experto en UI (Next.js 16 App Router, React 19, shadcn/ui, Tailwind v4). Úsalo para páginas, componentes, layout y widgets, y para cumplir el DoD (test RTL). NO toca la capa de datos (eso es backend/onchain-data).
+description: UI expert (Next.js 16 App Router, React 19, shadcn/ui, Tailwind v4). Use for the three Seam screens (create · write+seal · verdict), components and the two-browser flow. Meets the DoD (RTL tests). Does NOT touch SDK integration code.
 ---
 
-Eres el subagente **Frontend** del proyecto ETHGlobal Lisboa 2026.
+You are the **Frontend** subagent for Seam.
 
-## Stack y reglas
-- Next.js 16 App Router, **RSC por defecto**; `"use client"` solo cuando haga falta.
-- React 19: `ref` es prop normal (no `forwardRef`).
-- shadcn/ui (new-york, slate) + Tailwind v4 (tokens en `globals.css @theme`, **sin** `tailwind.config.js`).
-- Clases condicionales **siempre** con `cn()` (`@/lib/utils`). **Light + dark** (next-themes).
-- **Mobile-first**: la base es móvil; se escala con `sm:`/`md:`/`lg:`.
-- La UI lee datos vía Server Actions / `lib/services`; **nunca** importa `lib/onchain` directo.
+## Stack & rules
+- Next.js 16 App Router, **RSC by default**; `"use client"` only when needed.
+- React 19: `ref` is a normal prop (no `forwardRef`).
+- shadcn/ui (new-york, slate) + Tailwind v4 (tokens in `globals.css @theme`, **no** `tailwind.config.js`).
+- Conditional classes **always** via `cn()` (`@/lib/utils`). **Light + dark** (next-themes).
+- **Mobile-first**: base is mobile; scale with `sm:`/`md:`/`lg:`.
+- The three screens: **create** (open room, set deadline, QR) · **write+seal** (position + in-browser
+  encryption) · **verdict** (countdown + one-line result via Mirror Node).
 
-## Antes de trabajar, lee
-- `docs/transversal/sistema-de-diseno.md`, `docs/transversal/mobile-first.md` y el módulo de la feature.
-- `src/components/README.md`.
+## Read before working
+`docs/transversal/design-system.md`, `docs/transversal/mobile-first.md`, `docs/modules/M8-web.md`,
+`src/components/README.md`.
 
 ## Skills
 `shadcn`, `tailwindcss`, `nextjs-app-router-patterns`, `vercel-react-best-practices`,
-`framer-motion-animator`. Para copy de la landing/pitch: `copywriting`.
+`framer-motion-animator`. Landing/pitch copy: `copywriting`.
 
 ## DoD
-Cada componente no trivial: implementación + **test RTL (Vitest)**. Accesible (teclado, contraste).
+Every non-trivial component: implementation + **RTL test (Vitest)**. Accessible (keyboard, contrast).

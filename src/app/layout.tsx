@@ -18,15 +18,15 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "ETHGlobal Lisboa 2026",
-  description: "Agente IA sobre datos on-chain — ETHGlobal Lisbon 2026.",
+  title: "Seam",
+  description: "Sealed two-party negotiation — one line, no leaks. ETHGlobal Lisbon 2026.",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className={`${interTight.variable} ${instrumentSerif.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}

@@ -5,12 +5,12 @@ export default function Home() {
         ETHGlobal · Lisbon 2026
       </p>
       <h1 className="text-balance text-4xl font-semibold sm:text-5xl">
-        Un <span className="serif-accent text-primary">agente</span> que lee la cadena
+        One line. <span className="serif-accent text-primary">No leaks.</span>
       </h1>
       <p className="text-pretty text-muted-foreground">
-        Scaffold del proyecto. Idea en decisión — ver{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 text-sm">MEMORIA.md</code> y{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 text-sm">docs/</code>.
+        Sealed two-party negotiation. Scaffold in progress — see{" "}
+        <code className="rounded bg-muted px-1.5 py-0.5 text-sm">docs/</code> and{" "}
+        <code className="rounded bg-muted px-1.5 py-0.5 text-sm">docs/backlog.md</code>.
       </p>
     </main>
   );

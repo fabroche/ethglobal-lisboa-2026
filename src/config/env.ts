@@ -1,45 +1,36 @@
 import { z } from "zod";
 
 /**
- * Validación de variables de entorno (fail-fast) con Zod.
+ * Environment validation (fail-fast) with Zod. Validated ONCE, here.
+ * Never read `process.env.X ?? ""` scattered around the code.
  *
- * Se valida UNA vez, aquí. Nunca leer `process.env.X ?? ""` disperso por el código
- * (anti-patrón heredado de home-os: clientes construidos con strings vacíos que
- * fallan en runtime de forma silenciosa).
- *
- * Las integraciones son `optional()` para que el scaffold compile y arranque sin
- * credenciales; cada módulo, al implementarse, endurece (`.min(1)`) lo que necesita
- * o usa `requireEnv()`.
+ * Integrations are `optional()` so the scaffold compiles and boots without
+ * credentials; each module hardens (`.min(1)`) what it needs, or uses `requireEnv()`.
  */
 const envSchema = z.object({
   // App
   APP_URL: z.string().url().default("http://localhost:3000"),
-  CRON_SECRET: z.string().optional(),
-  SIGNUP_CODE: z.string().optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
-  // Supabase
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
-  SUPABASE_DB_URL: z.string().optional(),
+  // 0G — sealed inference (OpenAI-compatible router + independent attestation check)
+  OG_ROUTER_URL: z.string().url().default("https://router-api.0g.ai/v1"),
+  OG_KEY: z.string().optional(),
+  OG_MODEL: z.string().optional(), // pin an exact model, record its hash
+  OG_ENCLAVE_PUBKEY: z.string().optional(), // for independent attestation verification
 
-  // The Graph (datos on-chain vía subgraphs)
-  THE_GRAPH_API_KEY: z.string().optional(),
-  THE_GRAPH_GATEWAY_URL: z.string().url().default("https://gateway.thegraph.com/api"),
+  // Hedera — HCS topic (registry) + Schedule Service (clock) + Mirror Node (read)
+  HEDERA_ACCOUNT_ID: z.string().optional(),
+  HEDERA_PRIVATE_KEY: z.string().optional(), // our testnet account only — never a user's
+  HEDERA_TOPIC_ID: z.string().optional(), // created once
+  HEDERA_NETWORK: z.enum(["testnet", "mainnet"]).default("testnet"),
 
-  // RPC on-chain (viem: ENS, balances, lecturas ERC-20) — SOLO LECTURA
-  ETHEREUM_RPC_URL: z.string().url().default("https://eth.llamarpc.com"),
-
-  // IA de runtime — Claude Code headless (suscripción, sin API key)
-  CLAUDE_CLI_PATH: z.string().default("claude"),
-  CLAUDE_WORKDIR: z.string().default("./worker/agent"),
-  CLAUDE_CODE_OAUTH_TOKEN: z.string().optional(),
-  AI_POLL_MS: z.coerce.number().int().positive().default(3000),
+  // World — Selfie Check (one seat per room per side)
+  WORLD_APP_ID: z.string().optional(),
+  WORLD_ACTION: z.string().optional(), // scoped per room at runtime
 });
 
-// Trata las variables vacías ("") como ausentes, para que los placeholders
-// vacíos de .env.example no rompan la validación de campos opcionales.
+// Treat empty strings ("") as absent so empty .env.example placeholders don't
+// break optional-field validation.
 const rawEnv = Object.fromEntries(
   Object.entries(process.env).filter(([, value]) => value !== ""),
 );
@@ -47,18 +38,18 @@ const rawEnv = Object.fromEntries(
 const parsed = envSchema.safeParse(rawEnv);
 
 if (!parsed.success) {
-  console.error("❌ Variables de entorno inválidas:", parsed.error.flatten().fieldErrors);
-  throw new Error("Configuración de entorno inválida. Revisa .env.local (ver .env.example).");
+  console.error("❌ Invalid environment variables:", parsed.error.flatten().fieldErrors);
+  throw new Error("Invalid environment configuration. Check .env.local (see .env.example).");
 }
 
 export const env = parsed.data;
 export type Env = typeof env;
 
-/** Exige que una variable opcional esté presente (usar en los módulos que la necesiten). */
+/** Require an optional variable to be present (use in modules that need it). */
 export function requireEnv<K extends keyof Env>(key: K): NonNullable<Env[K]> {
   const value = env[key];
   if (value === undefined || value === null || value === "") {
-    throw new Error(`Falta la variable de entorno requerida: ${String(key)} (ver .env.example).`);
+    throw new Error(`Missing required environment variable: ${String(key)} (see .env.example).`);
   }
   return value as NonNullable<Env[K]>;
 }

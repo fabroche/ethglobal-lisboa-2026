@@ -2,7 +2,6 @@ import "server-only";
 import {
   Client,
   AccountId,
-  PrivateKey,
   ScheduleCreateTransaction,
   ScheduleInfoQuery,
   ScheduleId,
@@ -10,6 +9,7 @@ import {
   type Transaction,
 } from "@hashgraph/sdk";
 import { env, requireEnv } from "@/config/env";
+import { parseOperatorKey } from "@/lib/hedera-key";
 import type { ScheduleService } from "./service";
 
 /**
@@ -26,7 +26,7 @@ export function hederaScheduleService(buildRevealTx: () => Transaction): Schedul
   const privateKey = requireEnv("HEDERA_PRIVATE_KEY");
   const client = Client.forName(env.HEDERA_NETWORK).setOperator(
     AccountId.fromString(accountId),
-    PrivateKey.fromStringECDSA(privateKey),
+    parseOperatorKey(privateKey),
   );
 
   return {

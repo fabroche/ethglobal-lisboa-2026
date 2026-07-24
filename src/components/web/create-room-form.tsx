@@ -1,8 +1,14 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { cn } from "@/lib/utils";
 import { RoomQr } from "./room-qr";
+
+/** Format a Date as a `datetime-local` value (`YYYY-MM-DDTHH:mm`) in local time. */
+function toLocalInputValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 export interface CreateRoomResult {
   roomId: string;
@@ -25,6 +31,14 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [room, setRoom] = useState<CreateRoomResult | null>(null);
+  // Set the picker's floor to "now" after mount (avoids an SSR/client hydration mismatch —
+  // computing it during render would differ between server and client).
+  const [minDeadline, setMinDeadline] = useState("");
+  useEffect(() => {
+    // Derive "now" on the client after mount so the picker's min doesn't cause a hydration mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMinDeadline(toLocalInputValue(new Date()));
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,6 +96,7 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
           type="datetime-local"
           name="deadline"
           value={deadline}
+          min={minDeadline || undefined}
           onChange={(event) => setDeadline(event.target.value)}
           aria-invalid={error != null}
           className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"

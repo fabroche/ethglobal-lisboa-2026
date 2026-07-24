@@ -16,12 +16,14 @@ describe("CreateRoomForm", () => {
     expect(createRoom).not.toHaveBeenCalled();
   });
 
-  it("rejects a past deadline", async () => {
+  it("blocks a past deadline via the picker min (native validation stops submit)", async () => {
     const createRoom = ok();
     render(<CreateRoomForm createRoom={createRoom} />);
-    fireEvent.change(screen.getByLabelText(/deadline/i), { target: { value: "2000-01-01T00:00" } });
+    const input = screen.getByLabelText(/deadline/i);
+    await waitFor(() => expect(input).toHaveAttribute("min")); // floor set to "now" after mount
+    fireEvent.change(input, { target: { value: "2000-01-01T00:00" } });
     fireEvent.click(screen.getByRole("button", { name: /open room/i }));
-    expect(await screen.findByRole("alert")).toHaveTextContent(/future/i);
+    // Below min ⇒ invalid ⇒ the form never submits, so the action is never called.
     expect(createRoom).not.toHaveBeenCalled();
   });
 

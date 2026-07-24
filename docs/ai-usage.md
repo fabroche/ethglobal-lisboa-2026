@@ -20,7 +20,7 @@ disclosure.
 | `docs/**` (this documentation set) | ✅ | Generated with Claude Code under human direction; human-reviewed. RF/RNF specs, architecture, threat model, transversal docs. |
 | `docs/spec-01-session.md` · `spec-02-evaluator.md` · `spec-03-attest.md` | ✅ | Specs written before code (spec-driven rule). |
 | Project scaffold (Next.js 16 · Tailwind v4 · shadcn) | ✅ | Boilerplate generated; config reviewed by a human. |
-| `src/session/**` | ⬜ | To fill when built (M1). |
+| `src/session/**` | ✅ | M1/S1.2 domain layer (messages, room, createRoom orchestrator, commitment gate) + co-located Vitest unit tests. Drafted with Claude Code under human direction; human-reviewed. |
 | `src/seal/**` | ⬜ | To fill when built (M2) — the deterministic commitment is safety-critical; expect close human review. |
 | `src/worldid/**` | ⬜ | To fill when built (M3). |
 | `src/registry/**` | ⬜ | To fill when built (M4). |

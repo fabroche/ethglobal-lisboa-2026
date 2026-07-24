@@ -21,10 +21,10 @@ disclosure.
 | `docs/spec-01-session.md` · `spec-02-evaluator.md` · `spec-03-attest.md` | ✅ | Specs written before code (spec-driven rule). |
 | `docs/ux/**` | ✅ | Screens, sitemap, wireframes and the sponsor-value map, drafted with Claude Code from the existing specs; bilingual (EN canonical, ES mirror) for the team design review. |
 | Project scaffold (Next.js 16 · Tailwind v4 · shadcn) | ✅ | Boilerplate generated; config reviewed by a human. |
-| `src/session/**` | ⬜ | To fill when built (M1). |
+| `src/session/**` | ✅ | M1/S1.2 domain layer (messages, room, createRoom orchestrator, commitment gate) + co-located Vitest unit tests. Drafted with Claude Code under human direction; human-reviewed. |
 | `src/seal/**` | ⬜ | To fill when built (M2) — the deterministic commitment is safety-critical; expect close human review. |
-| `src/worldid/**` | ⬜ | To fill when built (M3). |
-| `src/registry/**` | ⬜ | To fill when built (M4). |
+| `src/worldid/**` | ✅ | M3/S1.5 verify + seat logic (per-room-per-side action scoping, `WorldVerifier` port, one-seat gate, fail-closed `claimSeat`, isolated `verifyCloudProof` adapter) + co-located Vitest tests. Drafted with Claude Code under human direction; human-reviewed. |
+| `src/registry/**` | ✅ | M4 write path (S1.3: canonical JSON, Hedera SDK boundary, `createRegistry`→`RegistryPort`) + read path (S2.5: Mirror Node boundary, `createReader`, base64/Zod decode, sequence-gap check) + co-located Vitest unit/integration tests. Drafted with Claude Code under human direction; human-reviewed. |
 | `src/scheduler/**` | ⬜ | To fill when built (M5). |
 | `src/evaluator/**` | ⬜ | To fill when built (M6). |
 | `src/evaluator/canonical.ts` (+ test) | ✅ | M7/S0.3. Canonical serialization for the signed bytes, drafted with Claude Code under human direction. Safety-critical (determinism) — 16 unit tests, human-reviewed. |

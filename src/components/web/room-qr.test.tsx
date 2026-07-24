@@ -19,6 +19,12 @@ describe("RoomQr", () => {
     expect(screen.getByLabelText(/join link/i)).toHaveValue(URL_);
   });
 
+  it("renders a scannable QR (SVG) labelled with the room", () => {
+    const { container } = render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
+    expect(screen.getByRole("img", { name: /join qr for room r_9f3a/i })).toBeInTheDocument();
+    expect(container.querySelector("svg")).toBeInTheDocument();
+  });
+
   it("copies the link and confirms", async () => {
     render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
     fireEvent.click(screen.getByRole("button", { name: /^copy$/i }));

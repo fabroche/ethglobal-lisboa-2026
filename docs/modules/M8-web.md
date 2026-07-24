@@ -86,7 +86,7 @@ sequenceDiagram
 | Component | Story | RTL test | Status |
 |-----------|:-----:|:--------:|--------|
 | `create-room-form` | ✅ | ✅ | 🟢 (S3.1) |
-| `room-qr` | ✅ | ✅ | 🟡 (S3.1 — link+copy; QR image needs `qrcode` dep) |
+| `room-qr` | ✅ | ✅ | 🟢 (S3.1 — scannable QR via `react-qr-code` + copy) |
 | `seal-position-form` | ⬜ | ⬜ | 🟧 |
 | `selfie-check-gate` | ⬜ | ⬜ | 🟧 |
 | `countdown` | ⬜ | ⬜ | 🟧 |
@@ -97,13 +97,13 @@ Landed with co-located Storybook stories (CSF3) + RTL tests, tokenized via `glob
 mobile-first (full-width, ≥44px targets, theme-aware):
 - `src/components/web/create-room-form.tsx` — deadline input, future-deadline validation, calls the
   injected `createRoom` action (M1); on success renders `RoomQr`.
-- `src/components/web/room-qr.tsx` — join link + one-tap copy. **QR image deferred**: needs a
-  `qrcode` dependency (integrator-owned `package.json`) — see PR dep request.
+- `src/components/web/room-qr.tsx` — **scannable QR** (`react-qr-code`, self-contained SVG, no
+  external calls; on a fixed white plate for dark mode) + join link with one-tap copy.
 - `src/app/create/page.tsx` + `src/app/create/actions.ts` — the `/create` route wires the real
   `createRoom` Server Action to M1 `session` + M4 `registry.write` (`hederaTopicClient`).
 
-**Deferred:** the scannable QR image (`qrcode` dep), and arming the scheduled reveal in the action
-(M5 `armReveal` — needs the reveal tx from M6/M7). Screens S3.2 (write+seal) and S3.3 (verdict) remain.
+**Deferred:** arming the scheduled reveal in the action (M5 `armReveal` — needs the reveal tx from
+M6/M7). Screens S3.2 (write+seal) and S3.3 (verdict) remain.
 
 ## 10. Module acceptance criteria
 - [ ] The two-browser E2E passes with QR join (S3.4).

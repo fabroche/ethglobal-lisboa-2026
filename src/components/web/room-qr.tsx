@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import QRCode from "react-qr-code";
 import { cn } from "@/lib/utils";
 
 export interface RoomQrProps {
@@ -10,9 +11,9 @@ export interface RoomQrProps {
 }
 
 /**
- * M8 `room-qr` (S3.1). Shows a room's join link with one-tap copy. The scannable QR *image*
- * needs a `qrcode` dependency (integrator-owned `package.json`); until it's added this renders
- * the link + copy and a labelled slot for the image. The URL encodes only room id + side — no terms.
+ * M8 `room-qr` (S3.1). Shows a room's scannable join QR (via `react-qr-code`, a self-contained
+ * SVG — no external calls) plus the link with one-tap copy. The URL encodes only room id + side,
+ * never any terms. The QR sits on a fixed white plate so it stays scannable in dark mode.
  */
 export function RoomQr({ roomId, joinUrl, className }: RoomQrProps) {
   const [copied, setCopied] = useState(false);
@@ -40,10 +41,10 @@ export function RoomQr({ roomId, joinUrl, className }: RoomQrProps) {
 
       <div
         role="img"
-        aria-label={`Join QR placeholder for room ${roomId}`}
-        className="flex aspect-square w-40 items-center justify-center rounded-lg border border-dashed p-3 text-center text-xs text-muted-foreground"
+        aria-label={`Join QR for room ${roomId}`}
+        className="rounded-lg bg-white p-3"
       >
-        QR image pending (add qrcode dep)
+        <QRCode value={joinUrl} size={160} style={{ height: "auto", width: 160, maxWidth: "100%" }} />
       </div>
 
       <div className="flex w-full items-center gap-2">

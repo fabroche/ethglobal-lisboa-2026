@@ -7,6 +7,8 @@ export {
   sideSchema,
   expiryMessageSchema,
   commitmentMessageSchema,
+  verdictSchema,
+  verdictMessageSchema,
   topicMessageSchema,
   buildExpiryMessage,
   buildCommitmentMessage,
@@ -14,6 +16,8 @@ export {
   type Side,
   type ExpiryMessage,
   type CommitmentMessage,
+  type Verdict,
+  type VerdictMessage,
   type TopicMessage,
 } from "./messages";
 

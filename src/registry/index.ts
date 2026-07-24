@@ -6,3 +6,17 @@
 export { canonicalJson } from "./canonical";
 export { createRegistry, type Registry } from "./write";
 export { hederaTopicClient, type TopicClient } from "./topic-client";
+export {
+  createReader,
+  decodeMirrorMessage,
+  assertContiguous,
+  type Reader,
+  type SessionView,
+  type DecodedMessage,
+} from "./read";
+export {
+  hederaMirrorClient,
+  mirrorMessageSchema,
+  type MirrorClient,
+  type MirrorMessage,
+} from "./mirror-client";

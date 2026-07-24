@@ -88,8 +88,35 @@ describe("parseTopicMessage", () => {
     expect(parseTopicMessage(raw)).toEqual(raw);
   });
 
+  it("parses a valid verdict message via the discriminated union", () => {
+    const raw = {
+      v: 1,
+      type: "verdict",
+      roomId: ROOM,
+      verdict: "not_workable",
+      modelHash: "sha256:abc",
+      attestationRef: "att_1",
+      publishedAt: "2026-07-26T08:00:03Z",
+    };
+    expect(parseTopicMessage(raw)).toEqual(raw);
+  });
+
+  it("rejects a verdict outside the D9 enum", () => {
+    expect(() =>
+      parseTopicMessage({
+        v: 1,
+        type: "verdict",
+        roomId: ROOM,
+        verdict: "maybe",
+        modelHash: "sha256:abc",
+        attestationRef: "att_1",
+        publishedAt: "2026-07-26T08:00:03Z",
+      }),
+    ).toThrow();
+  });
+
   it("rejects an unknown message type", () => {
-    expect(() => parseTopicMessage({ v: 1, type: "verdict", roomId: ROOM })).toThrow();
+    expect(() => parseTopicMessage({ v: 1, type: "bogus", roomId: ROOM })).toThrow();
   });
 
   it("rejects an unversioned/legacy message (wrong v)", () => {

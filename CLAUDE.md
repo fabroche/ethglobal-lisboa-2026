@@ -25,6 +25,12 @@ enclave pubkey is **stable across requests** (if not, it can't be a static env v
 **We verify the last link and pin the enclave key** — no TDX quote parsing / cert-chain walk to an
 Intel root. Say it that way in the Q&A; overstating it is how this demo loses (spec-03 §5).
 
+**`seal` (S1.4) done.** ECIES to the enclave key, suite tagged in the payload. One correction worth
+knowing: **sealing is randomized on purpose.** `M2-seal.md` asked for "same plaintext ⇒ identical
+ciphertext", which would leak equality of plaintexts on a public topic and let an attacker confirm a
+guessed position offline by comparing commitments — the probing attack from an angle the one-seat
+control doesn't cover. A test enforces that two seals of the same text differ (spec-04 §1).
+
 ## 🧭 If you are a Claude working on this repo, read in this order
 1. **This file** (context + hard rules).
 2. **`docs/branching-strategy.md`** — how we use Git (pull-based, no squash, commit every ~30 min).

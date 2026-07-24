@@ -50,10 +50,41 @@ export const commitmentMessageSchema = z.object({
 });
 export type CommitmentMessage = z.infer<typeof commitmentMessageSchema>;
 
-/** Discriminated union of the message types `session` handles (verdict added downstream). */
+/**
+ * Verdict enum — the ONLY permitted verdict values (D9). The enclave never emits free text
+ * (free text leaks); `gap:*` values are only published if both sides opted in. This is the
+ * canonical list; the evaluator (M6) produces one of these and the registry writes it.
+ */
+export const verdictSchema = z.enum([
+  "workable",
+  "not_workable",
+  "gap:compensation",
+  "gap:timing",
+  "gap:scope",
+]);
+export type Verdict = z.infer<typeof verdictSchema>;
+
+/**
+ * Verdict — written only after `attest` passes (fail closed, D10). Carries the pinned model
+ * hash and the attestation reference so a reader can tie the verdict to a verified enclave
+ * run. (`modelHash` per RF-M4-002; the data-model example omits it, this is the superset.)
+ */
+export const verdictMessageSchema = z.object({
+  v: z.literal(TOPIC_MESSAGE_VERSION),
+  type: z.literal("verdict"),
+  roomId: z.string().min(1),
+  verdict: verdictSchema,
+  modelHash: z.string().min(1),
+  attestationRef: z.string().min(1),
+  publishedAt: isoInstant,
+});
+export type VerdictMessage = z.infer<typeof verdictMessageSchema>;
+
+/** Discriminated union of the three versioned topic message types (D4/D11). */
 export const topicMessageSchema = z.discriminatedUnion("type", [
   expiryMessageSchema,
   commitmentMessageSchema,
+  verdictMessageSchema,
 ]);
 export type TopicMessage = z.infer<typeof topicMessageSchema>;
 

@@ -7,7 +7,7 @@
 | Field | Value |
 |-------|-------|
 | **ID** | M4 |
-| **Status** | 🟡 wip (S1.3 — write path landed) |
+| **Status** | 🟡 wip (S1.3 write + S2.5 read landed) |
 | **Backlog** | S1.3 (`write`) · S2.5 (`read`) · S2.6 (versioning) |
 | **Sponsor** | Hedera |
 | **Depends on** | M1 (session/topic), M2 (produces the commitment), M3 (gates the commitment), M6/M7 (produce the verified verdict) |
@@ -102,8 +102,22 @@ unit tests (no live calls in units, per §11).
 **Rules / validations:** parse each Mirror Node message with a Zod schema keyed on `type`; unknown
 `v` handled explicitly.
 **Acceptance criteria:**
-- [ ] Both clients read the identical verdict from Mirror Node.
-- [ ] A malformed message is rejected, not silently coerced.
+- [x] Both clients read the identical verdict from Mirror Node. _(deterministic parse — unit-tested)_
+- [x] A malformed message is rejected, not silently coerced. _(bad base64/JSON/schema throw — unit-tested)_
+
+### Implementation notes (S2.5 — read path)
+Landed in `src/registry/` with co-located Vitest tests:
+- `mirror-client.ts` — the **Mirror Node REST boundary** (`MirrorClient` + `hederaMirrorClient()`),
+  public read path (no key), responses Zod-validated at the boundary, pagination followed.
+- `read.ts` — `decodeMirrorMessage` (base64 → JSON → Zod, **rejects malformed, never coerces**),
+  `assertContiguous` (**sequence gap ⇒ tamper signal**, RNF-M4-001), and `createReader(client)`
+  → `readSession(topicId, {roomId?})` returning a structured `{expiry, commitments, verdict}` view.
+- Added the **verdict** message schema (D9 enum) to `src/session/messages.ts` and completed the
+  3-type discriminated union, so reads validate all message types (RNF-M4-002).
+
+**Deferred:** verdict *write* with the fail-closed attestation gate (needs M7), World-seat gate
+on the commitment write (RF-M4-005, needs M3). The real `MirrorClient` is covered by E2E/manual
+against testnet (no live calls in unit tests, §11).
 
 ## 8. Endpoints / Server Actions / Integrations / Jobs
 | Type | Name | Input | Output | Auth | Notes |

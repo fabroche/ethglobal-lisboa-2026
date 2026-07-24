@@ -27,7 +27,7 @@ disclosure.
 | `src/scheduler/**` | ✅ | M5/S2.4 arm/fire logic (`ScheduleService` port, `armReveal` future-only, idempotent `onRevealFired`, DA5 fallback timer, isolated Hedera Schedule Service adapter) + co-located Vitest tests. Drafted with Claude Code under human direction; human-reviewed. |
 | `src/evaluator/**` | ⬜ | To fill when built (M6). |
 | `src/attest/**` · `scripts/spike-attest.ts` | ⬜ | To fill when built (M7) — the Friday-night spike; human-verified against the 0G booth answers. |
-| `src/web/**` | ⬜ | To fill when built (M8). |
+| `src/components/web/**` · `src/app/create/**` | ✅ | M8/S3.1 create screen (`create-room-form`, `room-qr` + stories + RTL) and the `/create` route + `createRoom` Server Action wiring M1/M4. Drafted with Claude Code under human direction; human-reviewed. |
 | Submission video | ❌ | Human narration only (no AI voiceover — track rule). |
 
 Legend: ✅ AI-assisted · ⬜ pending (fill when built) · ❌ not AI-assisted.

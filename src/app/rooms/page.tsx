@@ -8,8 +8,13 @@ import { RecentRooms } from "@/components/web/recent-rooms";
  *
  * Everything here is client-side: the list lives in `localStorage`, so this page
  * ships no data of its own and there is nothing for the server to know about which
- * rooms you have open. That is also why there is no empty-state fallback rendered
- * on the server — `RecentRooms` decides, once it has read the store.
+ * rooms you have open. The empty state is passed *into* `RecentRooms` rather than
+ * rendered here, so it appears only once the store has actually answered — a
+ * server-rendered "no rooms" would flash at everyone, including people who have
+ * plenty.
+ *
+ * It earns its keep as of S3.12: the navbar now links here unconditionally, so the
+ * first person to click it will be someone who has never opened a room.
  */
 export const metadata = { title: "Your rooms · Seam" };
 
@@ -23,7 +28,18 @@ export default function RoomsPage() {
         </p>
       </div>
 
-      <RecentRooms searchable />
+      <RecentRooms
+        searchable
+        emptyState={
+          <p
+            role="status"
+            className="w-full max-w-md rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground"
+          >
+            No rooms on this browser yet. Rooms you open — or join from a link someone sends you —
+            show up here.
+          </p>
+        }
+      />
 
       <Link
         href="/create"

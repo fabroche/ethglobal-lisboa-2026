@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -20,6 +20,15 @@ export interface RecentRoomsProps {
   searchable?: boolean;
   /** Link to the full list when the landing page has truncated it. */
   moreHref?: string;
+  /**
+   * Rendered when the store answers with no rooms at all (S3.12). Omitted on the
+   * landing page, where an empty heading is noise; supplied at `/rooms`, which the
+   * navbar now makes reachable by someone who has never opened a room.
+   *
+   * Never shown while the store is still being read — see the `null` vs `[]` note
+   * below.
+   */
+  emptyState?: ReactNode;
   className?: string;
 }
 
@@ -56,6 +65,7 @@ export function RecentRooms({
   limit,
   searchable = false,
   moreHref,
+  emptyState,
   className,
 }: RecentRoomsProps) {
   const [bookmarks, setBookmarks] = useState<RoomBookmark[] | null>(null);
@@ -89,7 +99,8 @@ export function RecentRooms({
 
   // `null` = not read yet. Distinguished from `[]` so the first paint does not
   // flash an empty state before the store has answered.
-  if (bookmarks === null || bookmarks.length === 0) return null;
+  if (bookmarks === null) return null;
+  if (bookmarks.length === 0) return emptyState ?? null;
 
   return (
     <section

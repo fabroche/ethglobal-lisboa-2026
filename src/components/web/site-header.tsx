@@ -14,10 +14,19 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
  *   and screenshotted, and the header is the one element present in every capture.
  *   A room id there would leak which negotiation someone is in, to anyone glancing
  *   at the screen, on every single page.
- * - **No nav links besides home.** There are three destinations and two of them are
- *   reached by a link someone sent you. A menu would be ceremony.
+ * - **Two links, and only two.** Home, and `/rooms` (S3.12) — the list was otherwise
+ *   reachable only through a "See all N rooms" link that renders when the landing
+ *   page truncates it, so with one to three rooms there was no route to it at all
+ *   short of typing the URL.
+ * - **The Rooms link is unconditional**, and that is the privacy call, not a
+ *   shortcut. Showing it only when this device has bookmarks would make the header
+ *   itself report that someone here has negotiations open — on every page and in
+ *   every screenshot, to a person who cannot see the list. The word "Rooms" alone
+ *   says nothing; its *presence or absence* would say something. No count either,
+ *   for the same reason.
  * - **A server component.** Only the theme toggle needs the client, so only the
- *   theme toggle gets it.
+ *   theme toggle gets it — a conditional link would have moved the whole header to
+ *   the client and made it flicker in after hydration.
  */
 export function SiteHeader() {
   return (
@@ -31,7 +40,16 @@ export function SiteHeader() {
           Seam
         </Link>
 
-        <ThemeToggle className="inline-flex size-11 items-center justify-center rounded-full text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+        <nav aria-label="Main" className="flex items-center gap-1">
+          <Link
+            href="/rooms"
+            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Rooms
+          </Link>
+
+          <ThemeToggle className="inline-flex size-11 items-center justify-center rounded-full text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+        </nav>
       </div>
     </header>
   );

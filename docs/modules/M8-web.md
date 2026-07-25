@@ -99,6 +99,8 @@ sequenceDiagram
 | `selfie-check-gate` | ✅ | ✅ | 🟢 (S3.2 — per-room-per-side action; widget mocked in RTL) |
 | `countdown` | ✅ | ✅ | 🟢 (S3.3) |
 | `verdict-panel` | ✅ | ✅ | 🟢 (S3.3) |
+| `recent-rooms` | ✅ | ✅ | 🟢 (S3.9 · search S3.11 · `emptyState` S3.12) |
+| `site-header` | ✅ | ✅ | 🟢 (S3.10 — home + theme toggle; Rooms link S3.12) |
 
 ### Implementation notes (S3.1 — create screen)
 Landed with co-located Storybook stories (CSF3) + RTL tests, tokenized via `globals.css` + `cn()`,
@@ -178,6 +180,32 @@ Where the UI reflects the backend, and where it doesn't yet.
   builder landed with the B-side-consent change). The create form's toggle becomes Side A's *prefill*
   for their own seal-time choice; the write screen (S3.2) must surface the toggle per side and pass
   it to `buildCommitmentMessage`. Enclave-side enforcement remains **S4.6**.
+
+### Implementation notes (S3.12 — reaching `/rooms`)
+`/rooms` shipped in S3.11 with essentially no way in: the only link was "See all N rooms" on the
+landing page, which renders **only when the list is truncated**, so with one to three rooms the route
+existed and could not be reached short of typing the URL.
+
+Two calls the backlog asked to be made explicitly rather than assumed:
+
+- **The Rooms link is unconditional.** Showing it only when this device has bookmarks looked like the
+  considerate option — no dead end for a first-time visitor — but it makes the header *itself* report
+  that someone here has negotiations open, on every page and in every screenshot, to a person who
+  cannot see the list. The word "Rooms" says nothing; its presence or absence would. Same reasoning as
+  the S3.10 no-room-id rule, one step further out. It also keeps `site-header` a **server component** —
+  a conditional link would need the client store and would flicker in after hydration.
+- **No count.** For the same reason: "Rooms (4)" is exactly the fact the room id was withheld to
+  protect, in aggregate.
+
+The consequence is that a first-time visitor can now land on an empty `/rooms`, which previously was
+unreachable, so `RecentRooms` gained an optional **`emptyState`**. It renders only once the store has
+answered — `null` (unread) stays distinct from `[]` (read, empty), or "no rooms yet" would flash at
+everyone including people who have plenty. The landing page passes none and keeps rendering nothing.
+
+Verified in a real browser against `npm run start`, not only in RTL (the handoff records three
+occasions where green unit tests coexisted with a broken page): link visible with an empty store,
+click navigates, empty state appears, list replaces it once a bookmark exists, and the header's text
+is byte-identical with and without rooms — `"Seam\nRooms"`, no digits, no id.
 
 ## 10. Module acceptance criteria
 - [ ] The two-browser E2E passes with QR join (S3.4).

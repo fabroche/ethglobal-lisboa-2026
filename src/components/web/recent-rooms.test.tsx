@@ -45,6 +45,26 @@ describe("RecentRooms", () => {
     await waitFor(() => expect(container).toBeEmptyDOMElement());
   });
 
+  it("renders the caller's empty state when there are no rooms, if given one", async () => {
+    // /rooms supplies one (S3.12) because the navbar now links there unconditionally,
+    // so the first person to arrive will be someone who has never opened a room. The
+    // landing page passes none and keeps rendering nothing.
+    render(<RecentRooms store={fakeStore([])} emptyState={<p>No rooms yet.</p>} />);
+    expect(await screen.findByText("No rooms yet.")).toBeInTheDocument();
+  });
+
+  it("does not show the empty state while the store is still being read", () => {
+    // Otherwise "no rooms yet" flashes at everyone, including people who have plenty.
+    const pending: RoomBookmarkStore = {
+      list: () => new Promise(() => {}),
+      remember: async () => undefined,
+      forget: async () => undefined,
+      clear: async () => undefined,
+    };
+    render(<RecentRooms store={pending} emptyState={<p>No rooms yet.</p>} />);
+    expect(screen.queryByText("No rooms yet.")).not.toBeInTheDocument();
+  });
+
   it("does not flash an empty state before the store answers", () => {
     // `null` (unread) must be distinguishable from `[]` (read, empty).
     let resolve: (value: RoomBookmark[]) => void = () => {};

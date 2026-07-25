@@ -45,6 +45,25 @@ export const Empty: Story = {
   args: { store: fixtureStore([]) },
 };
 
+/**
+ * The same empty store, but at `/rooms`, which passes an `emptyState` (S3.12). The
+ * landing page keeps rendering nothing; a dedicated page that the navbar links to
+ * unconditionally cannot, because the first visitor to follow that link will have
+ * no rooms at all.
+ */
+export const EmptyWithFallback: Story = {
+  args: {
+    store: fixtureStore([]),
+    searchable: true,
+    emptyState: (
+      <p className="w-full max-w-md rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+        No rooms on this browser yet. Rooms you open — or join from a link someone sends you — show
+        up here.
+      </p>
+    ),
+  },
+};
+
 /** Enough rows to check the list does not overwhelm the landing page. */
 export const Several: Story = {
   args: {

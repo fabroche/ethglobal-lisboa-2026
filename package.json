@@ -13,6 +13,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "spike": "tsx scripts/spike-attest.ts",
+    "og:status": "tsx scripts/og-wallet-status.ts",
+    "og:setup": "tsx scripts/og-setup.ts",
     "inspect": "tsx scripts/inspect.ts",
     "demo:naive": "tsx scripts/demo-naive.ts",
     "format": "prettier --write .",
@@ -20,6 +22,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@0gfoundation/0g-compute-ts-sdk": "^0.9.0",
     "@hashgraph/sdk": "^2.62.0",
     "@noble/curves": "^1.9.1",
     "@noble/hashes": "^1.8.0",

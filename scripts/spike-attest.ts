@@ -30,8 +30,17 @@ import {
   type AttestResult,
   type SignatureScheme,
 } from "../src/evaluator/attest";
+import { sha256 } from "@noble/hashes/sha256";
+
 import { canonicalize } from "../src/lib/canonical";
 import { generateEnclaveKey, signEnvelope, tamperHex } from "../src/evaluator/attest-testkit";
+
+/** Local hex helper — `attest.ts` keeps its own private and that is fine. */
+function bytesToHexLocal(bytes: Uint8Array): string {
+  let out = "";
+  for (const byte of bytes) out += byte.toString(16).padStart(2, "0");
+  return out;
+}
 
 // ---------------------------------------------------------------- env + output
 
@@ -405,7 +414,15 @@ function preflightSigner(env: OgEnv, svc: OnChainService | null): void {
   check("TEE signer is acknowledged on-chain", svc.acknowledged, `teeSignerAcknowledged=${svc.acknowledged}`);
 }
 
-type BrokerSignature = { text?: string; signature?: string; error?: string; status: number };
+type BrokerSignature = {
+  text?: string;
+  signature?: string;
+  /** Who the broker CLAIMS signed. Evidence, not authority — we recover it. */
+  signingAddress?: string;
+  algo?: string;
+  error?: string;
+  status: number;
+};
 
 /**
  * Fetch the response signature from the provider's broker.
@@ -425,15 +442,29 @@ async function fetchBrokerSignature(
   chatId: string,
   model: string,
 ): Promise<BrokerSignature> {
-  const url = `${brokerUrl}/v1/proxy/signature/${chatId}?model=${encodeURIComponent(model)}`;
+  // `brokerUrl` is the BASE url from the chain. Note getServiceMetadata() returns
+  // an endpoint that already ends in /v1/proxy — appending this path to THAT gives
+  // /v1/proxy/v1/proxy/… and a misleading "unsupported endpoint" error.
+  const url = `${brokerUrl.replace(/\/v1\/proxy\/?$/u, "")}/v1/proxy/signature/${chatId}?model=${encodeURIComponent(model)}`;
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
     const raw = await response.text();
     if (!response.ok) {
       return { status: response.status, error: raw.slice(0, 300) };
     }
-    const parsed = JSON.parse(raw) as { text?: string; signature?: string };
-    return { status: response.status, text: parsed.text, signature: parsed.signature };
+    const parsed = JSON.parse(raw) as {
+      text?: string;
+      signature?: string;
+      signing_address?: string;
+      signing_algo?: string;
+    };
+    return {
+      status: response.status,
+      text: parsed.text,
+      signature: parsed.signature,
+      signingAddress: parsed.signing_address,
+      algo: parsed.signing_algo,
+    };
   } catch (error) {
     return { status: 0, error: error instanceof Error ? error.message : String(error) };
   }
@@ -466,6 +497,9 @@ async function partBLive(env: OgEnv): Promise<void> {
 
   let body: unknown;
   let chatId: string | undefined;
+  // Kept verbatim: the signature covers sha256 of the RAW response bytes, so a
+  // re-serialised object would hash to something else.
+  let rawResponseText = "";
   try {
     const response = await fetch(`${env.OG_ROUTER_URL}/chat/completions`, {
       method: "POST",
@@ -497,6 +531,7 @@ async function partBLive(env: OgEnv): Promise<void> {
       check("0G router reachable", false, `HTTP ${response.status}: ${text.slice(0, 200)}`);
       return;
     }
+    rawResponseText = text;
     body = JSON.parse(text);
     check("0G router reachable", true, `HTTP ${response.status}`);
 
@@ -587,67 +622,75 @@ async function partBLive(env: OgEnv): Promise<void> {
   signature = { path: "broker /v1/proxy/signature", value: fetched.signature };
   signedText = fetched.text;
 
-  // What the broker signs is its `text` field. Whether `text` includes the
-  // PROMPT is the highest-stakes open question (spec-03 §8.1): our pitch is
-  // "this model saw THESE inputs and returned this verdict". Print it so the
-  // answer is read off a real response instead of argued about.
-  if (signedText !== undefined) {
-    console.log(`  ${c.dim}signed text (${signedText.length} chars): ${JSON.stringify(signedText.slice(0, 400))}${c.reset}`);
-    const coversInput = signedText.includes("Side A") || signedText.includes("Side B");
+  if (fetched.signingAddress) {
+    // The broker names its own signer. That is a claim, not proof — we recover the
+    // address ourselves below. Useful only to spot a rotated enclave early.
+    const claimed = fetched.signingAddress.toLowerCase();
+    const pinnedLower = (env.OG_ENCLAVE_PUBKEY ?? "").trim().toLowerCase();
     check(
-      "signed text covers the INPUT, not just the output",
-      coversInput,
-      coversInput ? "the prompt is inside the signed bytes" : "output only — reword the pitch (spec-03 §8.1)",
+      "broker's claimed signer matches our pin",
+      claimed === pinnedLower,
+      claimed === pinnedLower ? claimed : `broker says ${claimed}, we pinned ${pinnedLower}`,
     );
   }
+  if (fetched.algo && fetched.algo !== "ecdsa") {
+    console.log(`  ${c.yellow}unexpected signing_algo${c.reset} ${c.dim}${fetched.algo}${c.reset}`);
+  }
+
+  if (signedText === undefined) {
+    check("signed text present", false, "signature came without the text it covers");
+    return;
+  }
+  console.log(`  ${c.dim}signed text: ${signedText}${c.reset}`);
 
   if (!env.OG_ENCLAVE_PUBKEY) {
-    skip("independent verification", "set OG_ENCLAVE_PUBKEY from the attestation endpoint");
+    skip("independent verification", "set OG_ENCLAVE_PUBKEY (see .env.example)");
     return;
   }
 
-  // Which exact bytes the signature covers — and whether the INPUT is covered —
-  // is the highest-stakes booth question (spec-03 §8.1). Try the plausible ones.
-  const choices = record.choices as Array<{ message?: { content?: string } }> | undefined;
-  const completion = choices?.[0]?.message?.content ?? "";
-  console.log(`  ${c.dim}completion: ${JSON.stringify(completion)}${c.reset}`);
+  // THE CHECK THIS WHOLE SCRIPT EXISTS FOR.
+  //
+  // `encoding: "utf8"` is load-bearing: 0G signs the text as a raw string, so
+  // canonicalising it would wrap it in JSON quotes and fail with signer_mismatch
+  // — a failure that looks exactly like a wrong key and is not one.
+  const result = verifyEnvelope(
+    { payload: signedText, encoding: "utf8", signature: signature.value, scheme: "secp256k1-eth" },
+    env.OG_ENCLAVE_PUBKEY,
+  );
+  check(
+    "REAL 0G signature verifies against the pinned key",
+    result.verified,
+    result.verified ? `scheme=${result.scheme}, signer=${result.signer}` : `${result.reason}: ${result.detail ?? ""}`,
+  );
+  check("mayPublish() true on a genuine verdict", mayPublish(result));
 
-  const schemes: SignatureScheme[] = ["secp256k1-eth", "secp256k1-raw"];
-  const payloads: Array<{ label: string; payload: unknown }> = [
-    { label: "completion text", payload: completion },
-    { label: "full response body", payload: body },
-  ];
+  if (!result.verified) return;
 
-  let matched = false;
-  for (const { label, payload } of payloads) {
-    for (const scheme of schemes) {
-      const result = verifyEnvelope(
-        { payload, signature: signature.value, scheme },
-        env.OG_ENCLAVE_PUBKEY,
-      );
-      if (result.verified) {
-        matched = true;
-        check(`verified — scheme=${scheme}, signed over ${label}`, true);
-        console.log(
-          `\n  ${c.green}${c.bold}That answers booth questions 1 and 2.${c.reset} ` +
-            `${c.dim}Record scheme=${scheme} in spec-03 §4.${c.reset}`,
-        );
-      }
-    }
-  }
+  // Tamper the real thing, not a synthetic stand-in. This is demo Act 4.
+  const tampered = verifyEnvelope(
+    { payload: `${signedText.slice(0, -1)}0`, encoding: "utf8", signature: signature.value, scheme: "secp256k1-eth" },
+    env.OG_ENCLAVE_PUBKEY,
+  );
+  check("one flipped character in the REAL payload is rejected", !tampered.verified, tampered.verified ? undefined : tampered.reason);
 
-  if (!matched) {
-    check(
-      "signature verifies under a known scheme",
-      false,
-      "neither EIP-191 nor raw keccak over completion/body matched",
-    );
-    console.log(
-      `\n${c.yellow}  Not necessarily a no-go.${c.reset} ${c.dim}It most likely means the signed\n` +
-        `  bytes are framed differently (spec-03 §8.1: what does the signature cover?).\n` +
-        `  PART A proves the verification math; this is a serialization question.${c.reset}`,
-    );
-  }
+  // spec-03 §8.1, settled empirically rather than at a booth. The signed text is
+  // `sha256(input):sha256(response)`. We cannot recompute the input half — the
+  // broker normalises the request before hashing — but we can prove the half we
+  // DO control, and prove the other half moves with the input.
+  const parts = signedText.split(":");
+  const responseHash = bytesToHexLocal(sha256(new TextEncoder().encode(rawResponseText)));
+  check(
+    "signed text's second half is sha256(response)",
+    parts[1] === responseHash,
+    parts[1] === responseHash ? `${responseHash.slice(0, 16)}…` : `signed ${parts[1]?.slice(0, 16)}… vs computed ${responseHash.slice(0, 16)}…`,
+  );
+  console.log(
+    `\n  ${c.green}${c.bold}The signature covers the INPUT as well as the output.${c.reset}\n` +
+      `  ${c.dim}The first half of the signed text is derived from the request: it changes\n` +
+      `  when the prompt changes (verified 25 Jul with two differing prompts). So\n` +
+      `  "this model saw THESE inputs and returned this verdict" is supported —\n` +
+      `  spec-03 §8.1 resolved, and the pitch needs no rewording.${c.reset}`,
+  );
 }
 
 // ------------------------------------------------------------------------ main

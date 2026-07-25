@@ -163,3 +163,82 @@ describe("verifyEnvelope · fail-closed contract", () => {
     expect(verifyEnvelope(envelope, key.pinned).verified).toBe(true);
   });
 });
+
+/**
+ * The real 0G wire format, confirmed live on 25 Jul against provider
+ * 0x4870CbC4… on mainnet. The broker signs `sha256(input):sha256(response)` as a
+ * RAW STRING, so these bytes must not go through canonical serialisation.
+ */
+describe("verifyEnvelope · utf8 encoding (0G's real wire format)", () => {
+  /** Captured verbatim from GET /v1/proxy/signature/{chatID}. Not synthetic. */
+  const REAL = {
+    text: "bdb8808ad8b37b6be2e2760ccfa9004bc1a0b60eca7b7c29301932e5016aef21:d746c179da80393d93eab12b55cc68cea6dc4c3136bc23b0f4ea5a480e0b1648",
+    signature:
+      "0xab67a562d37c7fe7e638baf611b1e1f4b1a9ed053a8ffddeb6ba6895ef21dcf73cfcaef044a777cd46888a19f3ada923f7c95cd75658144b9eb08dfc631f65521c",
+    signingAddress: "0x0038f716958a90b753da6937787395e2365db2e8",
+  };
+
+  it("verifies a real enclave signature against the pinned teeSignerAddress", () => {
+    const result = verifyEnvelope(
+      { payload: REAL.text, encoding: "utf8", signature: REAL.signature, scheme: "secp256k1-eth" },
+      REAL.signingAddress,
+    );
+
+    expect(result).toMatchObject({ verified: true, scheme: "secp256k1-eth" });
+    expect(mayPublish(result)).toBe(true);
+  });
+
+  it("rejects the same real signature under canonical encoding", () => {
+    // The regression that cost us an afternoon: canonicalising a string wraps it
+    // in JSON quotes, so the bytes stop being what the enclave hashed and the
+    // failure surfaces as `signer_mismatch` — indistinguishable, at a glance,
+    // from having pinned the wrong key. Encoding is explicit for this reason.
+    const result = verifyEnvelope(
+      { payload: REAL.text, encoding: "canonical", signature: REAL.signature, scheme: "secp256k1-eth" },
+      REAL.signingAddress,
+    );
+
+    expect(result).toMatchObject({ verified: false, reason: "signer_mismatch" });
+  });
+
+  it("still rejects a tampered real payload", () => {
+    const result = verifyEnvelope(
+      {
+        payload: REAL.text.replace(/^b/u, "c"),
+        encoding: "utf8",
+        signature: REAL.signature,
+        scheme: "secp256k1-eth",
+      },
+      REAL.signingAddress,
+    );
+
+    expect(result.verified).toBe(false);
+  });
+
+  it("refuses a non-string payload rather than stringifying it", () => {
+    // String({}) is "[object Object]", which would hash to something stable and
+    // verify nothing. Fail loudly instead.
+    const result = verifyEnvelope(
+      { payload: { a: 1 }, encoding: "utf8", signature: REAL.signature, scheme: "secp256k1-eth" },
+      REAL.signingAddress,
+    );
+
+    expect(result).toMatchObject({ verified: false, reason: "payload_not_text" });
+  });
+
+  it("round-trips through the testkit under utf8", () => {
+    const utf8Key = generateEnclaveKey("secp256k1-eth");
+    const envelope = signEnvelope("some:raw:string", utf8Key, {}, "utf8");
+
+    expect(verifyEnvelope(envelope, utf8Key.pinned).verified).toBe(true);
+  });
+
+  it("defaults to canonical when encoding is absent", () => {
+    // Every existing caller and fixture omits it; they must keep working.
+    const localKey = generateEnclaveKey("secp256k1-eth");
+    const envelope = signEnvelope(VERDICT, localKey);
+    const { encoding: _dropped, ...withoutEncoding } = envelope;
+
+    expect(verifyEnvelope(withoutEncoding, localKey.pinned).verified).toBe(true);
+  });
+});

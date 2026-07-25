@@ -1,8 +1,10 @@
 import {
   expiryMessageSchema,
   commitmentMessageSchema,
+  verdictMessageSchema,
   type ExpiryMessage,
   type CommitmentMessage,
+  type VerdictMessage,
   type RegistryPort,
 } from "@/session";
 import { canonicalize } from "@/lib/canonical";
@@ -14,6 +16,14 @@ export interface Registry extends RegistryPort {
   publishCommitment(
     message: CommitmentMessage,
   ): Promise<{ topicId: string; sequenceNumber: number }>;
+  /**
+   * Append the verdict (S2.9) — the last message a room ever gets.
+   *
+   * This method does not decide whether publishing is allowed. `runReveal` verifies the
+   * attestation and refuses to build a `VerdictMessage` at all when it fails, so the only
+   * way to reach here is with an `attestationRef` the schema forced you to have.
+   */
+  publishVerdict(message: VerdictMessage): Promise<{ topicId: string; sequenceNumber: number }>;
 }
 
 /**
@@ -33,6 +43,10 @@ export function createRegistry(client: TopicClient): Registry {
     },
     async publishCommitment(message: CommitmentMessage) {
       const valid = commitmentMessageSchema.parse(message);
+      return client.submit(canonicalize(valid));
+    },
+    async publishVerdict(message: VerdictMessage) {
+      const valid = verdictMessageSchema.parse(message);
       return client.submit(canonicalize(valid));
     },
   };

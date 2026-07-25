@@ -12,6 +12,7 @@ export {
   topicMessageSchema,
   buildExpiryMessage,
   buildCommitmentMessage,
+  buildVerdictMessage,
   parseTopicMessage,
   type Side,
   type ExpiryMessage,

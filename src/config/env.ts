@@ -22,6 +22,10 @@ const envSchema = z.object({
   OG_MODEL: z.string().optional(),
   OG_ENCLAVE_PUBKEY: z.string().optional(), // signing key — verifies the attestation (M7)
   OG_ENCLAVE_SEAL_PUBKEY: z.string().optional(), // encryption key — seals positions (M2)
+  // OUR operating wallet, never a user's (see agente/guardrails.md). Needed
+  // because the Router never makes us the broker's customer, so it cannot give
+  // us a signature to verify — the whole product rests on getting one.
+  OG_WALLET_PRIVATE_KEY: z.string().optional(),
 
   // Hedera — HCS topic (registry) + Schedule Service (clock) + Mirror Node (read)
   HEDERA_ACCOUNT_ID: z.string().optional(),

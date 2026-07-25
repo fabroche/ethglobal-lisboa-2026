@@ -97,6 +97,8 @@ export async function submitCommitmentAction(
     const { sequenceNumber } = await registry.publishCommitment(message);
     return { ok: true, sequenceNumber };
   } catch (err) {
+    // Client gets the typed message; the server log keeps the stack (digest hides it otherwise).
+    console.error("[submitCommitment]", err);
     return { ok: false, message: err instanceof Error ? err.message : "could not submit" };
   }
 }

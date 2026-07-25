@@ -41,7 +41,7 @@ const PRESET = USE_CASES.property;
 const KEY = "a".repeat(64);
 
 function renderForm(over: Partial<Parameters<typeof SealPositionForm>[0]> = {}) {
-  const submitCommitment = vi.fn(async () => ({ sequenceNumber: 7 }));
+  const submitCommitment = vi.fn(async () => ({ ok: true as const, sequenceNumber: 7 }));
   render(
     <SealPositionForm
       roomId="r_1"
@@ -57,6 +57,21 @@ function renderForm(over: Partial<Parameters<typeof SealPositionForm>[0]> = {}) 
 }
 
 describe("SealPositionForm", () => {
+  it("closes the browser-side leak doors on the position field (S3.7, P0)", () => {
+    renderForm();
+    const field = screen.getByRole("textbox", { name: /^position$/i });
+    // Form history saves by `name` — the field must not have one.
+    expect(field).not.toHaveAttribute("name");
+    expect(field).toHaveAttribute("autocomplete", "off");
+    expect(field).toHaveAttribute("spellcheck", "false");
+    expect(field).toHaveAttribute("autocorrect", "off");
+    expect(field).toHaveAttribute("autocapitalize", "off");
+    expect(field).toHaveAttribute("data-1p-ignore");
+    expect(field).toHaveAttribute("data-lpignore", "true");
+    // And the limitation is explained as the privacy feature it is.
+    expect(screen.getByText(/spellcheck is off on purpose/i)).toBeInTheDocument();
+  });
+
   it("shows the preset placeholder and checklist — guidance never blocks (D16/DA8)", () => {
     renderForm();
     expect(screen.getByPlaceholderText(/sell below/i)).toBeInTheDocument();
@@ -107,10 +122,11 @@ describe("SealPositionForm", () => {
     expect(screen.getByText(new RegExp("c".repeat(16)))).toBeInTheDocument();
   });
 
-  it("surfaces a server rejection (e.g. seat already taken)", async () => {
-    const submitCommitment = vi.fn(async () => {
-      throw new Error("seat already taken for r_1/A");
-    });
+  it("surfaces a typed server rejection with its real message (no digest gibberish)", async () => {
+    const submitCommitment = vi.fn(async () => ({
+      ok: false as const,
+      message: "seat already taken for r_1/A",
+    }));
     render(
       <SealPositionForm
         roomId="r_1"

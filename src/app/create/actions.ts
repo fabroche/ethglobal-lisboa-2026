@@ -18,10 +18,11 @@ export async function createRoomAction(
   deadlineIso: string,
   gapOptIn: boolean,
   useCase: UseCaseId,
+  about?: string,
 ): Promise<{ roomId: string; joinUrl: string; ownUrl: string }> {
   const registry = createRegistry(hederaTopicClient());
   const room = await createRoom(
-    { deadlineIso, gapOptIn, useCase: useCaseIdSchema.parse(useCase) },
+    { deadlineIso, gapOptIn, useCase: useCaseIdSchema.parse(useCase), about },
     { registry, baseUrl: env.APP_URL },
   );
 

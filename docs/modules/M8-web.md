@@ -139,6 +139,20 @@ RNF-M1-001 surfaces in UX) and resolves the D16 preset (`useCase`, legacy rooms 
 - **Env-gated**: without `OG_ENCLAVE_SEAL_PUBKEY` the form drafts but won't seal (clear notice);
   without `WORLD_APP_ID` the gate explains itself. Both light up on config alone.
 
+### Implementation notes (role declaration + context anchor — live-testing fixes, Sat night)
+Found by Dylan in the first real two-human run: the creator's side was silently hardwired to A, so a
+Buyer-creator used the B link themselves and **both humans entered side B**; and the success screen
+never said which of its two links the QR encodes. Fix (his design):
+- **Create form asks "You are the…"** — two options whose labels follow the selected preset
+  (Seller/Buyer ↔ Employer/Candidate); plus an optional **"What's this about?"** context anchor
+  (announcement URL or one line; public-class like `useCase`, "never your terms" stated inline).
+- The creator's side + anchor ride the creator's own redirect (`/share?uc=…&me=…&about=…`); the
+  share screen maps links by role and `RememberRoom` saves the DECLARED side, not "A".
+- `RoomQr` gains an optional role-framed layout: "For the ⟨their role⟩ — have them scan this" (QR
+  explicitly = that link) and "You — the ⟨your role⟩" with a direct **Write your position** CTA.
+  With no labels passed it renders the old positional layout unchanged (share deep-links, tests).
+- `about` persists on the expiry message (see `02-data-model.md`) and shows on the write screen.
+
 ### Implementation notes (S3.3 — verdict screen)
 `/room/[roomId]/verdict` reads the room's expiry + verdict from Mirror Node (M4 `registry.read`) at
 load, then the client polls for the verdict until it lands:

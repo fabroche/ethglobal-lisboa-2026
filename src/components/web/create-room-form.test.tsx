@@ -48,7 +48,7 @@ describe("CreateRoomForm", () => {
 
     await waitFor(() => expect(createRoom).toHaveBeenCalledTimes(1));
     // `?uc=` rides along so the share screen can label the bookmark (S3.11).
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/room/r_9f3a/share?uc=property"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/room/r_9f3a/share?uc=property&me=A"));
   });
 
   it("carries the picked use case on the redirect, and only there", async () => {
@@ -60,7 +60,7 @@ describe("CreateRoomForm", () => {
     fireEvent.change(screen.getByLabelText(/deadline/i), { target: { value: "2099-01-01T00:00" } });
     fireEvent.click(screen.getByRole("button", { name: /open room/i }));
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/room/r_9f3a/share?uc=otc"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/room/r_9f3a/share?uc=otc&me=A"));
     // The shared link is built server-side from the id + side only.
     expect(createRoom.mock.results[0]!.value).resolves.not.toHaveProperty("useCase");
   });
@@ -97,7 +97,7 @@ describe("CreateRoomForm", () => {
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByRole("button", { name: /open room/i }));
     await waitFor(() =>
-      expect(createRoom).toHaveBeenCalledWith(expect.any(String), true, "property"),
+      expect(createRoom).toHaveBeenCalledWith(expect.any(String), true, "property", undefined),
     );
   });
 
@@ -107,7 +107,7 @@ describe("CreateRoomForm", () => {
     fireEvent.change(screen.getByLabelText(/deadline/i), { target: { value: "2099-01-01T00:00" } });
     fireEvent.click(screen.getByRole("button", { name: /open room/i }));
     await waitFor(() =>
-      expect(createRoom).toHaveBeenCalledWith(expect.any(String), false, "property"),
+      expect(createRoom).toHaveBeenCalledWith(expect.any(String), false, "property", undefined),
     );
   });
 
@@ -117,7 +117,49 @@ describe("CreateRoomForm", () => {
     fireEvent.click(screen.getByRole("radio", { name: /otc trade/i }));
     fireEvent.change(screen.getByLabelText(/deadline/i), { target: { value: "2099-01-01T00:00" } });
     fireEvent.click(screen.getByRole("button", { name: /open room/i }));
-    await waitFor(() => expect(createRoom).toHaveBeenCalledWith(expect.any(String), false, "otc"));
+    await waitFor(() => expect(createRoom).toHaveBeenCalledWith(expect.any(String), false, "otc", undefined));
+  });
+
+  it("role options follow the selected use case (Seller/Buyer ↔ Employer/Candidate)", () => {
+    render(<CreateRoomForm createRoom={ok()} />);
+    expect(screen.getByRole("radio", { name: /^seller$/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /job offer/i }));
+    expect(screen.getByRole("radio", { name: /^employer$/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /^candidate$/i })).toBeInTheDocument();
+  });
+
+  it("carries the creator's declared side on the redirect (the both-Buyers fix)", async () => {
+    const createRoom = ok();
+    render(<CreateRoomForm createRoom={createRoom} />);
+    fireEvent.click(screen.getByRole("radio", { name: /^buyer$/i }));
+    fireEvent.change(screen.getByLabelText(/deadline/i), { target: { value: "2099-01-01T00:00" } });
+    fireEvent.click(screen.getByRole("button", { name: /open room/i }));
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith("/room/r_9f3a/share?uc=property&me=B"),
+    );
+  });
+
+  it("passes the context anchor to the action and the redirect", async () => {
+    const createRoom = ok();
+    render(<CreateRoomForm createRoom={createRoom} />);
+    fireEvent.change(screen.getByLabelText(/what’s this about/i), {
+      target: { value: "https://listing.example/t3" },
+    });
+    fireEvent.change(screen.getByLabelText(/deadline/i), { target: { value: "2099-01-01T00:00" } });
+    fireEvent.click(screen.getByRole("button", { name: /open room/i }));
+    await waitFor(() =>
+      expect(createRoom).toHaveBeenCalledWith(
+        expect.any(String),
+        false,
+        "property",
+        "https://listing.example/t3",
+      ),
+    );
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith(
+        `/room/r_9f3a/share?uc=property&me=A&about=${encodeURIComponent("https://listing.example/t3")}`,
+      ),
+    );
   });
 
   it("surfaces an action error", async () => {

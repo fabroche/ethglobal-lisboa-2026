@@ -12,7 +12,7 @@ issue a join link/QR, and accept exactly **two commitments** (one per side).
 ## Inputs / outputs
 | | Shape |
 |---|---|
-| **Input (create)** | `{ deadline: ISO8601, useCase: "property" \| "job" \| "otc", sideLabels?: { a: string, b: string }, gapOptIn?: boolean }` |
+| **Input (create)** | `{ deadline: ISO8601, useCase: "property" \| "job" \| "otc", about?: string /* context anchor, ≤200, public-class */, sideLabels?: { a: string, b: string }, gapOptIn?: boolean }` |
 | **Output (create)** | `{ roomId, topicId, expirySeq, joinUrl, qr }` |
 | **Input (commit)** | `{ roomId, side: "a" \| "b", commitment: string /* sha256(ciphertext) */, nullifierRef, gapOptIn: boolean /* this side's consent, D9 */ }` |
 | **Output (commit)** | `{ committedSeq }` |

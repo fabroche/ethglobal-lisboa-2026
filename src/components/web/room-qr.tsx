@@ -22,6 +22,18 @@ export interface RoomQrProps {
    * per room. The `side` parameter is a routing hint, never an authorisation.
    */
   ownUrl?: string;
+  /**
+   * Role framing (both required together). When present, the layout speaks in roles —
+   * "For the Seller — have them scan this" / "You — the Buyer" — instead of positional
+   * join/own language. Fixes the live failure where a Buyer-creator used the join link
+   * themselves and both humans entered side B.
+   */
+  theirLabel?: string;
+  yourLabel?: string;
+  /** Context anchor from the create form (announcement URL or one line). */
+  about?: string;
+  /** The creator's direct write link (`/room/<id>/write?side=X`) — rendered as the primary CTA. */
+  writeUrl?: string;
   className?: string;
 }
 
@@ -142,8 +154,18 @@ function CopyRow({ url, label }: { url: string; label: string }) {
   );
 }
 
-export function RoomQr({ roomId, joinUrl, ownUrl, className }: RoomQrProps) {
+export function RoomQr({
+  roomId,
+  joinUrl,
+  ownUrl,
+  theirLabel,
+  yourLabel,
+  about,
+  writeUrl,
+  className,
+}: RoomQrProps) {
   const unreachable = isLoopbackUrl(joinUrl);
+  const roleMode = Boolean(theirLabel && yourLabel);
 
   return (
     <div
@@ -154,7 +176,23 @@ export function RoomQr({ roomId, joinUrl, ownUrl, className }: RoomQrProps) {
     >
       <div className="flex flex-col items-center gap-1 text-center">
         <h2 className="text-lg font-semibold tracking-tight">Room ready</h2>
-        <p className="text-sm text-muted-foreground">Share this link so the other side can join.</p>
+        {about ? (
+          <p className="max-w-full truncate text-xs text-primary" title={about}>
+            About:{" "}
+            {/^https?:\/\//.test(about) ? (
+              <a href={about} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                {about}
+              </a>
+            ) : (
+              about
+            )}
+          </p>
+        ) : null}
+        <p className="text-sm text-muted-foreground">
+          {roleMode
+            ? `For the ${theirLabel} — have them scan this.`
+            : "Share this link so the other side can join."}
+        </p>
       </div>
 
       <div
@@ -164,6 +202,12 @@ export function RoomQr({ roomId, joinUrl, ownUrl, className }: RoomQrProps) {
       >
         <QRCode value={joinUrl} size={160} style={{ height: "auto", width: 160, maxWidth: "100%" }} />
       </div>
+
+      {roleMode ? (
+        <p className="text-xs text-muted-foreground">
+          The QR and the link below are the same door — the {theirLabel}&apos;s.
+        </p>
+      ) : null}
 
       {unreachable ? (
         <p
@@ -180,6 +224,17 @@ export function RoomQr({ roomId, joinUrl, ownUrl, className }: RoomQrProps) {
 
       {ownUrl ? (
         <div className="flex w-full flex-col gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+          {roleMode ? (
+            <p className="text-xs font-semibold">You — the {yourLabel}</p>
+          ) : null}
+          {roleMode && writeUrl ? (
+            <Link
+              href={writeUrl}
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Write your position
+            </Link>
+          ) : null}
           <p className="text-xs">
             <span className="font-semibold">Your own link.</span> The room has no accounts and no
             sign-in, so this URL is how you get back to write your position and read the verdict.{" "}

@@ -41,6 +41,28 @@ import { generateEnclaveKey, signEnvelope, tamperHex } from "../src/evaluator/at
  * so we populate process.env here and import that module dynamically, after.
  * No dependency, and it must not fail when the file is absent.
  */
+/**
+ * Parse one .env value. Handles the two shapes that actually occur:
+ *   KEY="value"   # trailing comment      <- quoted, comment after the quote
+ *   KEY=value     # trailing comment      <- bare, comment after whitespace
+ *
+ * Getting this wrong is not a cosmetic bug: a value that silently carries its
+ * own trailing comment gets sent to the API verbatim, and the failure surfaces
+ * as a confusing permission error from the provider rather than a config error
+ * from us.
+ */
+function parseEnvValue(raw: string): string {
+  const s = raw.trim();
+  const quote = s.startsWith('"') ? '"' : s.startsWith("'") ? "'" : "";
+  if (quote) {
+    const end = s.indexOf(quote, 1);
+    return end > 0 ? s.slice(1, end) : s.slice(1);
+  }
+  // Bare value: a comment starts at a `#` that begins the line or follows space.
+  const hash = s.search(/(^|\s)#/u);
+  return (hash >= 0 ? s.slice(0, hash) : s).trim();
+}
+
 function loadEnvLocal(): void {
   for (const file of [".env.local", ".env"]) {
     let raw: string;
@@ -50,11 +72,11 @@ function loadEnvLocal(): void {
       continue;
     }
     for (const line of raw.split(/\r?\n/u)) {
-      const match = /^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/u.exec(line);
+      const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$/u.exec(line);
       if (!match) continue;
       const [, key, rawValue] = match;
       if (!key || process.env[key] !== undefined) continue;
-      process.env[key] = rawValue?.replace(/^["']|["']$/gu, "") ?? "";
+      process.env[key] = parseEnvValue(rawValue ?? "");
     }
   }
 }
@@ -204,6 +226,74 @@ type OgEnv = {
   OG_ENCLAVE_PUBKEY?: string | undefined;
 };
 
+type CatalogModel = {
+  id: string;
+  type?: string;
+  verifiability?: string;
+  tee_attested?: boolean;
+  tee_type?: string;
+  provider_count?: number;
+};
+
+/**
+ * Check the pinned model against the public catalog BEFORE spending a request.
+ * `GET /v1/models` needs no auth, so this is free — and it turns "403
+ * permission_error" (which reads like a broken API key) into a config error
+ * that names itself.
+ *
+ * It also asserts the two properties the whole product rests on: the model runs
+ * inside the enclave (TeeML), and it has a single provider so the signing key
+ * cannot rotate out from under our pinned address.
+ */
+async function preflightModel(env: OgEnv): Promise<boolean> {
+  let catalog: CatalogModel[];
+  try {
+    const response = await fetch(`${env.OG_ROUTER_URL}/models`, {
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!response.ok) {
+      check("model catalog reachable", false, `HTTP ${response.status}`);
+      return false;
+    }
+    catalog = ((await response.json()) as { data?: CatalogModel[] }).data ?? [];
+    check("model catalog reachable", true, `${catalog.length} models`);
+  } catch (error) {
+    check("model catalog reachable", false, error instanceof Error ? error.message : String(error));
+    return false;
+  }
+
+  const model = catalog.find((m) => m.id === env.OG_MODEL);
+  if (!model) {
+    check("OG_MODEL exists in the catalog", false, `no model with id ${JSON.stringify(env.OG_MODEL)}`);
+    const raw = env.OG_MODEL ?? "";
+    if (raw !== raw.trim() || /["'#]/u.test(raw)) {
+      console.log(
+        `\n  ${c.yellow}The value carries quotes, spaces or a comment.${c.reset} ${c.dim}Check the\n` +
+          `  OG_MODEL line in .env.local — an inline "# comment" after the value is\n` +
+          `  legal .env syntax and must not end up inside the string.${c.reset}`,
+      );
+    }
+    const near = catalog.filter((m) => m.id.includes(String(raw).slice(0, 12).replace(/["']/gu, "")));
+    if (near.length > 0) {
+      console.log(`  ${c.dim}did you mean: ${near.map((m) => m.id).join(", ")}${c.reset}`);
+    }
+    return false;
+  }
+
+  check("OG_MODEL exists in the catalog", true, model.id);
+  check(
+    "model runs INSIDE the enclave (TeeML)",
+    model.verifiability === "TeeML",
+    `verifiability=${model.verifiability}, tee=${model.tee_type ?? "?"}`,
+  );
+  check(
+    "single provider — signing key cannot rotate",
+    model.provider_count === 1,
+    `provider_count=${model.provider_count}`,
+  );
+  return true;
+}
+
 async function partBLive(env: OgEnv): Promise<void> {
   heading("PART B · live — does a real 0G response verify?");
 
@@ -217,7 +307,9 @@ async function partBLive(env: OgEnv): Promise<void> {
     return;
   }
 
-  console.log(`${c.dim}  router ${env.OG_ROUTER_URL} · model ${env.OG_MODEL}${c.reset}\n`);
+  console.log(`${c.dim}  router ${env.OG_ROUTER_URL} · model ${JSON.stringify(env.OG_MODEL)}${c.reset}\n`);
+
+  if (!(await preflightModel(env))) return;
 
   let body: unknown;
   try {
@@ -226,8 +318,14 @@ async function partBLive(env: OgEnv): Promise<void> {
       headers: { "content-type": "application/json", authorization: `Bearer ${env.OG_KEY}` },
       body: JSON.stringify({
         model: env.OG_MODEL,
+        // Explicit, never inherited: the provider default is temperature 1.
         temperature: 0,
-        max_tokens: 8,
+        max_tokens: 64,
+        // Thinking is ON by default on this model (spec-02 D-M6-1). Two reasons
+        // to kill it: a chain of thought discusses BOTH positions, so receiving
+        // it hands the operator what the threat model says they cannot have —
+        // and it also makes the call slow enough to time out.
+        chat_template_kwargs: { enable_thinking: false },
         messages: [
           {
             role: "system",
@@ -237,7 +335,7 @@ async function partBLive(env: OgEnv): Promise<void> {
           { role: "user", content: "Side A wants 100. Side B offers 95. Is this workable?" },
         ],
       }),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(120_000),
     });
 
     const text = await response.text();
@@ -266,7 +364,25 @@ async function partBLive(env: OgEnv): Promise<void> {
       console.log(`  ${c.yellow}no ZG-Res-Key header${c.reset} ${c.dim}— check data.id in the body${c.reset}`);
     }
   } catch (error) {
-    check("0G router reachable", false, error instanceof Error ? error.message : String(error));
+    const message = error instanceof Error ? error.message : String(error);
+    check("0G router reachable", false, message);
+    if (/timeout|abort/iu.test(message)) {
+      // The router answers an unauthorized model in ~0.2s, so a hang here is not
+      // the network and not the key — it is the router failing to get anything
+      // back from the provider.
+      console.log(
+        `\n${c.yellow}  Zero bytes back, not slowness.${c.reset} ${c.dim}The router rejects a bad model in\n` +
+          `  ~0.2s, so auth and routing are fine and this hang is downstream. In order:\n\n` +
+          `   1. CHECK THE BALANCE at pc.0g.ai (top right). Owning 0G in your wallet is\n` +
+          `      not the same as depositing it into the Router's payment contract —\n` +
+          `      that deposit is a separate transaction and it is the usual culprit.\n` +
+          `   2. If funded, the provider may be down despite is_healthy. Temporarily\n` +
+          `      allow 0gm-1.0-35b-a3b-sia on the key and retry: if that one answers,\n` +
+          `      the problem is the provider, not us.\n` +
+          `   3. Still stuck -> booth. Ask whether a Router key needs the provider\n` +
+          `      "acknowledged" before first use.${c.reset}`,
+      );
+    }
     return;
   }
 

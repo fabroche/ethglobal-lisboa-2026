@@ -58,7 +58,7 @@
 ## Phase 4 — Demo & track requirements · Saturday late
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
 |----|-----------|------|---------|-----------|-------|:------:|
-| S4.1 | `inspect.ts` | demo: show our store holds only ciphertext (no key) | demo | S1.3 | | ⬜ |
+| S4.1 | `inspect.ts` | demo: show our store holds only ciphertext (no key) | demo | S1.3 | dylan | 🟡 |
 | S4.2 | `demo-naive.ts` | demo: same product w/o enclave → plaintext leaks | demo | S2.2 | | ⬜ |
 | S4.3 | World testing doc | developer friction + user friction (track requirement) | World | S1.5 | | ⬜ |
 | S4.4 | README (final) | what/why, architecture, how to run, sponsors | compliance | — | | ⬜ |

@@ -72,7 +72,7 @@
 | S4.1 | `inspect.ts` | demo: show our store holds only ciphertext (no key) | demo | S1.3 | dylan | 🟩 |
 | S4.2 | `demo-naive.ts` | demo: same product w/o enclave → plaintext leaks | demo | S2.2 | **frank** | 🟩 (`--live` shows the SAME verdict) |
 | S4.3 | World testing doc | developer friction + user friction (track requirement) | World | S1.5 | dylan | 🟡 (dev half + skeleton; user half after S3.2) |
-| S4.4 | README (final) | what/why, architecture, how to run, sponsors | compliance | — | | ⬜ |
+| S4.4 | README (final) | what/why, architecture, how to run, sponsors. **Done** — written as **Overlap** (DA11). Leads with the problem, then hands the reader four commands to check our claims without trusting us (`spike` / `reveal:live` / `inspect` / `demo:naive`) plus the on-chain curl for the enclave key, and names a live verdict already on the topic (`r_live_ms0v9ctq`). Carries an explicit **"what we prove and what we don't"**: last-link-only attestation (no TDX quote parsing), server-side unsealing (D-M6-2), the in-memory ciphertext window between commits, and why the pinned model is deliberately the weaker one. ⚠️ The **code** rename is still S4.8 (dylan) — this is the README only. | compliance | — | **frank** | 🟩 |
 | S4.5 | `ai-usage.md` | which files were AI-assisted (keep updated all weekend) | compliance | — | | ⬜ |
 | S4.6 | output vocabulary | enum verdicts + opt-in `gap:*` consent logic | 0G/web | S2.2 | | ⬜ |
 | S4.7 | repo hygiene sweep | pre-freeze: decide `MEMORIA.md` (pre-pivot, ES — D2; owner's call) · confirm no editor-history/temp paths tracked (`.history/` incident, fixed) · drop stale local drafts or fold them in (`README2.md` → S4.4) · final `.gitignore` re-check | compliance | — | **frank** | 🟡 |

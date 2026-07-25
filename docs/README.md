@@ -5,7 +5,8 @@
 Pre-implementation design documentation for **Seam**: sealed two-party negotiation.
 Two sides write their negotiating position in plain language; a model inside a **0G TEE
 (sealed inference)** reads both and returns **one enum verdict to both** — `workable` /
-`not_workable` (optionally the single blocking `gap:*` dimension if **both** opted in).
+`not_workable` (optionally whether **one issue or several** block — `gap:single` / `gap:multiple`,
+never *which* — if **both** opted in).
 Neither side, nor the operator, ever sees the other's terms.
 
 **No database. No smart contract. No Solidity.** Storage *is* an Hedera Consensus Service
@@ -89,7 +90,7 @@ docs/
 | D6 | **Hedera = three native services** | HCS (commitments + verdict log), Schedule Service (the deadline clock), Mirror Node (read path). Testnet account; keys are **ours only**. |
 | D7 | **World = one seat per side, not login** | Selfie Check as an anti-probing abuse signal. Nullifier scoped **per room per side**, not app-wide. |
 | D8 | **No user private keys** | We hold only our own Hedera testnet account key. Users never sign anything; there are no wallets in the flow. |
-| D9 | **Constrained enum output** | The enclave emits `workable` / `not_workable` (+ opt-in `gap:*`) and never free text. Enum in, enum out — the leak control. |
+| D9 | **Constrained enum output** | The enclave emits `workable` / `not_workable` (+ opt-in `gap:single` \| `gap:multiple`) and never free text. Enum in, enum out — the leak control. **Amended 25 Jul:** gap disclosure reveals whether **one or several** dimensions block, never *which* — "the single blocking dimension" was ill-defined (several can block at once, and entangled tradeoffs have no unique blocker; naming one would fabricate an answer). The dimensions (compensation/timing/scope) survive **inside the enclave only**, as the counting basis for single-vs-multiple. |
 | D10 | **Fail closed** | A verdict is published only if the TEE attestation verifies **independently** of the 0G SDK (`verifyEnvelope`). Bad signature ⇒ no verdict. |
 | D11 | **Zod at all boundaries** | Every external response (0G, Hedera SDK, Mirror Node REST, World) is validated with Zod before use. No `as any`. |
 | D12 | **Deterministic commitment** | `sha256(ciphertext)` over canonically serialised bytes; no clock timestamp inside the committed bytes, so the verifier recomputes the same hash. |

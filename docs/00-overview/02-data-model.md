@@ -66,15 +66,18 @@ plaintext and the ciphertext never touch the topic — only the hash.
 { "v": 1, "type": "verdict", "roomId": "r_9f3a…", "verdict": "workable", "attestationRef": "att_…", "publishedAt": "2026-07-26T08:00:03Z" }
 ```
 
-**Verdict enum** (the only permitted values, D9):
+**Verdict enum** (the only permitted values, D9 as amended):
 
 | Value | When |
 |-------|------|
 | `workable` | always available |
 | `not_workable` | always available |
-| `gap:compensation` | only if **both** sides opted in |
-| `gap:timing` | only if **both** sides opted in |
-| `gap:scope` | only if **both** sides opted in |
+| `gap:single` | only if **both** sides opted in — exactly one dimension blocks (a deal is one issue away) |
+| `gap:multiple` | only if **both** sides opted in — several dimensions block, or they are too entangled to attribute to one |
+
+The gap values reveal **how many** dimensions block, never **which**. The three dimensions
+(compensation / timing / scope) exist only **inside the enclave** as the counting basis — they never
+appear in any published message.
 
 ## Client-side sealed payload (never leaves the browser un-sealed)
 

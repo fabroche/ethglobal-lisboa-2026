@@ -8,7 +8,7 @@ answered.
 
 | # | Question | Options | Tentative lean | Status | Confirm by |
 |---|----------|---------|----------------|:------:|-----------|
-| DA1 | Default verdict richness | enum-only (`workable`/`not_workable`) vs opt-in `gap:*` | **Default enum-only; `gap:*` only if BOTH sides opted in** — richest verdict both consented to | 🟧 leaning | product decision |
+| DA1 | Default verdict richness | enum-only (`workable`/`not_workable`) vs opt-in `gap:*` | **Decided 25 Jul (D9 amendment):** default enum-only; with two-sided opt-in the verdict adds `gap:single` \| `gap:multiple` — whether one or several dimensions block, **never which**. Naming the dimension was rejected: "the single blocker" is ill-defined when several block or tradeoffs entangle them, and a forced pick would fabricate an answer | 🟩 decided | — |
 | DA2 | Deploy target | Vercel vs Hostinger VPS + Dokploy | **Vercel** for speed (no worker, no DB) — see `../transversal/infra-devops.md` | 🟧 leaning | Sat, before feature freeze |
 | DA3 | Does 0G require a **contract deployment address** for submission? | mandatory vs not | **Assume not**; if mandatory we must deploy something on 0G Chain (a real design change) | ⛔ **blocking — open** | 0G workshop (Fri 14:30) |
 | DA4 | World **nullifier scope** | per room per side vs per app | **Per room per side** (negotiate many rooms, submit once per side per room) | 🟧 leaning | World workshop (Fri 16:30) |

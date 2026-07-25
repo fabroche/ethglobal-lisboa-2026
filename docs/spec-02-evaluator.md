@@ -12,10 +12,18 @@ run a **pinned model at temperature 0**, and emit a **single enum verdict** — 
 | | Shape |
 |---|---|
 | **Input** | `{ ciphertextA, ciphertextB, useCase: "property" \| "job" \| "otc", gapOptIn: { a: boolean, b: boolean } }` |
-| **Output** | `{ verdict: "workable" \| "not_workable" \| "gap:compensation" \| "gap:timing" \| "gap:scope" }` |
+| **Output** | `{ verdict: "workable" \| "not_workable" \| "gap:single" \| "gap:multiple" }` |
 
 The enclave emits the **richest verdict both sides consented to**: a `gap:*` value is allowed **only if
 `gapOptIn.a && gapOptIn.b`**; otherwise the output is the bare `workable` / `not_workable`.
+
+**Gap semantics (D9 as amended).** The gap values reveal **how many** dimensions block, never
+**which**. The counting basis is the three internal dimensions — compensation, timing, scope —
+assessed inside the enclave: emit `gap:single` iff exactly one dimension blocks and the model can
+attribute the failure to it cleanly; emit `gap:multiple` when several block **or** the positions are
+too entangled (tradeoffs across dimensions) to attribute to one. The dimension names never leave the
+enclave — "the single blocking dimension" as an output was rejected because it is ill-defined in
+those two cases, and a forced pick would fabricate an answer.
 
 ## Function signature (sketch)
 ```ts

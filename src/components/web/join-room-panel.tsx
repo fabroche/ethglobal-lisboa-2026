@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Side } from "@/session";
 
@@ -51,6 +52,13 @@ export function JoinRoomPanel({ roomId, side, className }: JoinRoomPanelProps) {
         browser — it’s encrypted to the enclave before it ever leaves your device, so the other
         side never sees it. That step is being wired up.
       </p>
+
+      <Link
+        href={`/room/${roomId}/verdict`}
+        className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        View countdown and verdict
+      </Link>
     </div>
   );
 }

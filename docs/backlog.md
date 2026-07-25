@@ -45,14 +45,14 @@
 | S2.4 | `scheduler` | arm + listen for the scheduled reveal | Hedera | S1.2 | dylan | 🟩 |
 | S2.5 | `registry.read` | read verdict via Mirror Node REST | Hedera | S1.3 | dylan | 🟩 |
 | S2.6 | topic versioning | 3 message types per session (expiry/commitments/verdict), versioned from commit 1 | Hedera | S1.3 | | ⬜ |
-| **S2.7** | **canonical consolidation** | **migrate `registry` off its own serializer onto `src/lib/canonical.ts`; delete `src/registry/canonical.ts`** | — | S1.4 | **dylan** | ⬜ |
+| S2.7 | canonical consolidation | migrate `registry` off its own serializer onto `src/lib/canonical.ts`; delete `src/registry/canonical.ts` | — | S1.4 | dylan | 🟡 |
 
 ## Phase 3 — Usable · Saturday evening
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
 |----|-----------|------|---------|-----------|-------|:------:|
 | S3.1 | `web` create | screen: open a room, set deadline, get QR/link | web | S1.2 | dylan | 🟩 |
 | S3.2 | `web` write+seal | screen: write position, seal in-browser | web | S1.4 | | ⬜ |
-| S3.3 | `web` verdict | screen: countdown + one-line verdict (Mirror) | web | S2.5 | dylan | 🟡 |
+| S3.3 | `web` verdict | screen: countdown + one-line verdict (Mirror) | web | S2.5 | dylan | 🟩 |
 | S3.4 | two-browser E2E | full flow across two browsers, QR to join | web | S3.1–S3.3 | | ⬜ |
 
 ## Phase 4 — Demo & track requirements · Saturday late

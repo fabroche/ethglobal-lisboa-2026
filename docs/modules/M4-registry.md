@@ -78,8 +78,10 @@ sequenceDiagram
 
 ### Implementation notes (S1.3 — write path)
 Landed in `src/registry/` with co-located Vitest unit tests:
-- `canonical.ts` — `canonicalJson()`: deterministic serialisation (recursively key-sorted,
-  array order preserved) so any verifier re-derives identical bytes (RNF-M4-001).
+- canonical serialisation (RNF-M4-001) — **S2.7:** `write.ts` now uses the shared
+  `canonicalize` from `src/lib/canonical.ts` (the ONE implementation `attest`/`seal`/`registry`
+  all agree on), so what the enclave signs is byte-identical to what the topic publishes. The
+  old `src/registry/canonical.ts` is deleted; `write.test.ts` passed unchanged after the swap.
 - `topic-client.ts` — the **Hedera SDK boundary** (`TopicClient` + `hederaTopicClient()`),
   `import "server-only"`; builds the client from env and signs with **our** testnet account
   (D8). The SDK is confined to this file; nothing else imports `@hashgraph/sdk`.

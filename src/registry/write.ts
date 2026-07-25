@@ -5,7 +5,7 @@ import {
   type CommitmentMessage,
   type RegistryPort,
 } from "@/session";
-import { canonicalJson } from "./canonical";
+import { canonicalize } from "@/lib/canonical";
 // Type-only import: keeps the `server-only` SDK adapter out of this module (and its tests).
 import type { TopicClient } from "./topic-client";
 
@@ -29,11 +29,11 @@ export function createRegistry(client: TopicClient): Registry {
   return {
     async publishExpiry(message: ExpiryMessage) {
       const valid = expiryMessageSchema.parse(message);
-      return client.submit(canonicalJson(valid));
+      return client.submit(canonicalize(valid));
     },
     async publishCommitment(message: CommitmentMessage) {
       const valid = commitmentMessageSchema.parse(message);
-      return client.submit(canonicalJson(valid));
+      return client.submit(canonicalize(valid));
     },
   };
 }

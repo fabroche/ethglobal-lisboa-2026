@@ -25,6 +25,14 @@ describe("RoomQr", () => {
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
+  it("links to the room's verdict/countdown screen", () => {
+    render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
+    expect(screen.getByRole("link", { name: /countdown and verdict/i })).toHaveAttribute(
+      "href",
+      "/room/r_9f3a/verdict",
+    );
+  });
+
   it("copies the link and confirms", async () => {
     render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
     fireEvent.click(screen.getByRole("button", { name: /^copy$/i }));

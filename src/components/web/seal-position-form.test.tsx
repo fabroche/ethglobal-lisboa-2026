@@ -5,7 +5,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { USE_CASES } from "@/session";
 
-vi.mock("@worldcoin/idkit", () => ({
+vi.mock("idkit2", () => ({
   VerificationLevel: { Device: "device" },
   IDKitWidget: ({
     onSuccess,

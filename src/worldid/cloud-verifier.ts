@@ -1,4 +1,4 @@
-import { verifyCloudProof, type ISuccessResult } from "@worldcoin/idkit";
+import { verifyCloudProof, type ISuccessResult } from "idkit2";
 import type { WorldProof, WorldVerifier } from "./verify";
 
 /**

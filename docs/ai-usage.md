@@ -31,6 +31,15 @@ disclosure.
   the D9 vocabulary change additionally required Frank's explicit agreement before it shipped.
 - **Sponsor workshops and credentials** (DA3–DA7 confirmations, World/0G keys) — humans at the
   booths; the AI only consumed the answers.
+- **Humans repeatedly caught and redirected the AI** — the reviews were real, not ceremonial.
+  Traceable examples beyond D9: the AI claimed World credentials were configured when the UI
+  correctly said otherwise (it had checked env variable *names*, not values — human caught the
+  discrepancy, 25 Jul); the AI advised against enabling World ID 4.0 before reading the current
+  docs, and reversed after a human insisted on reading them (Selfie Check turned out 4.x-only);
+  two proposed workarounds were rejected by humans demanding root-cause fixes (the D9 vocabulary,
+  and serving HTTPS for WebCrypto instead of dodging the phone flow — `world-testing.md` §A.8);
+  and grep-based investigation was rejected in favour of full-source reading, which upgraded a
+  hypothesis into the proven failure line in IDKit's `bridge.ts`.
 
 ## Attribution table
 | File / Area | AI-assisted? | Notes |

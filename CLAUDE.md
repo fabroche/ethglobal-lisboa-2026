@@ -86,7 +86,8 @@ npm run eval:live  # S2.2 evaluator against the real enclave. GO
 npm run og:status  # 0G wallet + compute-ledger balance. READ-ONLY, spends nothing
 npm run og:setup   # one-time: ledger deposit + acknowledge. DRY RUN unless -- --confirm
 npm run inspect    # demo: our store holds only ciphertext (S4.1)
-npm run demo:naive # demo: same product without the enclave leaks (S4.2)
+npm run demo:naive # demo Act 3: same product without the enclave leaks (S4.2)
+                   #   add `-- --live` to have the real enclave return the SAME verdict
 ```
 
 ## Architecture (nine modules, no DB, no contract)

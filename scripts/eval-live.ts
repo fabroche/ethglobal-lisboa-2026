@@ -14,14 +14,9 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// Static, because the SDK's ESM bundle breaks under dynamic import ("does not
-// provide an export named 'C'"). Safe here: neither of these reads env at import
-// time, so loading .env.local below still happens before anything needs it.
-import { createZGComputeNetworkBroker } from "@0gfoundation/0g-compute-ts-sdk";
-import { ethers } from "ethers";
-
 import { evaluate } from "../src/evaluator/evaluate";
-import { buildChatRequest, readChatCompletion, signatureBaseFrom } from "../src/evaluator/og-request";
+
+import { buildSealedModel, looksLikePrivateKey } from "./lib/sealed-model";
 
 /** Load .env.local BEFORE src/config/env.ts is imported (Zod, fail-fast). */
 function loadEnvLocal(): void {
@@ -95,52 +90,21 @@ async function main(): Promise<void> {
   console.log(`\n${c.bold}S2.2 · evaluator against the live enclave${c.reset}`);
   console.log(`${c.dim}Nothing is published — this only asks for verdicts.${c.reset}\n`);
 
-  // The client is built INLINE rather than imported from `og-client.ts`, which is
-  // marked `server-only` and throws under tsx. Same pattern as `inspect.ts` and
-  // `seed-room.ts`. The privacy-critical part is not duplicated: the request body
-  // comes from the same `buildChatRequest` the real adapter uses, so what runs here
-  // is what runs in production.
-  const key = (process.env.OG_WALLET_PRIVATE_KEY ?? "").trim();
-  if (!/^(0x)?[0-9a-fA-F]{64}$/u.test(key)) {
+  const key = process.env.OG_WALLET_PRIVATE_KEY ?? "";
+  if (!looksLikePrivateKey(key)) {
     console.log(`${c.red}OG_WALLET_PRIVATE_KEY missing or malformed.${c.reset} ${c.dim}Run npm run og:status.${c.reset}\n`);
     process.exit(1);
   }
 
-  let endpoint: string;
-  let model: string;
-  let broker: Awaited<ReturnType<typeof createZGComputeNetworkBroker>>;
-  const provider = "0x4870CbC4D07d6Ac2EE5aA865588e5985FE77a4E9";
+  let client: Awaited<ReturnType<typeof buildSealedModel>>;
   try {
-    const wallet = new ethers.Wallet(
-      key.startsWith("0x") ? key : `0x${key}`,
-      new ethers.JsonRpcProvider("https://evmrpc.0g.ai"),
-    );
-    broker = await createZGComputeNetworkBroker(wallet);
-    ({ endpoint, model } = await broker.inference.getServiceMetadata(provider));
+    client = await buildSealedModel({ privateKey: key });
   } catch (error) {
     console.log(`${c.red}Could not reach the broker.${c.reset} ${error instanceof Error ? error.message : String(error)}`);
     console.log(`${c.dim}Run npm run og:status — the compute ledger is separate from the wallet.${c.reset}\n`);
     process.exit(1);
   }
-  console.log(`${c.dim}broker ${signatureBaseFrom(endpoint)} · model ${model}${c.reset}\n`);
-
-  let lastChatId: string | undefined;
-  const client = {
-    async complete(request: { system: string; user: string; responseFormat: Record<string, unknown> }) {
-      const headers = await broker.inference.getRequestHeaders(provider);
-      const response = await fetch(`${endpoint}/chat/completions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(headers as unknown as Record<string, string>) },
-        body: JSON.stringify(buildChatRequest({ model, ...request })),
-        signal: AbortSignal.timeout(120_000),
-      });
-      const raw = await response.text();
-      if (!response.ok) throw new Error(`0G broker HTTP ${response.status}: ${raw.slice(0, 200)}`);
-      const parsed = JSON.parse(raw) as Parameters<typeof readChatCompletion>[0];
-      lastChatId = response.headers.get("zg-res-key") ?? parsed.id;
-      return readChatCompletion(parsed);
-    },
-  };
+  console.log(`${c.dim}broker ${client.signatureBase} · model ${client.servedModel}${c.reset}\n`);
 
   const deps = { model: client, pinnedModel: process.env.OG_MODEL };
 

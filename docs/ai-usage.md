@@ -22,7 +22,7 @@ disclosure.
 | `docs/spec-01-session.md` · `spec-02-evaluator.md` · `spec-03-attest.md` · `spec-04-seal.md` | ✅ | Specs written before code (spec-driven rule). |
 | `docs/ux/**` | ✅ | Screens, sitemap, wireframes and the sponsor-value map, drafted with Claude Code from the existing specs; bilingual (EN canonical, ES mirror) for the team design review. |
 | Project scaffold (Next.js 16 · Tailwind v4 · shadcn) | ✅ | Boilerplate generated; config reviewed by a human. |
-| `src/session/**` | ✅ | M1/S1.2 domain layer (messages, room, createRoom orchestrator, commitment gate) + co-located Vitest unit tests. Drafted with Claude Code under human direction; human-reviewed. |
+| `src/session/**` | ✅ | M1/S1.2 domain layer (messages, room, createRoom orchestrator, commitment gate) + **S3.5** `usecases.ts` (D16 preset map + `useCase` on the expiry message) + co-located Vitest unit tests. Drafted with Claude Code under human direction; human-reviewed. |
 | `src/seal/**` (+ tests) | ✅ | M2/S1.4. ECIES hybrid encryption + commitment, drafted with Claude Code under human direction. Safety-critical: the decision to make sealing **randomized** (against the module doc's literal wording) was raised by the AI, reasoned through in spec-04 §1, and human-reviewed. 23 unit tests. |
 | `src/worldid/**` | ✅ | M3/S1.5 verify + seat logic (per-room-per-side action scoping, `WorldVerifier` port, one-seat gate, fail-closed `claimSeat`, isolated `verifyCloudProof` adapter) + co-located Vitest tests. Drafted with Claude Code under human direction; human-reviewed. |
 | `src/registry/**` · `scripts/inspect.ts` | ✅ | M4 write path (S1.3: Hedera SDK boundary, `createRegistry`→`RegistryPort`) + read path (S2.5: Mirror Node boundary, `createReader`, base64/Zod decode, sequence-gap check) + **S2.7** (shared `src/lib/canonical.ts`) + **S4.1** (`inspect.ts` demo + `summarizeTopic`/`holdsOnlyHashes` proving the topic holds only hashes) + co-located Vitest tests. Drafted with Claude Code under human direction; human-reviewed. |
@@ -32,7 +32,7 @@ disclosure.
 | `src/evaluator/attest.ts` (+ test) | ✅ | M7/S0.3. Independent `verifyEnvelope` — signature recovery + fail-closed gate. Drafted with Claude Code; the design decision to drop the unresolvable vendor package and verify with general-purpose crypto was made explicitly (spec-03 §1). 24 unit tests. |
 | `src/evaluator/attest-testkit.ts` | ✅ | M7/S0.3. Ephemeral-key signing helpers for the spike + tests. **Not a production path** — Seam never signs anything. |
 | `scripts/spike-attest.ts` | ✅ | M7/S0.3, the Friday-night spike. PART A (offline) passes; PART B (live 0G) pending credentials + booth answers. Human-verified against the 0G booth answers. |
-| `src/components/web/**` · `src/app/create/**` · `src/app/room/**` | ✅ | M8 web screens: create (S3.1: `create-room-form`, `room-qr`), join landing, and verdict (S3.3: `countdown`, `verdict-panel`, `verdict-view`) + stories + RTL, and the routes/Server Actions wiring M1/M4. Drafted with Claude Code under human direction; human-reviewed. |
+| `src/components/web/**` · `src/app/create/**` · `src/app/room/**` | ✅ | M8 web screens: create (S3.1: `create-room-form`, `room-qr`; S3.5: `use-case-picker`), join landing, and verdict (S3.3: `countdown`, `verdict-panel`, `verdict-view`) + stories + RTL, and the routes/Server Actions wiring M1/M4. Drafted with Claude Code under human direction; human-reviewed. |
 | Submission video | ❌ | Human narration only (no AI voiceover — track rule). |
 
 Legend: ✅ AI-assisted · ⬜ pending (fill when built) · ❌ not AI-assisted.

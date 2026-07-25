@@ -31,7 +31,7 @@ Hedera testnet account, D8) · Hedera HCS (append-only log) · Hedera Schedule S
 | RF-M1-004 | Arm the scheduled reveal for that deadline (delegates to M5) | Must |
 | RF-M1-005 | Issue a join **link** and a **QR** encoding the room id | Must |
 | RF-M1-006 | Expose the enclave public key (`OG_ENCLAVE_PUBKEY`) to joining clients so M2 can seal | Should |
-| RF-M1-007 | Accept a **`useCase`** (`property` \| `job` \| `otc`, D16) and record it in the expiry message; provide the preset map (`src/session/usecases.ts`) consumed by M8 (labels, placeholder, checklist) and M6 (prompt hint) | Must |
+| RF-M1-007 ✅ | Accept a **`useCase`** (`property` \| `job` \| `otc`, D16) and record it in the expiry message; provide the preset map (`src/session/usecases.ts`) consumed by M8 (labels, placeholder, checklist) and M6 (prompt hint) | Must |
 
 ## 4. Non-functional requirements (RNF)
 | ID | Requirement | Metric / criterion |
@@ -55,9 +55,16 @@ classDiagram
 
 ### Use-case presets (D16 — source of truth: `src/session/usecases.ts`)
 
-Typed const map `{ id, sideLabels, placeholder, checklist: string[], evaluatorHint: string }` + Zod
-`UseCaseSchema`. One shared source for the create form + write screen (M8) and the enclave prompt
-hint (M6). Guidance only — positions stay free-form plain language in one sealed blob.
+Typed const map `{ id, title, tagline, sideLabels, placeholder, checklist: string[], evaluatorHint }`
++ Zod `useCaseIdSchema`. One shared source for the create form + write screen (M8) and the enclave
+prompt hint (M6). Guidance only — positions stay free-form plain language in one sealed blob.
+
+**Landed (S3.5):** `usecases.ts` + unit tests (map completeness; hints contain **no digits** so a
+hint can never smuggle a term into the enclave prompt). `expiryMessageSchema.useCase` is **optional**
+so pre-D16 expiry messages already on the live topic keep parsing (missing ⇒ legacy room).
+`createRoomInputSchema` gains `useCase` (default `property`, the primary demo case); `createRoom`
+records it on the expiry and resolves `sideLabels` from the preset unless the input overrides them
+(`Room.useCase` / `Room.sideLabels`).
 
 | id | Side labels | Checklist (guidance, not fields) |
 |----|-------------|----------------------------------|

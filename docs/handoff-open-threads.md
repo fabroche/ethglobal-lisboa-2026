@@ -154,6 +154,43 @@ be implemented in S2.2 — treat it as confirmed, not suspected.
 | Booth Q: enclave encryption key | either | §3.1 — still open, still blocks sealing to the *real* enclave. |
 | **⛔ Land `c879e20` + wire per-side consent (S2.8, P0)** | **dylan** | **Blocks the next merge to `develop`.** See below. |
 
+### ⛔ S3.7 · the position field leaks to the browser — blocking S3.2's merge, P0
+
+**dylan — this is in a file you have open right now (`seal-position-form.tsx`, still on
+`develop-dylan`), which is why it is being handed over rather than patched in parallel.**
+
+The `<textarea name="position">` sets no `autoComplete`, `spellCheck`, `autoCorrect` or
+`autoCapitalize`, and neither does the `<form>`. Two consequences:
+
+- **The browser may write the position to disk.** Form history is keyed by field name, so
+  `name="position"` is exactly what gets remembered — and later offered as a suggestion, including to
+  the next person using that machine.
+- **The text may be sent to a third party.** Chrome's *Enhanced spell check* and Edge's *Microsoft
+  Editor* transmit what you type to Google/Microsoft. Opt-in, often on without the user realising.
+
+Three lines above that field, the UI promises: *"sealed **in this browser** to the enclave key — the
+other side and the operator never see it."* True of our code, not true of the whole system while this
+stands. It is the same class of hole as **D-M6-1** — where we decided that *receiving* the model's
+reasoning is already the breach — except earlier in the chain, and about the user's own words.
+
+```tsx
+<textarea
+  autoComplete="off" spellCheck={false} autoCorrect="off" autoCapitalize="off"
+  data-1p-ignore data-lpignore="true"
+  // and drop or rename name="position"
+/>
+```
+Plus `autoComplete="off"` on the `<form>`.
+
+**A trade-off to decide rather than skip:** `spellCheck={false}` removes the red underline on a field
+where people are writing terms that matter. Recommendation is to take it and *say so* in the UI —
+*"spellcheck is off on purpose: your text never leaves this browser"* — which turns a limitation into
+evidence that the promise is real. Your call, but please make it explicitly.
+
+**Meanwhile frank is on S3.8** (post-create navigation + showing both join links). That touches
+`create/actions.ts`, `create-room-form.tsx` and `room/[roomId]/share`, **not** `seal-position-form.tsx`
+— so the two should not collide.
+
 ### ⛔ S2.8 · per-side gap consent — blocking, P0
 
 **Right now one person consents on behalf of both.** `gapOptIn` is a single room-level boolean set by

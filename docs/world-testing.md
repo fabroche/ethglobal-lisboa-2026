@@ -47,11 +47,12 @@ two-browser flow, per-side action strings)._
 
 8. **Silent failure on insecure origins (Sat night, reproduced twice on the phone):** serving the
    app over plain HTTP on a LAN IP (standard hackathon setup), the IDKit modal renders and offers
-   "Open World App", but tapping it does **nothing** — no error anywhere. Code-level evidence:
-   `@worldcoin/idkit-core` (v2) uses `crypto.subtle` (8 call sites) to build the bridge request;
-   on a non-secure origin `crypto.subtle` is undefined, so the request silently never exists while
-   the button still renders. The widget should refuse to render — or show "this page must be served
-   over HTTPS" — instead of a dead button. **Root fix on our side:** serve the app over HTTPS with
+   "Open World App", but tapping it does **nothing** — no error anywhere. Root cause read from the
+   v2 source (`packages/core/src/bridge.ts`): `createClient` starts with `await generateKey()`
+   (WebCrypto) — on a non-secure origin this **throws on its first line**, so `connectorURI` stays
+   `null` and the button has no URL to open, while the state sits in `PreparingClient` and the error
+   only reaches the console. The widget should surface "this page must be served over HTTPS"
+   instead of rendering a dead button. **Root fix on our side:** serve the app over HTTPS with
    a valid certificate (tunnel or local TLS) and point `APP_URL` at it so QR links carry the HTTPS
    origin; pending team go-ahead on public tunnel exposure. Note: our own `seal()` needs WebCrypto
    too — the same origin problem would have bitten the sealing step next.

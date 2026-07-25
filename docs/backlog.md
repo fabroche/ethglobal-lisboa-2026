@@ -25,7 +25,7 @@
 |----|-----------|------|---------|-----------|-------|:------:|
 | S0.1 | repo setup | branches, `.env.example`, README skeleton, spec folder | — | — | integrator | 🟩 |
 | S0.2 | `spec-03-attest.md` | spec for independent attestation check (before code) | 0G | S0.1 | frank | 🟩 |
-| S0.3 | **`spike-attest.ts`** | one sealed 0G call, verify signature **outside** the SDK (`verifyEnvelope`) | 0G | S0.2 | frank | 🟩 offline · ⛔ live needs `OG_KEY` |
+| S0.3 | **`spike-attest.ts`** | one sealed 0G call, verify signature **outside** the SDK (`verifyEnvelope`) | 0G | S0.2 | frank | 🟩 **FULL GO** — offline **+ live**, exit 0 |
 
 ## Phase 1 — Lock-in · Saturday AM
 | ID | Component | What | Sponsor | Depends on | Owner | Status |

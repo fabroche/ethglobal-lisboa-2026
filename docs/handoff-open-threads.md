@@ -20,11 +20,65 @@ decide that consciously rather than by running out of time.
 
 ---
 
-## 1. The one thing blocking 0G · ⛔ START HERE
+## 1. 0G · ✅ RESOLVED — `npm run spike` is FULL GO
 
-> **Updated Sat 25 Jul ~12:45.** The "zero bytes" hang from Friday night is **GONE** — the chat call
-> now returns `HTTP 200` with a full body. Do not spend any more time on the balance/deposit theory.
-> The blocker moved, and the new one is much better understood. Everything below is current.
+> **Updated Sat 25 Jul ~15:45.** **The gamble is won.** A real enclave signature verifies against our
+> pinned key, `npm run spike` exits 0, and spec-03 §8.1 resolved in our favour. This section is kept
+> as the record of how, because most of it was expensive to find. Nothing here is blocked.
+
+```
+PASS  REAL 0G signature verifies against the pinned key (scheme=secp256k1-eth, signer=0x0038f716…)
+PASS  one flipped character in the REAL payload is rejected (signer_mismatch)
+PASS  signed text's second half is sha256(response)
+FULL GO — a real 0G response verifies against a pinned key.
+```
+
+### The three things that had to be understood
+
+**1. The Router can never produce a signature.** `router-api.0g.ai` pays the broker with its OWN
+wallet, so the broker's customer is the Router, not us. Asking it for our chatID was asking for the
+receipt of a conversation we were never party to — `chat_id_not_found` was correct behaviour, not a
+bug. **The only path that yields a signature is direct to the broker, paying on-chain.** 0G's own skill
+package (`github.com/0gfoundation/0g-compute-skills`) documents exactly this flow and never mentions
+`router-api` at all.
+
+**2. `OG_ENCLAVE_PUBKEY` must be `teeSignerAddress`, not the provider address.** See §4 — the live
+signature's `signing_address` confirms it.
+
+**3. 0G signs a RAW STRING, so canonical serialisation breaks it.** The signed value is
+`sha256(input):sha256(response)`. Canonicalising it (spec-03 §3) wraps it in JSON quotes, the bytes
+stop matching, and it fails as **`signer_mismatch`** — which reads exactly like a wrongly pinned key
+and is not one. Hence `encoding: "canonical" | "utf8"` on the envelope, and a test that asserts the
+real signature FAILS under canonical so the trap stays caught.
+
+### Setup, one time only (already done)
+
+```powershell
+npm run og:status                # read-only: derives the address, checks wallet + ledger
+npm run og:setup                 # dry run — prints the plan, sends nothing
+npm run og:setup -- --confirm    # spends: addLedger(3) + acknowledgeProviderSigner
+```
+
+**The ledger minimum is 3 0G**, and it is an *account-opening floor*, unrelated to usage — a sealed
+call costs ~0.0005 0G. Budgeting from the call price gets you a wallet that cannot transact. Refunds
+carry a 24-hour lock, so deposit the floor and top up rather than parking funds.
+
+### Coordinates
+
+| What | Value |
+|---|---|
+| Broker URL | `https://compute-network-20.integratenetwork.work` (on-chain `getService().url`) |
+| Signature | `GET {broker}/v1/proxy/signature/{chatID}?model={model}` → `{ text, signature, signing_address, signing_algo }` |
+| Scheme | EIP-191 / `personal_sign` = our `secp256k1-eth` |
+| Inference contract | `0x47340d900bdFec2BD393c626E12ea0656F938d84` |
+| Ledger contract | `0x2dE54c845Cd948B72D2e32e39586fe89607074E3` |
+| RPC / chain id | `https://evmrpc.0g.ai` / `16661` |
+
+⚠️ `getServiceMetadata()` returns an endpoint **already ending in `/v1/proxy`**. The signature path is
+built from the BASE url — append to the endpoint and you get `/v1/proxy/v1/proxy/…` and an
+`"unsupported endpoint"` error that looks like a wrong route.
+
+### Historical record — what the failure looked like before
 
 **`npm run spike` PART A passes. PART B fails on one check: `response carries a signature`.**
 
@@ -101,16 +155,19 @@ be implemented in S2.2 — treat it as confirmed, not suspected.
 
 ## 3. Still unanswered by 0G
 
+Only one left, and it is no longer on the critical path.
+
 1. **Is there a separate *encryption* key for the enclave?** `seal` needs one and
    `OG_ENCLAVE_SEAL_PUBKEY` is empty. The attestation value is a 20-byte address and **you cannot
    encrypt to an address**. Without this, S3.2 can seal to a test key but not to the real enclave.
-2. ~~**Does the response signature cover the request input?**~~ → **Half-answered by the SDK.** The
-   signed message is the broker's `text` field (§1). Whether `text` includes the prompt is answered by
-   *reading one real signature response* — no booth queue needed, as soon as a chatID resolves.
-   Fallback if it turns out to be output-only is unchanged: hash the sealed inputs into the prompt so
-   they echo back inside the signed completion.
-3. **How do we get the response signature for a call made through the Router?** (§1) — the one that
-   matters most now.
+2. ~~**Does the response signature cover the request input?**~~ ✅ **YES — settled empirically, 25 Jul.**
+   Two calls with different prompts produce different first halves of the signed text; the second half
+   is exactly `sha256(raw response)`. So *"this model saw THESE inputs and returned this verdict"* is
+   supported and **the pitch needs no rewording**. We cannot recompute the input half ourselves (the
+   broker normalises the request before hashing) — say "derived from the request", not "sha256 of our
+   bytes". The fallback of hashing inputs into the prompt is no longer needed.
+3. ~~**How do we get the response signature for a call made through the Router?**~~ ✅ **You don't.**
+   Structurally impossible — the Router is the broker's customer, not us. Go direct. See §1.
 
 ## 4. Facts that were expensive to find — don't rediscover them
 

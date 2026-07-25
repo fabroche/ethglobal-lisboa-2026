@@ -186,22 +186,55 @@ Contract, binding on every caller:
 The offline checks gate the design; the live check gates the product. **They fail separately and are
 reported separately**, so "0G is down at 23:00" is never confused with "our crypto is wrong".
 
-## 8. Open questions for the 0G booth (Friday 14:30)
+## 8. The wire format — ANSWERED (25 Jul, empirically)
 
-Ordered by how much damage a wrong assumption does.
+None of these needed a booth in the end. Querying the API and reading the chain answered all of them,
+which is the better outcome: every claim below is reproducible by `npm run spike`.
 
-1. **What exactly does the response signature cover?** Only the completion text, or the *request* too?
-   If the input is not covered, the attestation does not prove "this model saw *these* inputs" — and
-   that sentence is our pitch. Fallback if not covered: include a hash of the sealed inputs in the
-   prompt so it is echoed into the signed completion.
-2. **Is the EIP-191 prefix applied?** (`secp256k1-eth` vs `secp256k1-raw` — the spike answers this
-   empirically, so confirmation is a bonus, not a blocker.)
-3. **Where is the enclave signing pubkey served from,** and is it stable across requests or per
-   session? Per-session means `OG_ENCLAVE_PUBKEY` cannot be a static env var and §5 needs rework —
-   **this is the answer most likely to cost us hours**, ask it first.
-4. **Constrained/enum output** at the router (schema support)? — leak control, D9.
-5. The submission form asks for **contract addresses**; what is expected from a product with no
-   contract? (Track in `00-overview/05-open-decisions.md`.)
+### 8.1 What does the signature cover? ✅ **INPUT AND OUTPUT**
+
+The signed value is a raw string:
+
+```
+sha256(<request, normalised by the broker>) : sha256(<raw response bytes>)
+```
+
+- The **second** half is exactly `sha256` of the response bytes as received. We assert this.
+- The **first** half **changes when the prompt changes** — verified with two calls differing only in
+  their prompt. We cannot recompute it (the broker normalises the request before hashing), so state it
+  as *"derived from the request"*, never *"sha256 of our bytes"*.
+
+**Therefore "this model saw *these* inputs and returned this verdict" is supported.** The fallback of
+hashing sealed inputs into the prompt is unnecessary and has been dropped.
+
+### 8.2 Is the EIP-191 prefix applied? ✅ **YES** — `secp256k1-eth`
+
+The SDK verifies with `ethers.hashMessage`, which *is* the `\x19Ethereum Signed Message:\n` framing,
+and the broker reports `signing_algo: "ecdsa"`. Our `DEFAULT_SCHEME` was right.
+
+### 8.3 Where does the signing key come from, and is it stable? ✅ **On-chain, and it can move**
+
+It is `teeSignerAddress` from `getService(provider)` on the mainnet InferenceServing contract — **not**
+the provider address, which is only a billing identity and which is what every API surface hands you.
+It is stable across requests (so a static env var is fine, §5 stands), but it **changes if the enclave
+is redeployed**, so the spike re-checks it on-chain rather than trusting the file.
+
+### 8.4 Constrained/enum output? ✅ `response_format` is in `supported_parameters` (D9, belt #1)
+
+### 8.5 A new one, learned the hard way: the payload is a RAW STRING
+
+Canonical serialisation (§3) is correct for payloads *we* construct, and **wrong** for this one:
+canonicalising a string wraps it in JSON quotes, so the bytes stop being what the enclave hashed. It
+then fails as **`signer_mismatch`**, which is indistinguishable at a glance from a wrongly pinned key
+and sends you looking in the wrong place. Hence `encoding: "canonical" | "utf8"` on the envelope,
+defaulting to `canonical`, with a test asserting the real signature FAILS under `canonical`.
+
+### 8.6 Still open
+
+- **Is there a separate enclave ENCRYPTION key?** `seal` (M2) needs one; `teeSignerAddress` is a
+  20-byte address and you cannot encrypt to an address. Not on the attestation critical path.
+- The submission form asks for **contract addresses**; what is expected from a product with no
+  contract? (Track in `00-overview/05-open-decisions.md`.)
 
 **Follow-up for the integrator:** `@noble/curves` + `@noble/hashes` are currently *transitive*
 dependencies (via `@hashgraph/sdk`). They are in our trust path, so they should be promoted to direct

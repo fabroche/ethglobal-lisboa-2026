@@ -19,6 +19,13 @@ export const createRoomInputSchema = z.object({
   useCase: useCaseIdSchema.default("property"),
   /** Optional override; when omitted, labels come from the preset (`USE_CASES[useCase]`). */
   sideLabels: z.object({ A: z.string().min(1), B: z.string().min(1) }).optional(),
+  /** Context anchor (announcement URL or one line) — public to both sides, never terms. */
+  about: z
+    .string()
+    .trim()
+    .max(200, "keep the context to one line")
+    .optional()
+    .transform((v) => (v === "" ? undefined : v)),
   gapOptIn: z.boolean().default(false),
 });
 export type CreateRoomInput = z.input<typeof createRoomInputSchema>;

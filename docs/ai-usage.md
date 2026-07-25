@@ -40,6 +40,17 @@ disclosure.
   and serving HTTPS for WebCrypto instead of dodging the phone flow — `world-testing.md` §A.8);
   and grep-based investigation was rejected in favour of full-source reading, which upgraded a
   hypothesis into the proven failure line in IDKit's `bridge.ts`.
+- **Later the same night, the pattern repeated and humans kept catching it:** the AI's first root
+  cause for the World `invalid_action` failure (unregistered actions) was wrong — Dylan demanded
+  certainty instead of acceptance, and deeper probing of World's own endpoints and open-source
+  portal proved the real cause (the legacy v2 verify endpoint cannot see new-generation apps'
+  actions; the fix moved verification to v4). The AI also: silently failed a server restart and
+  reported stale-server results as a fix (caught by Dylan's retest, then fixed with build-ID
+  verification); corrupted `docs/backlog.md` with a careless scripted edit — 127 duplicated rows
+  committed and pushed — repaired forward after the humans stopped it; and shipped a create flow
+  where the creator's side was silently hardwired, which Dylan exposed in live testing (both
+  parties entered as "Buyer") and redesigned himself: role declaration at creation plus a context
+  anchor (the announcement link) — the AI implemented his design.
 
 ## Attribution table
 | File / Area | AI-assisted? | Notes |

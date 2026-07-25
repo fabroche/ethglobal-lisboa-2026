@@ -37,6 +37,9 @@ export const expiryMessageSchema = z.object({
   type: z.literal("expiry"),
   roomId: z.string().min(1),
   useCase: useCaseIdSchema.optional(),
+  /** Context anchor: the announcement (listing/offer URL or one line). Public-class metadata
+   * like `useCase` — names what the deal concerns, NEVER a side's terms. Optional. */
+  about: z.string().min(1).max(200).optional(),
   deadline: isoInstant,
   createdAt: isoInstant,
 });
@@ -108,6 +111,7 @@ export type TopicMessage = z.infer<typeof topicMessageSchema>;
 export function buildExpiryMessage(input: {
   roomId: string;
   useCase?: UseCaseId;
+  about?: string;
   deadline: string;
   createdAt: string;
 }): ExpiryMessage {

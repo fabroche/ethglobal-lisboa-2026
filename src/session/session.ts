@@ -74,6 +74,7 @@ export async function createRoom(
   const expiry = buildExpiryMessage({
     roomId,
     useCase: input.useCase,
+    ...(input.about ? { about: input.about } : {}),
     deadline: input.deadlineIso,
     createdAt: now.toISOString(),
   });

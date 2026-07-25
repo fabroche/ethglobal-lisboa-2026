@@ -197,6 +197,54 @@ describe("RoomQr · the creator's own link", () => {
   });
 });
 
+/**
+ * Role framing (the both-Buyers fix). Optional and additive: with no labels the
+ * component renders the positional layout every test above asserts.
+ */
+describe("RoomQr · role-framed layout", () => {
+  beforeEach(() => {
+    withClipboard();
+  });
+
+  const roleProps = {
+    roomId: "r_9f3a",
+    joinUrl: URL_,
+    ownUrl: OWN_,
+    theirLabel: "Seller",
+    yourLabel: "Buyer",
+    writeUrl: "/room/r_9f3a/write?side=B",
+  };
+
+  it("names whose door the QR is", () => {
+    render(<RoomQr {...roleProps} />);
+    expect(screen.getByText(/for the seller — have them scan this/i)).toBeInTheDocument();
+    expect(screen.getByText(/the qr and the link below are the same door/i)).toBeInTheDocument();
+  });
+
+  it("names the creator's role and offers the direct write CTA", () => {
+    render(<RoomQr {...roleProps} />);
+    expect(screen.getByText(/you — the buyer/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /write your position/i })).toHaveAttribute(
+      "href",
+      "/room/r_9f3a/write?side=B",
+    );
+  });
+
+  it("shows the context anchor, linkified when it is a URL", () => {
+    render(<RoomQr {...roleProps} about="https://listing.example/t3" />);
+    expect(screen.getByRole("link", { name: /listing.example/i })).toHaveAttribute(
+      "href",
+      "https://listing.example/t3",
+    );
+  });
+
+  it("keeps the positional wording when no roles are passed (back-compat)", () => {
+    render(<RoomQr roomId="r_9f3a" joinUrl={URL_} ownUrl={OWN_} />);
+    expect(screen.getByText(/share this link so the other side can join/i)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /write your position/i })).not.toBeInTheDocument();
+  });
+});
+
 describe("RoomQr · the localhost warning", () => {
   beforeEach(() => {
     withClipboard();

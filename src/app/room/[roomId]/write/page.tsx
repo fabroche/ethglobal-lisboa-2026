@@ -23,12 +23,14 @@ export default async function WritePage({
   const side = sideSchema.safeParse(sideParam);
 
   let useCase: UseCaseId = "property";
+  let about: string | undefined;
   let roomFound = false;
   try {
     const topicId = requireEnv("HEDERA_TOPIC_ID");
     const view = await createReader(hederaMirrorClient()).readSession(topicId, { roomId });
     roomFound = Boolean(view.expiry);
     useCase = view.expiry?.useCase ?? "property";
+    about = view.expiry?.about;
   } catch {
     // Env missing / Mirror lag — render the not-found guidance below.
   }
@@ -57,14 +59,28 @@ export default async function WritePage({
           may still be catching up; retry in a few seconds.
         </p>
       ) : (
-        <SealPositionForm
-          roomId={roomId}
-          side={side.data}
-          preset={USE_CASES[useCase]}
-          enclaveSealKey={env.OG_ENCLAVE_SEAL_PUBKEY ?? null}
-          worldAppId={env.WORLD_APP_ID ?? null}
-          submitCommitment={submitCommitmentAction}
-        />
+        <>
+          {about ? (
+            <p className="w-full max-w-md truncate text-xs text-primary" title={about}>
+              About:{" "}
+              {/^https?:\/\//.test(about) ? (
+                <a href={about} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                  {about}
+                </a>
+              ) : (
+                about
+              )}
+            </p>
+          ) : null}
+          <SealPositionForm
+            roomId={roomId}
+            side={side.data}
+            preset={USE_CASES[useCase]}
+            enclaveSealKey={env.OG_ENCLAVE_SEAL_PUBKEY ?? null}
+            worldAppId={env.WORLD_APP_ID ?? null}
+            submitCommitment={submitCommitmentAction}
+          />
+        </>
       )}
     </main>
   );

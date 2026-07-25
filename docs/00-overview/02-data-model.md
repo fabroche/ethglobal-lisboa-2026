@@ -55,6 +55,10 @@ The clock is public before any position exists, so the opener can't use the dead
 *kind* of deal they are negotiating — only their positions are sealed. It selects the guidance preset
 (side labels, placeholder, checklist) and the evaluator's prompt hint (M6). It never carries terms.
 
+`about` (optional, ≤200 chars) is the **context anchor**: the announcement both parties already share
+— a listing/offer URL or one line. Same public-metadata class as `useCase` (it's how the two parties
+found each other); the create form states explicitly that it must **never contain a side's terms**.
+
 ### 2. Commitment entry — one per side, **before the reveal**
 ```json
 { "v": 1, "type": "commitment", "roomId": "r_9f3a…", "side": "A", "commitment": "3b1f…c7", "worldNullifier": "0x8a…", "gapOptIn": true, "submittedAt": "2026-07-26T06:12:04Z" }

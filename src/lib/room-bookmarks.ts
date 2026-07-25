@@ -31,11 +31,29 @@ import { z } from "zod";
 /** Which seat you took. Mirrors `Side` in `src/session`, kept local to avoid a cycle. */
 export const bookmarkSideSchema = z.enum(["A", "B"]);
 
+/**
+ * The preset the room was opened with. Kept as the searchable LABEL (S3.11).
+ *
+ * ⚠️ THIS REVERSES A DECISION, deliberately. S3.9 excluded it because a list on a
+ * shared device would reveal what *kind* of deal someone is negotiating. That cost
+ * is unchanged — what changed is the argument: searching a list of UUIDs is
+ * useless, and the alternative was a free-text label, which invites "Lisbon flat
+ * 400k" and leaks far more. A closed set of three that the user already chose is
+ * the smaller of the two.
+ *
+ * Optional because only the room's CREATOR knows it client-side; someone arriving
+ * by join link does not, and we will not put it in that link (it gets forwarded).
+ */
+export const bookmarkLabelSchema = z.enum(["property", "job", "otc"]);
+export type BookmarkLabel = z.infer<typeof bookmarkLabelSchema>;
+
 export const roomBookmarkSchema = z.object({
   roomId: z.string().min(1),
   side: bookmarkSideSchema,
   /** ISO instant. Used for ordering and for expiry — never for anything else. */
   savedAt: z.string().datetime(),
+  /** The deal TYPE. Never a term, a figure or a name — the vocabulary makes that impossible. */
+  label: bookmarkLabelSchema.optional(),
 });
 
 export type RoomBookmark = z.infer<typeof roomBookmarkSchema>;
@@ -60,11 +78,17 @@ export const MAX_BOOKMARKS = 20;
  * this as best-effort convenience and never let a failure here block the flow.
  * Losing a bookmark is an inconvenience; failing to seal a position is not.
  */
+export interface RememberOptions {
+  /** Deal type, when the caller knows it. Omitted for someone arriving by link. */
+  label?: BookmarkLabel | undefined;
+  now?: Date | undefined;
+}
+
 export interface RoomBookmarkStore {
   /** Newest first, expired entries already dropped. */
   list(): Promise<RoomBookmark[]>;
   /** Idempotent: saving a room you already have refreshes it rather than duplicating. */
-  remember(roomId: string, side: RoomBookmark["side"], now?: Date): Promise<void>;
+  remember(roomId: string, side: RoomBookmark["side"], options?: RememberOptions): Promise<void>;
   forget(roomId: string): Promise<void>;
   clear(): Promise<void>;
 }
@@ -111,13 +135,49 @@ export function sortAndCap(bookmarks: RoomBookmark[], max = MAX_BOOKMARKS): Room
   return [...bookmarks].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, max);
 }
 
-/** Apply a `remember` to a list, without touching storage. */
+/**
+ * Apply a `remember` to a list, without touching storage.
+ *
+ * A known label is never overwritten by an unknown one: the creator learns it on
+ * their redirect, and a later visit by join link (which cannot know it) must not
+ * erase what we already had.
+ */
 export function upsert(
   bookmarks: RoomBookmark[],
   roomId: string,
   side: RoomBookmark["side"],
   now: Date,
+  label?: BookmarkLabel,
 ): RoomBookmark[] {
-  const next: RoomBookmark = { roomId, side, savedAt: now.toISOString() };
+  const previous = bookmarks.find((b) => b.roomId === roomId);
+  const resolved = label ?? previous?.label;
+  const next: RoomBookmark = {
+    roomId,
+    side,
+    savedAt: now.toISOString(),
+    ...(resolved ? { label: resolved } : {}),
+  };
   return sortAndCap(dedupe([next, ...bookmarks]));
+}
+
+/**
+ * Filter a list by free-text query and side.
+ *
+ * The query matches the room id and the label's display name — nothing else,
+ * because nothing else is stored. Pure so `/rooms` and any future server-backed
+ * list agree on what "matching" means.
+ */
+export function filterBookmarks(
+  bookmarks: RoomBookmark[],
+  query: string,
+  side: "all" | RoomBookmark["side"],
+  labels: Record<BookmarkLabel, { title: string }>,
+): RoomBookmark[] {
+  const needle = query.trim().toLowerCase();
+  return bookmarks.filter((bookmark) => {
+    if (side !== "all" && bookmark.side !== side) return false;
+    if (needle.length === 0) return true;
+    const title = bookmark.label ? labels[bookmark.label].title.toLowerCase() : "";
+    return bookmark.roomId.toLowerCase().includes(needle) || title.includes(needle);
+  });
 }

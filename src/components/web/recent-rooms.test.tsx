@@ -6,8 +6,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import type { RoomBookmark, RoomBookmarkStore } from "@/lib/room-bookmarks";
 import { RecentRooms } from "./recent-rooms";
 
-const bookmark = (roomId: string, side: "A" | "B" = "A", savedAt = "2026-07-25T18:00:00.000Z") =>
-  ({ roomId, side, savedAt }) satisfies RoomBookmark;
+const bookmark = (
+  roomId: string,
+  side: "A" | "B" = "A",
+  savedAt = "2026-07-25T18:00:00.000Z",
+  label?: "property" | "job" | "otc",
+) => ({ roomId, side, savedAt, ...(label ? { label } : {}) }) satisfies RoomBookmark;
 
 function fakeStore(initial: RoomBookmark[]): RoomBookmarkStore & { forgotten: string[] } {
   let items = [...initial];
@@ -74,13 +78,34 @@ describe("RecentRooms", () => {
     expect(screen.getByText(/positions are not kept here/i)).toBeInTheDocument();
   });
 
-  it("shows no deal metadata — no use case, no deadline", async () => {
-    const { container } = render(<RecentRooms store={fakeStore([bookmark("r_1")])} />);
-    await screen.findByRole("link", { name: "r_1" });
+  it("shows the deal TYPE when known, and says so under the list", async () => {
+    // S3.11 knowingly reversed S3.9 here: the type is shown because a list of
+    // UUIDs is unsearchable. The old version of this test asserted the opposite
+    // and passed only because its fixture had no label — a test contradicting the
+    // live policy is worse than no test.
+    render(<RecentRooms store={fakeStore([bookmark("r_1", "A", undefined, "property")])} />);
 
-    // The privacy line, asserted on rendered output: a list on someone's laptop
-    // must not reveal what KIND of deal they are negotiating.
-    expect(container.textContent).not.toMatch(/property|job|otc|deadline/i);
+    expect(await screen.findByRole("link", { name: /property sale/i })).toBeInTheDocument();
+    // And the consequence is stated where the user can act on it.
+    expect(screen.getByText(/use forget on a shared device/i)).toBeInTheDocument();
+  });
+
+  it("shows NO terms, figures or dates — only the type", async () => {
+    // The line that did NOT move: the vocabulary is three fixed values, so no
+    // price, deadline or counterparty name can reach this list even by accident.
+    const { container } = render(
+      <RecentRooms store={fakeStore([bookmark("r_1", "A", undefined, "property")])} />,
+    );
+    await screen.findByRole("link", { name: /property sale/i });
+
+    expect(container.textContent).not.toMatch(/€|\d{3},\d{3}|deadline|CPCV/i);
+  });
+
+  it("falls back to the room id when the label is unknown", async () => {
+    // Someone arriving by join link cannot know the type — the link deliberately
+    // does not carry it.
+    render(<RecentRooms store={fakeStore([bookmark("r_nolabel")])} />);
+    expect(await screen.findByRole("link", { name: "r_nolabel" })).toBeInTheDocument();
   });
 
   it("survives a store that rejects, rather than breaking the landing page", async () => {
@@ -111,5 +136,76 @@ describe("RecentRooms · the port is what makes a database a later decision", ()
 
     expect(await screen.findByRole("link", { name: "r_from_server" })).toBeInTheDocument();
     expect(serverish.list).toHaveBeenCalled();
+  });
+});
+
+/**
+ * S3.11 · search and filter. The label is what makes this possible: nobody
+ * recognises a room by its UUID.
+ */
+describe("RecentRooms · search and filter", () => {
+  const many = [
+    bookmark("r_flat", "A", "2026-07-25T18:00:00.000Z", "property"),
+    bookmark("r_hire", "B", "2026-07-24T18:00:00.000Z", "job"),
+    bookmark("r_block", "A", "2026-07-23T18:00:00.000Z", "otc"),
+  ];
+
+  it("hides the controls unless asked, so the landing page stays a pitch", async () => {
+    render(<RecentRooms store={fakeStore(many)} />);
+    await screen.findByRole("link", { name: /property sale/i });
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+
+  it("searches by deal type", async () => {
+    render(<RecentRooms store={fakeStore(many)} searchable />);
+    await screen.findByRole("link", { name: /property sale/i });
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "job" } });
+
+    expect(screen.getByRole("link", { name: /job offer/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /property sale/i })).not.toBeInTheDocument();
+  });
+
+  it("searches by room id, for when you have one pasted", async () => {
+    render(<RecentRooms store={fakeStore(many)} searchable />);
+    await screen.findByRole("link", { name: /property sale/i });
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "r_block" } });
+
+    expect(screen.getByRole("link", { name: /otc trade/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /job offer/i })).not.toBeInTheDocument();
+  });
+
+  it("filters by side", async () => {
+    render(<RecentRooms store={fakeStore(many)} searchable />);
+    await screen.findByRole("link", { name: /property sale/i });
+
+    fireEvent.click(screen.getByRole("button", { name: /^side b$/i }));
+
+    expect(screen.getByRole("link", { name: /job offer/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /property sale/i })).not.toBeInTheDocument();
+  });
+
+  it("says so when nothing matches, instead of looking broken", async () => {
+    render(<RecentRooms store={fakeStore(many)} searchable />);
+    await screen.findByRole("link", { name: /property sale/i });
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "zzz" } });
+
+    expect(screen.getByRole("status")).toHaveTextContent(/no rooms match/i);
+  });
+
+  it("truncates to the limit and offers the full list", async () => {
+    render(<RecentRooms store={fakeStore(many)} limit={1} moreHref="/rooms" />);
+
+    await screen.findByRole("link", { name: /property sale/i });
+    expect(screen.queryByRole("link", { name: /job offer/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /see all 3 rooms/i })).toHaveAttribute("href", "/rooms");
+  });
+
+  it("does not offer the full list when nothing is hidden", async () => {
+    render(<RecentRooms store={fakeStore(many)} limit={10} moreHref="/rooms" />);
+    await screen.findByRole("link", { name: /property sale/i });
+    expect(screen.queryByRole("link", { name: /see all/i })).not.toBeInTheDocument();
   });
 });

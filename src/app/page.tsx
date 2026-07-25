@@ -23,8 +23,9 @@ export default function Home() {
       </Link>
 
       {/* Renders nothing until this device has a room, so a first-time visitor
-          sees the pitch and one button — not an empty list (S3.9). */}
-      <RecentRooms className="mt-6 text-left" />
+          sees the pitch and one button — not an empty list (S3.9). Truncated here:
+          the landing page is the pitch, and the full searchable list is /rooms. */}
+      <RecentRooms limit={3} moreHref="/rooms" className="mt-6 text-left" />
     </main>
   );
 }

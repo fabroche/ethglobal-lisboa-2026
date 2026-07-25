@@ -13,6 +13,7 @@ import {
   roomBookmarkSchema,
   sortAndCap,
   upsert,
+  filterBookmarks,
 } from "./room-bookmarks";
 
 const NOW = new Date("2026-07-25T18:00:00.000Z");
@@ -149,5 +150,87 @@ describe("upsert", () => {
   it("records the side you actually arrived as", () => {
     const result = upsert([bookmark("r_1", daysAgo(2), "A")], "r_1", "B", NOW);
     expect(result[0]!.side).toBe("B");
+  });
+});
+
+/**
+ * S3.11 · the label and the filter. The label is a CLOSED vocabulary on purpose:
+ * free text would invite "Lisbon flat 400k", which leaks far more than a type.
+ */
+describe("the label (S3.11)", () => {
+  it("accepts only the three presets", () => {
+    for (const label of ["property", "job", "otc"]) {
+      expect(roomBookmarkSchema.safeParse({ ...bookmark("r_1"), label }).success).toBe(true);
+    }
+  });
+
+  it("rejects free text, so no figure or name can be stored as a label", () => {
+    // This is the whole reason the label is an enum and not a string.
+    for (const label of ["Lisbon flat 400k", "Acme offer", "", "PROPERTY", "divorce"]) {
+      expect(roomBookmarkSchema.safeParse({ ...bookmark("r_1"), label }).success).toBe(false);
+    }
+  });
+
+  it("is optional, since only the creator knows it", () => {
+    expect(roomBookmarkSchema.safeParse(bookmark("r_1")).success).toBe(true);
+  });
+});
+
+describe("upsert · the label survives a later visit that cannot know it", () => {
+  it("keeps a known label when re-remembered without one", () => {
+    // The creator learns the type on their redirect; a later visit by join link
+    // has no way to know it and must not erase what we already had.
+    const withLabel = [{ ...bookmark("r_1", daysAgo(2)), label: "property" as const }];
+    const result = upsert(withLabel, "r_1", "A", NOW);
+
+    expect(result[0]!.label).toBe("property");
+  });
+
+  it("lets an explicit label overwrite an older one", () => {
+    const withLabel = [{ ...bookmark("r_1", daysAgo(2)), label: "property" as const }];
+    const result = upsert(withLabel, "r_1", "A", NOW, "otc");
+
+    expect(result[0]!.label).toBe("otc");
+  });
+
+  it("stores no label key at all when none is known", () => {
+    // Rather than `label: undefined`, which would survive JSON round-trips as a key.
+    expect(upsert([], "r_1", "A", NOW)[0]).not.toHaveProperty("label");
+  });
+});
+
+describe("filterBookmarks", () => {
+  const LABELS = {
+    property: { title: "Property sale" },
+    job: { title: "Job offer" },
+    otc: { title: "OTC trade" },
+  };
+  const items = [
+    { ...bookmark("r_flat", daysAgo(1), "A"), label: "property" as const },
+    { ...bookmark("r_hire", daysAgo(2), "B"), label: "job" as const },
+    { ...bookmark("r_plain", daysAgo(3), "A") },
+  ];
+
+  it("returns everything for an empty query", () => {
+    expect(filterBookmarks(items, "", "all", LABELS)).toHaveLength(3);
+    expect(filterBookmarks(items, "   ", "all", LABELS)).toHaveLength(3);
+  });
+
+  it("matches the label's display name, case-insensitively", () => {
+    expect(filterBookmarks(items, "property", "all", LABELS).map((b) => b.roomId)).toEqual(["r_flat"]);
+    expect(filterBookmarks(items, "JOB", "all", LABELS).map((b) => b.roomId)).toEqual(["r_hire"]);
+  });
+
+  it("matches the room id, for when you have one pasted", () => {
+    expect(filterBookmarks(items, "r_plain", "all", LABELS).map((b) => b.roomId)).toEqual(["r_plain"]);
+  });
+
+  it("filters by side, and combines with the query", () => {
+    expect(filterBookmarks(items, "", "A", LABELS).map((b) => b.roomId)).toEqual(["r_flat", "r_plain"]);
+    expect(filterBookmarks(items, "property", "B", LABELS)).toEqual([]);
+  });
+
+  it("does not crash on an unlabelled room", () => {
+    expect(filterBookmarks(items, "sale", "all", LABELS).map((b) => b.roomId)).toEqual(["r_flat"]);
   });
 });

@@ -47,7 +47,22 @@ describe("CreateRoomForm", () => {
     fireEvent.click(screen.getByRole("button", { name: /open room/i }));
 
     await waitFor(() => expect(createRoom).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/room/r_9f3a/share"));
+    // `?uc=` rides along so the share screen can label the bookmark (S3.11).
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/room/r_9f3a/share?uc=property"));
+  });
+
+  it("carries the picked use case on the redirect, and only there", async () => {
+    // The creator's own redirect gets the type; the join link they hand over does
+    // not, so forwarding it does not forward what kind of deal this is.
+    const createRoom = ok();
+    render(<CreateRoomForm createRoom={createRoom} />);
+    fireEvent.click(screen.getByRole("radio", { name: /otc trade/i }));
+    fireEvent.change(screen.getByLabelText(/deadline/i), { target: { value: "2099-01-01T00:00" } });
+    fireEvent.click(screen.getByRole("button", { name: /open room/i }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/room/r_9f3a/share?uc=otc"));
+    // The shared link is built server-side from the id + side only.
+    expect(createRoom.mock.results[0]!.value).resolves.not.toHaveProperty("useCase");
   });
 
   it("stays disabled after success so a second room cannot be opened by accident", async () => {

@@ -77,7 +77,10 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
       // and no way back to a room that already exists on the topic. Pushing to
       // /share gives the room a real address — which also makes the browser's own
       // history a free recovery path.
-      router.push(`/room/${result.roomId}/share`);
+      // `uc` rides along so the share screen can label the bookmark (S3.11). It is
+      // on the CREATOR's own redirect only — the join link they hand over carries
+      // just the side, so the deal type is not forwarded with it.
+      router.push(`/room/${result.roomId}/share?uc=${useCase}`);
       // `pending` deliberately stays true: navigation is in flight, and
       // re-enabling the button here would invite a second room being created —
       // which costs a Hedera message and leaves an orphan on the topic.

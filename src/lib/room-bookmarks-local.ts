@@ -66,9 +66,10 @@ export function createLocalBookmarkStore(): RoomBookmarkStore {
       return decodeBookmarks(readRaw(), new Date());
     },
 
-    async remember(roomId, side, now = new Date()): Promise<void> {
+    async remember(roomId, side, options): Promise<void> {
+      const now = options?.now ?? new Date();
       const current = decodeBookmarks(readRaw(), now);
-      writeRaw(upsert(current, roomId, side, now));
+      writeRaw(upsert(current, roomId, side, now, options?.label));
     },
 
     async forget(roomId): Promise<void> {

@@ -35,6 +35,25 @@ describe("buildExpiryMessage", () => {
       buildExpiryMessage({ roomId: ROOM, deadline: "next friday", createdAt: "2026-07-26T06:00:00Z" }),
     ).toThrow();
   });
+
+  it("records the use case when given, and rejects one outside the D16 enum", () => {
+    const msg = buildExpiryMessage({
+      roomId: ROOM,
+      useCase: "property",
+      deadline: "2026-07-26T09:00:00Z",
+      createdAt: "2026-07-26T06:00:00Z",
+    });
+    expect(msg.useCase).toBe("property");
+    expect(() =>
+      buildExpiryMessage({
+        roomId: ROOM,
+        // @ts-expect-error — "poker" is not a use case
+        useCase: "poker",
+        deadline: "2026-07-26T09:00:00Z",
+        createdAt: "2026-07-26T06:00:00Z",
+      }),
+    ).toThrow();
+  });
 });
 
 describe("buildCommitmentMessage", () => {
@@ -85,6 +104,7 @@ describe("parseTopicMessage", () => {
       deadline: "2026-07-26T09:00:00Z",
       createdAt: "2026-07-26T06:00:00Z",
     };
+    // No `useCase` — a pre-D16 room already on the live topic must keep parsing.
     expect(parseTopicMessage(raw)).toEqual(raw);
   });
 

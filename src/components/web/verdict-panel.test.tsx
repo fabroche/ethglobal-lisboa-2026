@@ -21,8 +21,13 @@ describe("VerdictPanel", () => {
     expect(screen.getByText(/no deal/i)).toBeInTheDocument();
   });
 
-  it("shows a gap dimension when both sides opted in", () => {
-    render(<VerdictPanel verdict="gap:compensation" />);
-    expect(screen.getByText(/blocked on compensation/i)).toBeInTheDocument();
+  it("shows the gap count — never a dimension — when both sides opted in (D9 amended)", () => {
+    render(<VerdictPanel verdict="gap:single" />);
+    expect(screen.getByText(/one issue blocks/i)).toBeInTheDocument();
+  });
+
+  it("shows gap:multiple as several issues", () => {
+    render(<VerdictPanel verdict="gap:multiple" />);
+    expect(screen.getByText(/several issues block/i)).toBeInTheDocument();
   });
 });

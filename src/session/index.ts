@@ -22,6 +22,15 @@ export {
 } from "./messages";
 
 export {
+  useCaseIdSchema,
+  USE_CASES,
+  USE_CASE_IDS,
+  getUseCase,
+  type UseCaseId,
+  type UseCasePreset,
+} from "./usecases";
+
+export {
   createRoomInputSchema,
   assertFutureDeadline,
   generateRoomId,

@@ -25,8 +25,8 @@ Side A / Side B (two browsers) · the module libs behind Server Actions (M1–M4
 ## 3. Functional requirements (RF)
 | ID | Requirement | Priority |
 |----|-------------|:--------:|
-| RF-M8-001 | **Create screen:** set a deadline, create the room (M1), show a scannable QR + copyable link | Must |
-| RF-M8-002 | **Write+seal screen:** write a position, run Selfie Check (M3), seal in-browser (M2), submit the commitment (M4) | Must |
+| RF-M8-001 | **Create screen:** pick a **use case** (3-card picker, D16 — sets side labels + `useCase`), set a deadline, create the room (M1), show a scannable QR + copyable link | Must |
+| RF-M8-002 | **Write+seal screen:** write a free-form position (preset placeholder + **soft, non-blocking checklist**, D16/DA8), run Selfie Check (M3), seal in-browser (M2), submit the commitment (M4) | Must |
 | RF-M8-003 | **Verdict screen:** show a live countdown to the deadline, then the one-line verdict from Mirror Node (M4) | Must |
 | RF-M8-004 | Plaintext **never** leaves the browser (uses M2's client seal) | Must |
 | RF-M8-005 | Show the **identical** verdict to both sides | Must |
@@ -93,7 +93,9 @@ sequenceDiagram
 |-----------|:-----:|:--------:|--------|
 | `create-room-form` | ✅ | ✅ | 🟢 (S3.1) |
 | `room-qr` | ✅ | ✅ | 🟢 (S3.1 — scannable QR via `react-qr-code` + copy) |
-| `seal-position-form` | ⬜ | ⬜ | 🟧 |
+| `seal-position-form` | ⬜ | ⬜ | 🟧 (S3.2 — preset placeholder + checklist, D16) |
+| `use-case-picker` | ✅ | ✅ | 🟢 (S3.5 — 3 cards, radio-group semantics, sets labels + `useCase`) |
+| `position-checklist` | ⬜ | ⬜ | 🟧 (S3.2 — static guidance, never blocks sealing; heuristics = DA8 stretch) |
 | `selfie-check-gate` | ⬜ | ⬜ | 🟧 |
 | `countdown` | ✅ | ✅ | 🟢 (S3.3) |
 | `verdict-panel` | ✅ | ✅ | 🟢 (S3.3) |
@@ -110,6 +112,14 @@ mobile-first (full-width, ≥44px targets, theme-aware):
 
 **Deferred:** arming the scheduled reveal in the action (M5 `armReveal` — needs the reveal tx from
 M6/M7). Screen S3.2 (write+seal) remains (blocked on M2 seal).
+
+### Implementation notes (S3.5 — use-case picker)
+- `src/components/web/use-case-picker.tsx` — three preset cards (`property` / `job` / `otc`) fed
+  from `src/session/usecases.ts` (D16); `role="radiogroup"`, `type="button"` (a pick never submits),
+  ≥44px targets. Story + RTL.
+- `create-room-form` defaults to `property` and passes the pick to `createRoomAction`, which
+  Zod-parses it and records it on the expiry message (M1). The write screen's preset placeholder +
+  `position-checklist` remain **S3.2**.
 
 ### Implementation notes (S3.3 — verdict screen)
 `/room/[roomId]/verdict` reads the room's expiry + verdict from Mirror Node (M4 `registry.read`) at

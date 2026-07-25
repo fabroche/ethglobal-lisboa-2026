@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { useCaseIdSchema, type UseCaseId } from "./usecases";
 
 /**
  * Canonical HCS topic message schemas for Seam (D4/D11).
@@ -28,11 +29,14 @@ const sha256Hex = z
   .string()
   .regex(/^[0-9a-f]{64}$/, "expected sha256 as 64 lowercase hex characters");
 
-/** Expiry — published BEFORE anyone writes a word, so the clock is public first (D4/D6). */
+/** Expiry — published BEFORE anyone writes a word, so the clock is public first (D4/D6).
+ * `useCase` (D16) is public metadata naming the deal *type*, never the terms; it is optional
+ * so pre-D16 expiry messages already on the live topic still parse (missing ⇒ legacy room). */
 export const expiryMessageSchema = z.object({
   v: z.literal(TOPIC_MESSAGE_VERSION),
   type: z.literal("expiry"),
   roomId: z.string().min(1),
+  useCase: useCaseIdSchema.optional(),
   deadline: isoInstant,
   createdAt: isoInstant,
 });
@@ -51,16 +55,19 @@ export const commitmentMessageSchema = z.object({
 export type CommitmentMessage = z.infer<typeof commitmentMessageSchema>;
 
 /**
- * Verdict enum — the ONLY permitted verdict values (D9). The enclave never emits free text
- * (free text leaks); `gap:*` values are only published if both sides opted in. This is the
- * canonical list; the evaluator (M6) produces one of these and the registry writes it.
+ * Verdict enum — the ONLY permitted verdict values (D9 as amended). The enclave never emits
+ * free text (free text leaks); `gap:*` values are only published if both sides opted in, and
+ * reveal HOW MANY dimensions block — never which. The dimensions (compensation/timing/scope)
+ * exist only inside the enclave as the counting basis: `gap:single` = exactly one blocks (a
+ * deal is one issue away), `gap:multiple` = several block or they're too entangled to
+ * attribute to one. This is the canonical list; the evaluator (M6) produces one of these and
+ * the registry writes it.
  */
 export const verdictSchema = z.enum([
   "workable",
   "not_workable",
-  "gap:compensation",
-  "gap:timing",
-  "gap:scope",
+  "gap:single",
+  "gap:multiple",
 ]);
 export type Verdict = z.infer<typeof verdictSchema>;
 
@@ -95,6 +102,7 @@ export type TopicMessage = z.infer<typeof topicMessageSchema>;
  */
 export function buildExpiryMessage(input: {
   roomId: string;
+  useCase?: UseCaseId;
   deadline: string;
   createdAt: string;
 }): ExpiryMessage {

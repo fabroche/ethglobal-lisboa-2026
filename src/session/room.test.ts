@@ -7,10 +7,17 @@ import {
 } from "./room";
 
 describe("createRoomInputSchema", () => {
-  it("applies defaults for sideLabels and gapOptIn", () => {
+  it("applies defaults for useCase and gapOptIn; sideLabels stays unset (preset resolves it, D16)", () => {
     const parsed = createRoomInputSchema.parse({ deadlineIso: "2026-07-26T09:00:00Z" });
-    expect(parsed.sideLabels).toEqual({ A: "Side A", B: "Side B" });
+    expect(parsed.useCase).toBe("property");
+    expect(parsed.sideLabels).toBeUndefined();
     expect(parsed.gapOptIn).toBe(false);
+  });
+
+  it("rejects a use case outside the D16 enum", () => {
+    expect(() =>
+      createRoomInputSchema.parse({ deadlineIso: "2026-07-26T09:00:00Z", useCase: "poker" }),
+    ).toThrow();
   });
 
   it("rejects a non-ISO deadline", () => {

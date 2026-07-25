@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { sideSchema, type Side } from "./messages";
+import { useCaseIdSchema } from "./usecases";
 
 /**
  * Room domain: validate the create-room input, validate the deadline is in the future,
@@ -14,9 +15,10 @@ const ROOM_ID_PREFIX = "r_";
  * the current time, which callers inject. */
 export const createRoomInputSchema = z.object({
   deadlineIso: z.string().datetime(),
-  sideLabels: z
-    .object({ A: z.string().min(1), B: z.string().min(1) })
-    .default({ A: "Side A", B: "Side B" }),
+  /** D16 preset id; defaults to the primary demo case. Recorded on the expiry message. */
+  useCase: useCaseIdSchema.default("property"),
+  /** Optional override; when omitted, labels come from the preset (`USE_CASES[useCase]`). */
+  sideLabels: z.object({ A: z.string().min(1), B: z.string().min(1) }).optional(),
   gapOptIn: z.boolean().default(false),
 });
 export type CreateRoomInput = z.input<typeof createRoomInputSchema>;

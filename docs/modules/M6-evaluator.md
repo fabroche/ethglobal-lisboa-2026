@@ -28,10 +28,11 @@ runs the pinned model, signs the result) · the two sides (their opt-in consent 
 |----|-------------|:--------:|
 | RF-M6-001 | Call the 0G router (`OG_ROUTER_URL`) with the **pinned model** (`OG_MODEL`) at **temperature 0** | Must |
 | RF-M6-002 | Pass both sealed ciphertexts; decryption happens **only inside the enclave** | Must |
-| RF-M6-003 | Constrain output to the enum: `workable` \| `not_workable` (+ opt-in `gap:compensation\|timing\|scope`) | Must |
+| RF-M6-003 | Constrain output to the enum: `workable` \| `not_workable` (+ opt-in `gap:single`\|`gap:multiple` — how many dimensions block, never which; D9 as amended) | Must |
 | RF-M6-004 | Emit `gap:*` **only if both sides opted in**; otherwise the bare verdict | Must |
 | RF-M6-005 | Record the model hash alongside the verdict for reproducibility | Must |
 | RF-M6-006 | Validate the enclave response shape with Zod (D11); reject anything off-enum | Must |
+| RF-M6-007 | Prepend the room's **use-case prompt hint** (`usecases[useCase].evaluatorHint`, D16 — shared source `src/session/usecases.ts`, M1) so the model knows which dimensions matter; hint names dimensions, never terms; output stays enum-only | Should |
 
 ## 4. Non-functional requirements (RNF)
 | ID | Requirement | Metric / criterion |
@@ -77,7 +78,7 @@ sequenceDiagram
 ## 8. Endpoints / Server Actions / Integrations / Jobs
 | Type | Name | Input | Output | Auth | Notes |
 |------|------|-------|--------|------|-------|
-| Integration | `evaluate` | `{ ciphertextA, ciphertextB, consent }` | `{ verdict, modelHash, attestation }` | `OG_KEY` | pinned model, temp 0, enum schema |
+| Integration | `evaluate` | `{ ciphertextA, ciphertextB, useCase, consent }` | `{ verdict, modelHash, attestation }` | `OG_KEY` | pinned model, temp 0, enum schema, use-case hint (RF-M6-007) |
 
 ## 9. UI components (Definition of Done)
 | Component | Story | RTL test | Status |
@@ -96,4 +97,6 @@ _See `_templates/module.md` §11._ Plus: consent/gap logic and enum-validation u
 - Is structured/enum output natively supported by the 0G router, or enforced by prompt + validation?
   **Confirm at the 0G booth** (14:30).
 - The model can be wrong — it's a judgement. Framing: Seam says whether it's *worth a conversation*,
-  nobody signs on the output (see `transversal/security-and-privacy.md`).
+  nobody signs on the output (see `transversal/security-and-privacy.md`). This includes the
+  single-vs-multiple attribution: the semantics define the right answer (count of blocking internal
+  dimensions), the model can still misjudge the count on entangled positions.

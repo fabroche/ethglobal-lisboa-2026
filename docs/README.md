@@ -1,8 +1,8 @@
-# Seam — Technical Documentation
+# Overlap — Technical Documentation
 
 **ETHGlobal Lisbon 2026** · submission deadline **Sunday 26 July, 09:00 WEST**.
 
-Pre-implementation design documentation for **Seam**: sealed two-party negotiation.
+Pre-implementation design documentation for **Overlap**: sealed two-party negotiation.
 Two sides write their negotiating position in plain language; a model inside a **0G TEE
 (sealed inference)** reads both and returns **one enum verdict to both** — `workable` /
 `not_workable` (optionally whether **one issue or several** block — `gap:single` / `gap:multiple`,

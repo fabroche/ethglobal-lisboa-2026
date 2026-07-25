@@ -13,7 +13,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 MINUTES="${1:-180}"
-LOG="${TMPDIR:-/tmp}/seam-tunnel.log"
+LOG="${TMPDIR:-/tmp}/overlap-tunnel.log"
 
 # 1. Tunnel (reuse if already up)
 TUNNEL=$(grep -o "https://[a-z0-9-]*\.trycloudflare\.com" "$LOG" 2>/dev/null | head -1 || true)
@@ -32,7 +32,7 @@ echo "▶ APP_URL updated"
 # 3. Restart the production server (env is read at boot; no rebuild needed)
 npx --yes kill-port 3000 >/dev/null 2>&1 || true
 sleep 1
-nohup npx next start -p 3000 > "${TMPDIR:-/tmp}/seam-next.log" 2>&1 &
+nohup npx next start -p 3000 > "${TMPDIR:-/tmp}/overlap-next.log" 2>&1 &
 sleep 4
 echo "▶ server restarted on :3000"
 

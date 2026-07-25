@@ -68,7 +68,7 @@ export async function revealRoom(roomId: string): Promise<RevealResult> {
       sealedPayloads: getSealedPayloads,
 
       // ⚠️ THE HONEST SEAM (D-M6-2). `unseal-testkit` is named "testkit" because the spec
-      // says Seam never decrypts — decryption belongs inside the TEE. 0G's router is a chat
+      // says Overlap never decrypts — decryption belongs inside the TEE. 0G's router is a chat
       // API, so until an enclave encryption key exists this is where it happens instead:
       // on our server, in memory, for the moment before the enclave call.
       //

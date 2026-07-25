@@ -16,7 +16,7 @@ function fakeRegistry(): RegistryPort & { calls: ExpiryMessage[] } {
 function deps(over: Partial<CreateRoomDeps> = {}): CreateRoomDeps {
   return {
     registry: fakeRegistry(),
-    baseUrl: "https://seam.app",
+    baseUrl: "https://overlap.app",
     now: () => new Date("2026-07-26T06:00:00Z"),
     newRoomId: () => "9f3a",
     ...over,

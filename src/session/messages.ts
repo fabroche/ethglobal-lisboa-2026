@@ -2,7 +2,7 @@ import { z } from "zod";
 import { useCaseIdSchema, type UseCaseId } from "./usecases";
 
 /**
- * Canonical HCS topic message schemas for Seam (D4/D11).
+ * Canonical HCS topic message schemas for Overlap (D4/D11).
  *
  * Storage IS the Hedera Consensus Service topic — an append-only, consensus-ordered
  * log with no database. Three message types share one topic per session; consumers

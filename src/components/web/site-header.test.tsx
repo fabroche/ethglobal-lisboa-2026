@@ -12,7 +12,7 @@ describe("SiteHeader", () => {
   it("gives every page a way home", () => {
     // The reason this component exists: all five pages were dead ends.
     render(<SiteHeader />);
-    expect(screen.getByRole("link", { name: /seam/i })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /overlap/i })).toHaveAttribute("href", "/");
   });
 
   it("carries the theme toggle, which had no UI before", () => {

@@ -1,7 +1,7 @@
 /**
  * Signing helpers for the S0.3 spike and the unit tests.
  *
- * NOT A PRODUCTION PATH. Seam never signs anything — the enclave does. This
+ * NOT A PRODUCTION PATH. Overlap never signs anything — the enclave does. This
  * exists so the offline self-test can prove `verifyEnvelope` is correct without
  * 0G being reachable, and so the spike and the tests share one implementation
  * instead of drifting apart.

@@ -25,8 +25,8 @@ Every external response is validated with **Zod** (D11).
 flowchart TB
   A[Side A]:::human
   B[Side B]:::human
-  subgraph Seam
-    APP[Seam Next.js app]
+  subgraph Overlap
+    APP[Overlap Next.js app]
   end
   OG[(0G TEE\nsealed inference)]:::ext
   HED[(Hedera\nHCS · Schedule · Mirror)]:::ext
@@ -54,7 +54,7 @@ flowchart LR
     SEAL[seal — hybrid encrypt\nto enclave key\n+ deterministic commitment]
     UI[web UI: create · write+seal · verdict]
   end
-  subgraph Server[Seam app / Next.js]
+  subgraph Server[Overlap app / Next.js]
     ACT[Server Actions + Zod]
     SESSION[session]
     REG[registry write/read]
@@ -95,7 +95,7 @@ flowchart LR
 sequenceDiagram
     actor A as Side A
     actor B as Side B
-    participant APP as Seam app
+    participant APP as Overlap app
     participant H as Hedera
     participant W as World
     participant OG as 0G enclave

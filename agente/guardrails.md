@@ -14,9 +14,9 @@
   The keys we hold are **our own operating accounts** and nothing else:
   **(1)** our Hedera testnet account (writes to the topic), **(2)** our 0G mainnet wallet
   (`OG_WALLET_PRIVATE_KEY` — pays for inference and signs each broker request, added 25 Jul).
-  One wallet serves every user and every room, like an OpenAI key on a server. **Seam users have no
+  One wallet serves every user and every room, like an OpenAI key on a server. **Overlap users have no
   wallet at all**: they type text and read one line. They never sign anything, never pay the enclave,
-  and never connect a wallet — Seam is not a dApp. If a design ever needs a key from a user, the design
+  and never connect a wallet — Overlap is not a dApp. If a design ever needs a key from a user, the design
   is wrong.
 - ❌ **The enclave never emits free text.** Enum verdicts only (`workable` / `not_workable` / opt-in `gap:*`).
   Free text leaks.

@@ -161,7 +161,7 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
           className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <span className="text-xs font-normal text-muted-foreground">
-          Visible to both sides. Context only — <span className="font-semibold">never your terms.</span>
+          Visible to both sides. Context only. <span className="font-semibold">Never your terms.</span>
         </span>
       </label>
 

@@ -9,7 +9,7 @@ Status: 🟧 draft · Last updated: 2026-07-24 · Implements `modules/M8-web.md`
 
 ## 1. The one-paragraph product
 
-Two sides need to agree on terms and neither wants to name theirs first. Seam opens a **sealed room**:
+Two sides need to agree on terms and neither wants to name theirs first. Overlap opens a **sealed room**:
 Hedera publishes the deadline *before anyone writes*, each side writes a position in plain language
 and **encrypts it in their own browser** to a 0G enclave's public key, World grants **one seat per
 side** so nobody can run the room twenty times to triangulate, and at the deadline a model **inside
@@ -117,7 +117,7 @@ boxes is the **real UI copy proposal** — argue with it here, not in the JSX.
 ```
 MOBILE 390                                DESKTOP ≥1024
 ┌────────────────────────────┐   ┌──────────────────────────────────────────┐
-│ ◐ Seam                 [☾] │   │ ◐ Seam            How it works · Proof [☾]│
+│ ◐ Overlap                 [☾] │   │ ◐ Overlap            How it works · Proof [☾]│
 ├────────────────────────────┤   ├──────────────────────────────────────────┤
 │                            │   │                                          │
 │  Both sides name their     │   │   Both sides name their terms.           │
@@ -162,7 +162,7 @@ is created in place, so the opener never loses the QR by pressing back.
 
 ```
 ┌────────────────────────────┐
-│ ← Seam                 [☾] │
+│ ← Overlap                 [☾] │
 ├────────────────────────────┤
 │  Open a room               │
 │  The deadline is published │
@@ -507,7 +507,7 @@ Variants:
 
 ### S4 · Proof — `/r/:roomId/proof`
 
-**The judge screen.** Everything Seam holds about this room, rendered from the HCS topic, with the
+**The judge screen.** Everything Overlap holds about this room, rendered from the HCS topic, with the
 hashes recomputed in the browser.
 
 ```
@@ -651,7 +651,7 @@ mode we can demonstrate.**
 sequenceDiagram
   actor J1 as Judge 1 (laptop — the company)
   actor J2 as Judge 2 (phone — the candidate)
-  participant S as Seam
+  participant S as Overlap
 
   J1->>S: S1 · open a room, reveal in 2 min
   S-->>J1: S1-b · QR + "deadline locked, seq #1"

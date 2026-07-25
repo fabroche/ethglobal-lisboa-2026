@@ -19,7 +19,7 @@ registry writes the verdict -> bytes from registry/canonical (published to the H
 ```
 
 If those two disagree by one byte, **what was signed is not what was published** — and "the attested
-verdict is the one on the topic" is the entire claim Seam is selling. Worse, it fails silently: no
+verdict is the one on the topic" is the entire claim Overlap is selling. Worse, it fails silently: no
 error, no crash, just a signature that does not correspond to the published record. Nobody notices
 until a judge checks.
 

@@ -19,7 +19,7 @@ export interface SelfieCheckGateProps {
 
 /**
  * M8 `selfie-check-gate` (S3.2 / M3). Mounts the World Selfie Check widget with the action
- * scoped **per room per side** (`seam-<roomId>-<side>`, RF-M3-001) — one seat per side. The
+ * scoped **per room per side** (`overlap-<roomId>-<side>`, RF-M3-001) — one seat per side. The
  * widget only yields a proof; the fail-closed verification runs server-side in `claimSeat`.
  */
 export function SelfieCheckGate({

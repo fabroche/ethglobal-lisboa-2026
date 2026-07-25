@@ -18,14 +18,14 @@ describe("cloudWorldVerifier (v4 endpoint, legacy v3.0 proof shape)", () => {
     const fetchFn = fetchReturning(200, { success: true, nullifier: "123" });
     await cloudWorldVerifier(fetchFn as unknown as typeof fetch).verify(PROOF, {
       appId: "app_x",
-      action: "seam-r_1-A",
+      action: "overlap-r_1-A",
     });
     const [url, init] = fetchFn.mock.calls[0]! as unknown as [string, RequestInit];
     expect(url).toBe("https://developer.worldcoin.org/api/v4/verify/app_x");
     const body = JSON.parse(init.body as string);
     expect(body).toMatchObject({
       protocol_version: "3.0",
-      action: "seam-r_1-A",
+      action: "overlap-r_1-A",
       responses: [
         {
           identifier: "device",

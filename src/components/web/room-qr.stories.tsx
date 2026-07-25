@@ -13,14 +13,14 @@ type Story = StoryObj<typeof RoomQr>;
 export const Default: Story = {
   args: {
     roomId: "r_9f3a",
-    joinUrl: "https://seam.app/room/r_9f3a?side=B",
+    joinUrl: "https://overlap.app/room/r_9f3a?side=B",
   },
 };
 
 export const LongUrl: Story = {
   args: {
     roomId: "r_9f3a",
-    joinUrl: "https://seam.app/room/r_9f3a?side=B&ref=very-long-tracking-token-that-should-truncate",
+    joinUrl: "https://overlap.app/room/r_9f3a?side=B&ref=very-long-tracking-token-that-should-truncate",
   },
 };
 
@@ -53,7 +53,7 @@ export const LanAddress: Story = {
 export const WithOwnLink: Story = {
   args: {
     roomId: "r_9f3a",
-    joinUrl: "https://seam.app/room/r_9f3a?side=B",
-    ownUrl: "https://seam.app/room/r_9f3a?side=A",
+    joinUrl: "https://overlap.app/room/r_9f3a?side=B",
+    ownUrl: "https://overlap.app/room/r_9f3a?side=A",
   },
 };

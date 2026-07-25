@@ -2,7 +2,7 @@
 
 Status: 🟧 draft · Last updated: 2026-07-25
 
-Seam has **no relational database, no ORM, no server-side store of terms** (D4). The source of truth is
+Overlap has **no relational database, no ORM, no server-side store of terms** (D4). The source of truth is
 a single **Hedera Consensus Service (HCS) topic**: an append-only, consensus-ordered log. Each message
 gets a sequence number and a consensus timestamp and is never edited or deleted; a **gap in the sequence
 betrays tampering**. This document specifies the **message schemas** that live on that topic, plus the

@@ -169,7 +169,7 @@ export function SealPositionForm({
           className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <span className="text-xs font-normal text-muted-foreground">
-          Spellcheck is off on purpose — your text never leaves this browser.
+          Spellcheck is off on purpose: your text never leaves this browser.
         </span>
       </label>
 

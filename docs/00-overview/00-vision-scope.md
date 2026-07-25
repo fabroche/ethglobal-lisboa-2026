@@ -24,7 +24,7 @@ That is why there are three sponsors here rather than one.
 Think of a referee locked in a windowless room. Both sides slide a paper under the door. The referee
 says **"workable"** or **"not workable"** through the door. Then the papers burn.
 
-Seam is that referee. Two sides write a negotiating position in plain language; a model inside a **0G
+Overlap is that referee. Two sides write a negotiating position in plain language; a model inside a **0G
 TEE (sealed inference)** reads both and returns **one enum verdict to both** — nothing about where the
 room is, who was further off, or either position. The sealed enclave is the whole reason the product is
 usable, not a feature bolted on (D5).
@@ -57,7 +57,7 @@ comparison inside a TEE is not inference and would likely be ruled out).
   enclave leaking plaintext), and the World testing doc.
 - **Out of scope (deliberately):**
   - **No money movement.** Hedera's agentic-payments track is a bigger pool but requires a real payment
-    or token transfer. Seam moves no money — **don't bolt one on** to reach for it.
+    or token transfer. Overlap moves no money — **don't bolt one on** to reach for it.
   - **No user wallets / no user private keys** (D8). We hold only our own Hedera testnet account key.
   - **No database** (D4). No Notion, no email, no calendar.
   - **No Solidity / no contracts** (D3).

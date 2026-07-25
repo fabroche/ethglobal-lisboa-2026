@@ -108,7 +108,7 @@ export function responseFormat(consent: GapConsent): Record<string, unknown> {
   return {
     type: "json_schema",
     json_schema: {
-      name: "seam_verdict",
+      name: "overlap_verdict",
       strict: true,
       schema: {
         type: "object",

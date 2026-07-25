@@ -1,4 +1,4 @@
-# Seam — project brief
+# Overlap — project brief
 
 **ETHGlobal Lisbon 2026 · submission deadline Sunday 26 July, 09:00 WEST**
 
@@ -71,7 +71,7 @@ scheduled tx fires → verdict to topic → both clients read via Mirror Node RE
 
 Four decisions in there that aren't plumbing:
 
-- **Nullifier scope.** Scope it to the room, not the app. App-wide means a person can use Seam exactly once ever. Per-room means they can negotiate many times but submit once per room.
+- **Nullifier scope.** Scope it to the room, not the app. App-wide means a person can use Overlap exactly once ever. Per-room means they can negotiate many times but submit once per room.
 - **Constrained output.** Enum in, enum out. This is the leak control.
 - **Fail closed.** A verdict published without a valid attestation looks identical to a good one, which is worse than no verdict.
 - **Message versioning.** The topic carries three message types over a session (expiry, commitments, verdict). Version them from the first commit.
@@ -98,7 +98,7 @@ Hedera appears three times in the flow: sets the clock, locks the papers, opens 
 
 **$12,500 addressable, 8 winning positions.** Three partner slots, which is the maximum allowed per project.
 
-Hedera's agentic payments track is a bigger pool ($6,000) but requires an actual payment or token transfer on testnet. Seam moves no money. **Don't bolt one on to reach for it.**
+Hedera's agentic payments track is a bigger pool ($6,000) but requires an actual payment or token transfer on testnet. Overlap moves no money. **Don't bolt one on to reach for it.**
 
 ## 9. Known risks
 
@@ -108,7 +108,7 @@ Good news on this: providers generate a signing key inside the TEE, the CPU and 
 
 **Non-determinism.** A model isn't a comparison. Pin the model hash, temperature 0, and be precise in the demo: what's attested is *this model saw these committed inputs and returned this verdict*, not *any run returns the same*. Overstating this is what loses the Q&A.
 
-**The model can be wrong.** It's making a judgement. Honest framing: Seam tells you whether it's worth a conversation, not what the deal is. Nobody signs anything on this output.
+**The model can be wrong.** It's making a judgement. Honest framing: Overlap tells you whether it's worth a conversation, not what the deal is. Nobody signs anything on this output.
 
 **One room, one pair.** Reusing a position across rooms is the same probing attack wearing a different hat. Say it out loud in the demo — it's the sharpest question a technical judge can ask.
 

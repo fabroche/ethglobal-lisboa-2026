@@ -14,7 +14,7 @@ export const Default: Story = {
   args: {
     createRoom: async (deadlineIso: string) => ({
       roomId: "r_9f3a",
-      joinUrl: `https://seam.app/room/r_9f3a?side=B&d=${encodeURIComponent(deadlineIso)}`,
+      joinUrl: `https://overlap.app/room/r_9f3a?side=B&d=${encodeURIComponent(deadlineIso)}`,
     }),
   },
 };

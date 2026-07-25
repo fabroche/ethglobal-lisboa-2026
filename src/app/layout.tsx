@@ -19,7 +19,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Seam",
+  title: "Overlap",
   description: "Sealed two-party negotiation — one line, no leaks. ETHGlobal Lisbon 2026.",
 };
 

@@ -130,7 +130,7 @@ RNF-M1-001 surfaces in UX) and resolves the D16 preset (`useCase`, legacy rooms 
 - `seal-position-form` — free-form textarea (preset placeholder), `position-checklist` (guidance,
   never blocks), per-side **gap consent** checkbox (D9 amended), Selfie-Check-then-seal ordering
   enforced in-component. Plaintext lives only in component state; `seal()` runs in-browser.
-- `selfie-check-gate` — mounts `IDKitWidget` with action `seam-<roomId>-<side>` (RF-M3-001);
+- `selfie-check-gate` — mounts `IDKitWidget` with action `overlap-<roomId>-<side>` (RF-M3-001);
   proof passes up, verification stays server-side. RTL mocks the widget module.
 - `submitCommitmentAction` — recomputes the commitment from the ciphertext (client untrusted),
   `claimSeat` (fail closed) **before** any write, parks the sealed payload in an in-memory
@@ -219,7 +219,7 @@ everyone including people who have plenty. The landing page passes none and keep
 Verified in a real browser against `npm run start`, not only in RTL (the handoff records three
 occasions where green unit tests coexisted with a broken page): link visible with an empty store,
 click navigates, empty state appears, list replaces it once a bookmark exists, and the header's text
-is byte-identical with and without rooms — `"Seam\nRooms"`, no digits, no id.
+is byte-identical with and without rooms — `"Overlap\nRooms"`, no digits, no id.
 
 ## 10. Module acceptance criteria
 - [ ] The two-browser E2E passes with QR join (S3.4).

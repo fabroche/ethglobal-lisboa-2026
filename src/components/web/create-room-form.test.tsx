@@ -38,6 +38,23 @@ describe("CreateRoomForm", () => {
     );
   });
 
+  it("passes the gap opt-in choice to the action", async () => {
+    const createRoom = ok();
+    render(<CreateRoomForm createRoom={createRoom} />);
+    fireEvent.change(screen.getByLabelText(/deadline/i), { target: { value: "2099-01-01T00:00" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: /open room/i }));
+    await waitFor(() => expect(createRoom).toHaveBeenCalledWith(expect.any(String), true));
+  });
+
+  it("defaults gap opt-in to false", async () => {
+    const createRoom = ok();
+    render(<CreateRoomForm createRoom={createRoom} />);
+    fireEvent.change(screen.getByLabelText(/deadline/i), { target: { value: "2099-01-01T00:00" } });
+    fireEvent.click(screen.getByRole("button", { name: /open room/i }));
+    await waitFor(() => expect(createRoom).toHaveBeenCalledWith(expect.any(String), false));
+  });
+
   it("surfaces an action error", async () => {
     const createRoom = vi.fn(async () => {
       throw new Error("Hedera not configured");

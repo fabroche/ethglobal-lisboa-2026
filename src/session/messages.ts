@@ -141,6 +141,28 @@ export function buildCommitmentMessage(input: {
   });
 }
 
+/**
+ * Build a validated verdict message (S2.9). Pure/deterministic (see {@link buildExpiryMessage}).
+ *
+ * `attestationRef` is required by the schema and that is the point: it is the evidence a
+ * reader needs to tie this verdict to a verified enclave run. There is deliberately no way
+ * to build this message without one — fail closed (D10) has to be unforgeable at the type
+ * level, not a rule the publish path is trusted to remember.
+ */
+export function buildVerdictMessage(input: {
+  roomId: string;
+  verdict: Verdict;
+  modelHash: string;
+  attestationRef: string;
+  publishedAt: string;
+}): VerdictMessage {
+  return verdictMessageSchema.parse({
+    v: TOPIC_MESSAGE_VERSION,
+    type: "verdict",
+    ...input,
+  });
+}
+
 /** Parse an unknown topic message, rejecting unversioned/legacy/unknown-type shapes. */
 export function parseTopicMessage(raw: unknown): TopicMessage {
   return topicMessageSchema.parse(raw);

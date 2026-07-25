@@ -25,5 +25,19 @@ export async function createRoomAction(
     { deadlineIso, gapOptIn, useCase: useCaseIdSchema.parse(useCase), about },
     { registry, baseUrl: env.APP_URL },
   );
+
+  // ⚠️ `armReveal` (M5) is deliberately NOT called here yet — see S2.9's note in the
+  // backlog. `hederaScheduleService(buildRevealTx)` needs a transaction for Hedera to
+  // execute at the deadline, and the only one that would mean anything for us is a topic
+  // message marking that the clock fired. That message would be a FOURTH topic type, and
+  // `decodeMirrorMessage` throws on any shape outside the three-way union — so adding it
+  // casually would break every read of every room. It belongs with S2.6 (topic
+  // versioning), not in a late edit to the create path.
+  //
+  // What actually fires the reveal today is the server-side fallback on the deadline this
+  // room just committed to the topic (DA5, `isDeadlineReached`). That deadline is public
+  // and was published before anyone can write (RNF-M1-001), so neither side can move it —
+  // which is the property the schedule was there to provide.
+
   return { roomId: room.roomId, joinUrl: room.joinUrls.B, ownUrl: room.joinUrls.A };
 }

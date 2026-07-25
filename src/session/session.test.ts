@@ -50,6 +50,29 @@ describe("createRoom", () => {
     });
   });
 
+  it("records the use case on the expiry message and defaults labels from the preset (D16)", async () => {
+    const registry = fakeRegistry();
+    const room = await createRoom({ ...VALID, useCase: "job" }, deps({ registry }));
+    expect(registry.calls[0]).toMatchObject({ type: "expiry", useCase: "job" });
+    expect(room.useCase).toBe("job");
+    expect(room.sideLabels).toEqual({ A: "Employer", B: "Candidate" });
+  });
+
+  it("defaults the use case to property (primary demo case) when omitted", async () => {
+    const registry = fakeRegistry();
+    const room = await createRoom(VALID, deps({ registry }));
+    expect(registry.calls[0]).toMatchObject({ useCase: "property" });
+    expect(room.sideLabels).toEqual({ A: "Seller", B: "Buyer" });
+  });
+
+  it("lets explicit side labels override the preset", async () => {
+    const room = await createRoom(
+      { ...VALID, useCase: "otc", sideLabels: { A: "Desk", B: "Fund" } },
+      deps(),
+    );
+    expect(room.sideLabels).toEqual({ A: "Desk", B: "Fund" });
+  });
+
   it("does NOT publish anything when the deadline is in the past (fail before side effects)", async () => {
     const registry = fakeRegistry();
     const spy = vi.spyOn(registry, "publishExpiry");

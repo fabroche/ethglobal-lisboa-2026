@@ -10,6 +10,7 @@ import {
   buildJoinUrl,
   type CreateRoomInput,
 } from "./room";
+import { USE_CASES, type UseCaseId } from "./usecases";
 
 /**
  * `session` orchestrates opening a room: validate input, publish the expiry to the HCS
@@ -44,6 +45,10 @@ export interface Room {
   /** Consensus sequence number of the expiry message on the topic. */
   expirySeq: number;
   deadlineIso: string;
+  /** D16 preset id, as recorded on the expiry message. */
+  useCase: UseCaseId;
+  /** Preset labels unless the input overrode them. */
+  sideLabels: Record<Side, string>;
   gapOptIn: boolean;
   joinUrls: Record<Side, string>;
 }
@@ -68,6 +73,7 @@ export async function createRoom(
   // Publish the clock BEFORE anyone can write a position (D4/D6, RNF-M1-001).
   const expiry = buildExpiryMessage({
     roomId,
+    useCase: input.useCase,
     deadline: input.deadlineIso,
     createdAt: now.toISOString(),
   });
@@ -78,6 +84,8 @@ export async function createRoom(
     topicId,
     expirySeq: sequenceNumber,
     deadlineIso: input.deadlineIso,
+    useCase: input.useCase,
+    sideLabels: input.sideLabels ?? USE_CASES[input.useCase].sideLabels,
     gapOptIn: input.gapOptIn,
     joinUrls: {
       A: buildJoinUrl(deps.baseUrl, roomId, "A"),

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { useCaseIdSchema, type UseCaseId } from "./usecases";
 
 /**
  * Canonical HCS topic message schemas for Seam (D4/D11).
@@ -28,11 +29,14 @@ const sha256Hex = z
   .string()
   .regex(/^[0-9a-f]{64}$/, "expected sha256 as 64 lowercase hex characters");
 
-/** Expiry — published BEFORE anyone writes a word, so the clock is public first (D4/D6). */
+/** Expiry — published BEFORE anyone writes a word, so the clock is public first (D4/D6).
+ * `useCase` (D16) is public metadata naming the deal *type*, never the terms; it is optional
+ * so pre-D16 expiry messages already on the live topic still parse (missing ⇒ legacy room). */
 export const expiryMessageSchema = z.object({
   v: z.literal(TOPIC_MESSAGE_VERSION),
   type: z.literal("expiry"),
   roomId: z.string().min(1),
+  useCase: useCaseIdSchema.optional(),
   deadline: isoInstant,
   createdAt: isoInstant,
 });
@@ -95,6 +99,7 @@ export type TopicMessage = z.infer<typeof topicMessageSchema>;
  */
 export function buildExpiryMessage(input: {
   roomId: string;
+  useCase?: UseCaseId;
   deadline: string;
   createdAt: string;
 }): ExpiryMessage {

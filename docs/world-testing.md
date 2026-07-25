@@ -29,6 +29,15 @@ until S3.2 puts the live widget in front of real users**. Feedback here is lived
 _To append during S3.2: any friction mounting `IDKitWidget` in the write+seal screen (App Router,
 two-browser flow, per-side action strings)._
 
+6. **World ID 4.0 enablement (Sat evening, live portal):** Selfie Check turned out to be
+   **4.x-only** (`selfieCheckLegacy` preset) — not discoverable from the portal UI; we found it in
+   the docs after building against IDKit v2 levels. The "Enable World ID 4.0" wizard then blocked us
+   with **"RP registration is not active. Please ensure your app is properly registered."** — a
+   chicken-and-egg inside the enablement flow itself (likely lost wizard state after an interrupted
+   first run, or async Relying Party Registry propagation). The error string appears in no public
+   docs. A resumable wizard, or an explicit "registration pending/failed" status on the app page,
+   would have saved the evening. _Resolution: (fill in — restart worked / new app worked / booth.)_
+
 ## B. User friction (to be filled from real runs — do not write ahead of testing)
 
 Protocol: two-browser run (laptop + phone via QR), first-time users, Property demo room.

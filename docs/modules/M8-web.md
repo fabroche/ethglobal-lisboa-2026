@@ -158,8 +158,10 @@ Where the UI reflects the backend, and where it doesn't yet.
 - **World Selfie Check invisible** — part of S3.2; the IDKit widget needs `WORLD_APP_ID`.
 - **Verdict colours are placeholders** — Tailwind emerald/amber until the semantic tokens
   (`--workable`/`--not-workable`/`--pending`) are added to `globals.css` (integrator-only).
-- Note: `gapOptIn` is collected but not yet persisted to the topic / enforced — the consent logic is
-  **S4.6**.
+- Note: consent is now **per-side on the commitment message** (`gapOptIn`, D9 as amended — schema +
+  builder landed with the B-side-consent change). The create form's toggle becomes Side A's *prefill*
+  for their own seal-time choice; the write screen (S3.2) must surface the toggle per side and pass
+  it to `buildCommitmentMessage`. Enclave-side enforcement remains **S4.6**.
 
 ## 10. Module acceptance criteria
 - [ ] The two-browser E2E passes with QR join (S3.4).

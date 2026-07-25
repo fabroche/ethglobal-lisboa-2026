@@ -30,6 +30,7 @@ const COMMITMENT = buildCommitmentMessage({
   side: "A",
   commitment: "a".repeat(64),
   worldNullifier: "0x8a",
+  gapOptIn: false,
   submittedAt: "2026-07-26T06:12:04Z",
 });
 

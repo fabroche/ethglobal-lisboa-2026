@@ -54,7 +54,7 @@
 | S3.1 | `web` create | screen: open a room, set deadline, get QR/link | web | S1.2 | dylan | 🟩 |
 | S3.2 | `web` write+seal | screen: write position (preset placeholder + soft checklist, D16), seal in-browser | web | S1.4, S3.5 | dylan | 🟩 |
 | S3.3 | `web` verdict | screen: countdown + one-line verdict (Mirror) | web | S2.5 | dylan | 🟩 |
-| S3.4 | two-browser E2E | full flow across two browsers, QR to join | web | S3.1–S3.3 | | ⬜ |
+| S3.4 | two-browser E2E | full flow across two browsers, QR to join. **Prereq: HTTPS origin** — phone browsers disable WebCrypto (IDKit bridge + our `seal()`) on plain-HTTP LAN; `APP_URL` must carry the HTTPS origin so QRs encode it (tunnel vs local TLS: pending team OK) | web | S3.1–S3.3 | | ⬜ |
 | S3.5 | `usecases` presets | preset module (`src/session/usecases.ts`: labels/placeholder/checklist/evaluatorHint + Zod enum) + create-form use-case picker + `useCase` in the expiry message (D16) | web/Hedera | S3.1 | dylan | 🟩 |
 | S3.6 | worldid 4.0 + Selfie Check | migrate M3 to World ID 4.0: IDKit 4.x, server-signed `rp_context` (`WORLD_SIGNING_KEY`), `selfieCheckLegacy` preset, verify via `POST /api/v4/verify/{rp_id}` (plain HTTP — drops the SDK from the server path). Selfie Check is 4.x-only; v2 `device` flow is the fallback if timeboxed out. See `transversal/integration-worldid.md` §5. | World | S3.2 | dylan | 🟡 |
 

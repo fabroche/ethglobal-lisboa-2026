@@ -45,12 +45,16 @@ two-browser flow, per-side action strings)._
    not in any doc. Also visible only via API: `enable_face_check: true` on our app — nothing in the
    portal UI shows Selfie Check's enablement state.
 
-8. **Silent failure on insecure origins (Sat night, first phone run):** serving the app over plain
-   HTTP on a LAN IP (standard hackathon setup), tapping "Open World App" in the IDKit modal does
-   **nothing** — no error, no console hint surfaced to the user. Likely cause: non-HTTPS pages are
-   not a secure context, so WebCrypto (which the IDKit bridge needs) is unavailable. A visible
-   "this page must be served over HTTPS" error in the widget would have saved an hour. Workaround:
-   run the widget from `localhost` (secure-context exempt) and scan the modal's QR with World App.
+8. **Silent failure on insecure origins (Sat night, reproduced twice on the phone):** serving the
+   app over plain HTTP on a LAN IP (standard hackathon setup), the IDKit modal renders and offers
+   "Open World App", but tapping it does **nothing** — no error anywhere. Code-level evidence:
+   `@worldcoin/idkit-core` (v2) uses `crypto.subtle` (8 call sites) to build the bridge request;
+   on a non-secure origin `crypto.subtle` is undefined, so the request silently never exists while
+   the button still renders. The widget should refuse to render — or show "this page must be served
+   over HTTPS" — instead of a dead button. **Root fix on our side:** serve the app over HTTPS with
+   a valid certificate (tunnel or local TLS) and point `APP_URL` at it so QR links carry the HTTPS
+   origin; pending team go-ahead on public tunnel exposure. Note: our own `seal()` needs WebCrypto
+   too — the same origin problem would have bitten the sealing step next.
 
 ## B. User friction (to be filled from real runs — do not write ahead of testing)
 

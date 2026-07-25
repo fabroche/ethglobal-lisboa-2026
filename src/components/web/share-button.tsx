@@ -24,8 +24,10 @@ export function ShareButton({ url, roleLabel, className }: ShareButtonProps) {
   const [canNativeShare, setCanNativeShare] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Feature-detect after mount: `navigator` does not exist during SSR.
+  // Feature-detect after mount: `navigator` does not exist during SSR, and deciding
+  // during render would mismatch hydration (same pattern as create-room-form's min-date).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
   }, []);
 

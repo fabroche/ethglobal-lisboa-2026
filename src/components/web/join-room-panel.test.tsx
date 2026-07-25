@@ -15,4 +15,12 @@ describe("JoinRoomPanel", () => {
     render(<JoinRoomPanel roomId="r_9f3a" side={null} />);
     expect(screen.getByText(/unknown side/i)).toBeInTheDocument();
   });
+
+  it("links to the room's verdict/countdown screen", () => {
+    render(<JoinRoomPanel roomId="r_9f3a" side="B" />);
+    expect(screen.getByRole("link", { name: /countdown and verdict/i })).toHaveAttribute(
+      "href",
+      "/room/r_9f3a/verdict",
+    );
+  });
 });

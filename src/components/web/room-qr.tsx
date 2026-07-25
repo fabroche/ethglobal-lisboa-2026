@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import QRCode from "react-qr-code";
 import { cn } from "@/lib/utils";
 
@@ -62,6 +63,13 @@ export function RoomQr({ roomId, joinUrl, className }: RoomQrProps) {
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
+
+      <Link
+        href={`/room/${roomId}/verdict`}
+        className="text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        View countdown and verdict →
+      </Link>
     </div>
   );
 }

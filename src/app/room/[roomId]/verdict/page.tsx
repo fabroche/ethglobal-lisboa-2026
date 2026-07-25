@@ -20,14 +20,17 @@ export default async function VerdictPage({
   let deadlineIso: string | undefined;
   let initialVerdict: Verdict | null = null;
   let committedCount = 0;
+  let found = false;
   try {
     const topicId = requireEnv("HEDERA_TOPIC_ID");
     const view = await createReader(hederaMirrorClient()).readSession(topicId, { roomId });
     deadlineIso = view.expiry?.deadline;
     initialVerdict = view.verdict?.verdict ?? null;
     committedCount = view.commitments.length;
+    // The room exists on the topic iff it has any message for this id.
+    found = Boolean(view.expiry ?? view.verdict) || committedCount > 0;
   } catch {
-    // No env / Mirror lag — render pending and let the client poll.
+    // Env missing / Mirror error — treat as not-yet-found; the panel explains.
   }
 
   return (
@@ -41,14 +44,26 @@ export default async function VerdictPage({
         </Link>
         <span className="font-mono text-xs text-muted-foreground">{roomId}</span>
       </nav>
-      <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-        {committedCount} of 2 sides committed
-      </p>
-      <VerdictView
-        deadlineIso={deadlineIso}
-        initialVerdict={initialVerdict}
-        pollVerdict={readVerdictAction.bind(null, roomId)}
-      />
+      {found ? (
+        <>
+          <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            {committedCount} of 2 sides committed
+          </p>
+          <VerdictView
+            deadlineIso={deadlineIso}
+            initialVerdict={initialVerdict}
+            pollVerdict={readVerdictAction.bind(null, roomId)}
+          />
+        </>
+      ) : (
+        <div className="flex w-full max-w-md flex-col items-center gap-2 rounded-xl border bg-card p-6 text-center text-card-foreground shadow-sm">
+          <h1 className="text-lg font-semibold tracking-tight">Room not found</h1>
+          <p className="text-sm text-muted-foreground">
+            Nothing for this room is on the topic. If you just created it, give Mirror Node a few
+            seconds and refresh — otherwise the link may be wrong.
+          </p>
+        </div>
+      )}
     </main>
   );
 }

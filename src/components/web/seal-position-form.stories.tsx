@@ -16,7 +16,7 @@ const base = {
   side: "A" as const,
   preset: USE_CASES.property,
   worldAppId: "app_staging_demo",
-  submitCommitment: async () => ({ sequenceNumber: 7 }),
+  submitCommitment: async () => ({ ok: true as const, sequenceNumber: 7 }),
 };
 
 export const Property: Story = { args: { ...base, enclaveSealKey: "aa".repeat(32) } };
@@ -36,8 +36,9 @@ export const SubmitFails: Story = {
   args: {
     ...base,
     enclaveSealKey: "aa".repeat(32),
-    submitCommitment: async () => {
-      throw new Error("seat already taken for r_9f3a/A");
-    },
+    submitCommitment: async () => ({
+      ok: false as const,
+      message: "seat already taken for r_9f3a/A",
+    }),
   },
 };

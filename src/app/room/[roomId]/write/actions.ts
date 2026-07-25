@@ -53,38 +53,52 @@ export async function getSealedPayloads(
   return { a: sealedByRoom.get(vaultKey(roomId, "A")), b: sealedByRoom.get(vaultKey(roomId, "B")) };
 }
 
+/**
+ * Typed result instead of `throw`: Next.js masks thrown Server Action errors in production
+ * behind a digest ("An error occurred in the Server Components render…"), which turned a
+ * diagnosable World rejection into gibberish during live testing (Sat night). Our failure
+ * messages are operational, not sensitive — they belong on the screen.
+ */
+export type SubmitCommitmentResult =
+  | { ok: true; sequenceNumber: number }
+  | { ok: false; message: string };
+
 export async function submitCommitmentAction(
   raw: SubmitCommitmentActionInput,
-): Promise<{ sequenceNumber: number }> {
-  const input = inputSchema.parse(raw);
+): Promise<SubmitCommitmentResult> {
+  try {
+    const input = inputSchema.parse(raw);
 
-  // Defence in depth: recompute the commitment from the ciphertext; reject a mismatch
-  // before any side effect (the client is untrusted).
-  if (commitmentOf(input.sealedPayload) !== input.commitment) {
-    throw new Error("commitment does not match the sealed payload");
+    // Defence in depth: recompute the commitment from the ciphertext; reject a mismatch
+    // before any side effect (the client is untrusted).
+    if (commitmentOf(input.sealedPayload) !== input.commitment) {
+      return { ok: false, message: "commitment does not match the sealed payload" };
+    }
+
+    // 1. One seat per (room, side): server-side World verification, fail closed (M3).
+    const appId = requireEnv("WORLD_APP_ID");
+    const claim = await claimSeat(
+      { roomId: input.roomId, side: input.side, appId, proof: input.worldProof },
+      { verifier: cloudWorldVerifier(), seats },
+    );
+    seats = claim.seats;
+
+    // 2. Park the ciphertext for the reveal (M6), then publish the commitment (M4).
+    sealedByRoom.set(vaultKey(input.roomId, input.side), input.sealedPayload);
+    const message = buildCommitmentMessage({
+      roomId: input.roomId,
+      side: input.side,
+      commitment: input.commitment,
+      worldNullifier: claim.nullifierRef,
+      gapOptIn: input.gapOptIn,
+      submittedAt: new Date().toISOString(),
+    });
+    const registry = createRegistry(hederaTopicClient());
+    const { sequenceNumber } = await registry.publishCommitment(message);
+    return { ok: true, sequenceNumber };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "could not submit" };
   }
-
-  // 1. One seat per (room, side): server-side World verification, fail closed (M3).
-  const appId = requireEnv("WORLD_APP_ID");
-  const claim = await claimSeat(
-    { roomId: input.roomId, side: input.side, appId, proof: input.worldProof },
-    { verifier: cloudWorldVerifier(), seats },
-  );
-  seats = claim.seats;
-
-  // 2. Park the ciphertext for the reveal (M6), then publish the commitment (M4).
-  sealedByRoom.set(vaultKey(input.roomId, input.side), input.sealedPayload);
-  const message = buildCommitmentMessage({
-    roomId: input.roomId,
-    side: input.side,
-    commitment: input.commitment,
-    worldNullifier: claim.nullifierRef,
-    gapOptIn: input.gapOptIn,
-    submittedAt: new Date().toISOString(),
-  });
-  const registry = createRegistry(hederaTopicClient());
-  const { sequenceNumber } = await registry.publishCommitment(message);
-  return { sequenceNumber };
 }
 
 /** Expose whether sealing is configured without leaking anything else to the client. */

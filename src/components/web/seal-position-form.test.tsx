@@ -41,7 +41,7 @@ const PRESET = USE_CASES.property;
 const KEY = "a".repeat(64);
 
 function renderForm(over: Partial<Parameters<typeof SealPositionForm>[0]> = {}) {
-  const submitCommitment = vi.fn(async () => ({ sequenceNumber: 7 }));
+  const submitCommitment = vi.fn(async () => ({ ok: true as const, sequenceNumber: 7 }));
   render(
     <SealPositionForm
       roomId="r_1"
@@ -107,10 +107,11 @@ describe("SealPositionForm", () => {
     expect(screen.getByText(new RegExp("c".repeat(16)))).toBeInTheDocument();
   });
 
-  it("surfaces a server rejection (e.g. seat already taken)", async () => {
-    const submitCommitment = vi.fn(async () => {
-      throw new Error("seat already taken for r_1/A");
-    });
+  it("surfaces a typed server rejection with its real message (no digest gibberish)", async () => {
+    const submitCommitment = vi.fn(async () => ({
+      ok: false as const,
+      message: "seat already taken for r_1/A",
+    }));
     render(
       <SealPositionForm
         roomId="r_1"

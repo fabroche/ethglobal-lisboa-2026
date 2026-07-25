@@ -3,7 +3,7 @@
 import { IDKitWidget, VerificationLevel, type ISuccessResult } from "idkit2";
 import { cn } from "@/lib/utils";
 import type { Side } from "@/session";
-import { worldProofSchema, type WorldProof } from "@/worldid";
+import { roomActionId, worldProofSchema, type WorldProof } from "@/worldid";
 
 export interface SelfieCheckGateProps {
   roomId: string;
@@ -54,7 +54,7 @@ export function SelfieCheckGate({
   return (
     <IDKitWidget
       app_id={appId as `app_${string}`}
-      action={`seam-${roomId}-${side}`}
+      action={roomActionId(roomId, side)}
       verification_level={VerificationLevel.Device}
       onSuccess={(result: ISuccessResult) => {
         onVerified(worldProofSchema.parse(result));

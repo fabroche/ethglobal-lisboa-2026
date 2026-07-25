@@ -26,8 +26,11 @@ export interface SealPositionFormProps {
   enclaveSealKey: string | null;
   /** `WORLD_APP_ID`; `null` gates the Selfie Check. */
   worldAppId: string | null;
-  /** Server Action (M3 claimSeat + M4 publishCommitment). Injected for tests/stories. */
-  submitCommitment: (input: SubmitCommitmentInput) => Promise<{ sequenceNumber: number }>;
+  /** Server Action (M3 claimSeat + M4 publishCommitment). Injected for tests/stories.
+   * Typed result — thrown errors get digest-masked by Next in production. */
+  submitCommitment: (
+    input: SubmitCommitmentInput,
+  ) => Promise<{ ok: true; sequenceNumber: number } | { ok: false; message: string }>;
   className?: string;
 }
 
@@ -76,7 +79,18 @@ export function SealPositionForm({
     setPending(true);
     try {
       const { sealedPayload, commitment } = await seal(position, enclaveSealKey);
-      await submitCommitment({ roomId, side, sealedPayload, commitment, worldProof: proof, gapOptIn });
+      const result = await submitCommitment({
+        roomId,
+        side,
+        sealedPayload,
+        commitment,
+        worldProof: proof,
+        gapOptIn,
+      });
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
       setCommitted({ commitment });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not seal and submit.");

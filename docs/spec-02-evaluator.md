@@ -30,11 +30,36 @@ async function evaluate(input: EvaluatorInput): Promise<Verdict> {
 - `OG_MODEL` is pinned to an exact model and its hash is recorded (see `transversal/integration-0g.md`).
 - Output is **constrained** to the enum (structured output / grammar) and re-validated with Zod (D11).
 
+## ⚠️ Reasoning tokens must be OFF (D-M6-1)
+
+The pinned model `0gm-1.0-35b-a3b` is described by 0G as *"thinking enabled by default"*, and its
+`default_parameters` are `{ temperature: 1, top_k: 20, top_p: 0.95 }` — **both defaults are wrong for us,
+and one of them is a privacy hole.**
+
+A reasoning model emits a chain of thought, and that chain **discusses both positions in detail**. If it
+comes back in the response, our server receives prose derived from both sides' terms — the operator can
+then learn what the threat model (`security-and-privacy.md` §a) promises they cannot. It does not matter
+that we never publish it; receiving it is already the breach. This is the enum rule (D9) defeated through
+a side channel rather than through the verdict field.
+
+Requirements, all Must:
+
+- **Disable thinking explicitly** via `reasoning_effort` and/or `chat_template_kwargs` (both are in the
+  model's `supported_parameters`). Never rely on a default.
+- **Assert the response carries no reasoning.** If `reasoning_content` — or any field other than the
+  enum — comes back non-empty, that is a **failure, not a verdict**: discard it and publish nothing
+  (same fail-closed posture as M7).
+- **Set `temperature: 0` explicitly.** The provider default is 1.
+- Use `response_format` (in `supported_parameters`, so the router supports constrained output) as the
+  first belt, Zod as the second (D11).
+
 ## Acceptance criteria
 - [ ] Output is **always** one of the enum values; free text is impossible/rejected.
 - [ ] `gap:*` appears **only** when both sides opted in; otherwise the bare verdict.
 - [ ] Plaintext exists **only** in enclave memory — never returned, logged, or persisted.
-- [ ] The call uses the pinned model hash and `temperature: 0`.
+- [ ] The call uses the pinned model and `temperature: 0` **explicitly** (provider default is 1).
+- [ ] **No reasoning/thinking content is returned**; if any is, nothing is published (D-M6-1).
+- [ ] A test asserts the response body contains no field carrying free text.
 
 ## Non-goals
 - No attestation verification here — that is **spec-03** (the verdict is not published until it passes).

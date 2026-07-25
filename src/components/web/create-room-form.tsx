@@ -2,7 +2,9 @@
 
 import { useState, useEffect, type FormEvent } from "react";
 import { cn } from "@/lib/utils";
+import type { UseCaseId } from "@/session";
 import { RoomQr } from "./room-qr";
+import { UseCasePicker } from "./use-case-picker";
 
 /** Format a Date as a `datetime-local` value (`YYYY-MM-DDTHH:mm`) in local time. */
 function toLocalInputValue(d: Date): string {
@@ -17,7 +19,11 @@ export interface CreateRoomResult {
 
 export interface CreateRoomFormProps {
   /** Server Action (M1 `createRoom`). Injected so the form is testable/story-able without Hedera. */
-  createRoom: (deadlineIso: string, gapOptIn: boolean) => Promise<CreateRoomResult>;
+  createRoom: (
+    deadlineIso: string,
+    gapOptIn: boolean,
+    useCase: UseCaseId,
+  ) => Promise<CreateRoomResult>;
   className?: string;
 }
 
@@ -28,6 +34,7 @@ export interface CreateRoomFormProps {
  */
 export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
   const [deadline, setDeadline] = useState("");
+  const [useCase, setUseCase] = useState<UseCaseId>("property");
   const [gapOptIn, setGapOptIn] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +68,7 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
 
     setPending(true);
     try {
-      const result = await createRoom(parsed.toISOString(), gapOptIn);
+      const result = await createRoom(parsed.toISOString(), gapOptIn, useCase);
       setRoom(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the room.");
@@ -90,6 +97,8 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
           <span className="serif-accent">before</span> anyone writes a word.
         </p>
       </div>
+
+      <UseCasePicker value={useCase} onChange={setUseCase} />
 
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         Deadline

@@ -7,7 +7,7 @@
 | Field | Value |
 |-------|-------|
 | **ID** | M2 |
-| **Status** | 🟧 draft |
+| **Status** | 🟩 S1.4 done — enclave key format pending booth |
 | **Backlog** | S1.4 |
 | **Sponsor** | 0G |
 | **Depends on** | S0.3 spike (`attest`, M7) — confirms sealing round-trips through the enclave |
@@ -35,7 +35,7 @@ private half of `OG_ENCLAVE_PUBKEY`, decrypts once inside the TEE).
 ## 4. Non-functional requirements (RNF)
 | ID | Requirement | Metric / criterion |
 |----|-------------|--------------------|
-| RNF-M2-001 | **Determinism** | Same plaintext + same content key ⇒ byte-identical ciphertext ⇒ identical commitment; the verifier (M7) recomputes the same hash |
+| RNF-M2-001 | **Determinism** — ⚠️ **amended by spec-04 §1** | Reproducible **given the ephemeral secret**, NOT across runs. The original wording ("same plaintext ⇒ byte-identical ciphertext") is a confidentiality bug: commitments are public on the topic, so deterministic sealing leaks that two sides wrote the same thing and lets an attacker confirm a guessed position offline by comparing commitments. What must be reproducible is the **commitment from the committed ciphertext**, which it is. |
 | RNF-M2-002 | Browser-only plaintext | Plaintext exists only in the tab's memory; nothing decryptable leaves the browser |
 | RNF-M2-003 | Reproducible serialisation | No `Date.now()`, no map-iteration-order dependence, numbers as fixed strings |
 
@@ -84,9 +84,12 @@ flowchart TD
 **Rules / validations:** commitment hashes the **ciphertext bytes only**; no timestamp in committed
 bytes (D12); Zod-validate the payload shape before returning.
 **Acceptance criteria:**
-- [ ] Given the same plaintext and content key, the commitment is byte-identical across runs.
-- [ ] Plaintext never appears in any network request (verify in devtools during E2E).
-- [ ] M7 recomputes the identical `sha256` from the committed ciphertext.
+- [x] Given the same plaintext **and the same ephemeral secret**, the output is byte-identical.
+      *(Amended — see RNF-M2-001 above and spec-04 §1. Across runs it MUST differ, and a test
+      enforces that.)*
+- [ ] Plaintext never appears in any network request (verify in devtools during E2E) — pending S3.4.
+- [x] M7 recomputes the identical `sha256` from the committed ciphertext (`commitmentOf`).
+- [x] Output satisfies `commitmentMessageSchema` (interop with M1/M4) — asserted in tests.
 
 ## 8. Endpoints / Server Actions / Integrations / Jobs
 | Type | Name | Input | Output | Auth | Notes |
@@ -108,5 +111,22 @@ bytes (D12); Zod-validate the payload shape before returning.
 _See `_templates/module.md` §11._ Priority tests: determinism of `seal`, canonical serialisation, commitment recomputation parity with M7.
 
 ## 12. Risks & open decisions
-- Exact hybrid scheme / curve must match what the 0G enclave decrypts — **confirm at the 0G booth**.
-- Canonical serialisation is the classic footgun (key order, number formatting) — cover with fixtures.
+
+### Resolved by S1.4
+- **D-M2-1 · sealing is randomized** (spec-04 §1). RNF-M2-001's literal reading was a leak; see the
+  amended row in §4. A unit test enforces that two seals of the same text differ.
+- **D-M2-2 · the encryption key is not the attestation key** (spec-04 §2). `OG_ENCLAVE_PUBKEY` is a
+  20-byte *address* for secp256k1 — you cannot encrypt to it. `seal()` takes the recipient key as an
+  argument; the error message names this mistake explicitly if someone passes an address.
+- **Suite is tagged, not inferred** — `x25519` (default) and `secp256k1`, both implemented and tested,
+  so whichever the enclave uses is a config change.
+- Canonical serialisation reuses `evaluator/canonical.ts` rather than adding a third implementation.
+
+### Still open
+- **Which key does the enclave decrypt with, and in what format?** Blocks the live path (spec-04 §8).
+  Also: is it the same key as the attestation signing key?
+- **Does the enclave expect a specific envelope format** (HPKE? a 0G wrapper?) or is ours fine?
+- **Integrator request:** S3.2 will need a new env var `OG_ENCLAVE_SEAL_PUBKEY` (distinct from
+  `OG_ENCLAVE_PUBKEY`). `src/config/env.ts` is integrator-only.
+- The commitment does not bind `epk`/`suite` — a DoS, not a confidentiality break (spec-04 §5). Left
+  as-is because M4 already writes this contract; flagged for the integrator.

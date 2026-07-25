@@ -24,8 +24,8 @@
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
 |----|-----------|------|---------|-----------|-------|:------:|
 | S0.1 | repo setup | branches, `.env.example`, README skeleton, spec folder | — | — | integrator | 🟩 |
-| S0.2 | `spec-03-attest.md` | spec for independent attestation check (before code) | 0G | S0.1 | | ⬜ |
-| S0.3 | **`spike-attest.ts`** | one sealed 0G call, verify signature **outside** the SDK (`verifyEnvelope`) | 0G | S0.2 | | ⬜ |
+| S0.2 | `spec-03-attest.md` | spec for independent attestation check (before code) | 0G | S0.1 | frank | 🟩 |
+| S0.3 | **`spike-attest.ts`** | one sealed 0G call, verify signature **outside** the SDK (`verifyEnvelope`) | 0G | S0.2 | frank | 🟩 offline · ⛔ live needs `OG_KEY` |
 
 ## Phase 1 — Lock-in · Saturday AM
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
@@ -33,7 +33,7 @@
 | S1.1 | `spec-01-session.md` | spec for room + deadline + commitments | Hedera | S0.1 | | ⬜ |
 | S1.2 | `session` | create room, publish expiry to HCS **before** any write, issue link | Hedera | S1.1 | dylan | 🟩 |
 | S1.3 | `registry.write` | `sha256(ciphertext)` + timestamp to HCS topic (versioned messages) | Hedera | S1.1 | dylan | 🟩 |
-| S1.4 | `seal` (client) | encrypt position in-browser to enclave pubkey (hybrid) | 0G | S0.3 | | ⬜ |
+| S1.4 | `seal` (client) | encrypt position in-browser to enclave pubkey (hybrid) | 0G | S0.3 | frank | 🟩 |
 | S1.5 | `worldid` | Selfie Check, one nullifier per room per side | World | S0.1 | dylan | 🟩 |
 
 ## Phase 2 — Core loop closes · Saturday PM
@@ -45,6 +45,7 @@
 | S2.4 | `scheduler` | arm + listen for the scheduled reveal | Hedera | S1.2 | dylan | 🟩 |
 | S2.5 | `registry.read` | read verdict via Mirror Node REST | Hedera | S1.3 | dylan | 🟩 |
 | S2.6 | topic versioning | 3 message types per session (expiry/commitments/verdict), versioned from commit 1 | Hedera | S1.3 | | ⬜ |
+| **S2.7** | **canonical consolidation** | **migrate `registry` off its own serializer onto `src/lib/canonical.ts`; delete `src/registry/canonical.ts`** | — | S1.4 | **dylan** | ⬜ |
 
 ## Phase 3 — Usable · Saturday evening
 | ID | Component | What | Sponsor | Depends on | Owner | Status |

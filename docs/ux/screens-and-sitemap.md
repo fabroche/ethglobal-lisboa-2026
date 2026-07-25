@@ -179,10 +179,10 @@ is created in place, so the opener never loses the QR by pressing back.
 │  │ off  ◯───            │  │  opt-in, OFF by default
 │  │ If /both/ sides opt  │  │
 │  │ in, the verdict may  │  │
-│  │ name the single      │  │
-│  │ blocking dimension   │  │
-│  │ (compensation /      │  │
-│  │ timing / scope).     │  │
+│  │ say whether one      │  │
+│  │ issue or several     │  │
+│  │ block — never        │  │
+│  │ which.               │  │
 │  │ Nothing else.        │  │
 │  └──────────────────────┘  │
 │                            │
@@ -455,7 +455,8 @@ Variants:
 |---------|--------------|----------|
 | `workable` | `--workable` (green) | "A deal is likely possible. Worth a conversation." |
 | `not_workable` | `--not-workable` (**muted grey — never red**) | "Not on these terms. That's information, not a failure." |
-| `not_workable · gap:compensation` | muted + `gap` badge | "The blocking dimension is compensation. Both sides asked for this." |
+| `not_workable · gap:single` | muted + `gap` badge | "One issue blocks the deal — not which. Both sides asked for this." |
+| `not_workable · gap:multiple` | muted + `gap` badge | "More than one issue blocks the deal. Both sides asked for this." |
 
 > `not_workable` is **not an error state.** Red would tell the room that "no deal" is a malfunction.
 > It is the product working. This is the single most important colour decision in the app.

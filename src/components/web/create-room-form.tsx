@@ -2,7 +2,9 @@
 
 import { useState, useEffect, type FormEvent } from "react";
 import { cn } from "@/lib/utils";
+import type { UseCaseId } from "@/session";
 import { RoomQr } from "./room-qr";
+import { UseCasePicker } from "./use-case-picker";
 
 /** Format a Date as a `datetime-local` value (`YYYY-MM-DDTHH:mm`) in local time. */
 function toLocalInputValue(d: Date): string {
@@ -17,7 +19,11 @@ export interface CreateRoomResult {
 
 export interface CreateRoomFormProps {
   /** Server Action (M1 `createRoom`). Injected so the form is testable/story-able without Hedera. */
-  createRoom: (deadlineIso: string) => Promise<CreateRoomResult>;
+  createRoom: (
+    deadlineIso: string,
+    gapOptIn: boolean,
+    useCase: UseCaseId,
+  ) => Promise<CreateRoomResult>;
   className?: string;
 }
 
@@ -28,6 +34,8 @@ export interface CreateRoomFormProps {
  */
 export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
   const [deadline, setDeadline] = useState("");
+  const [useCase, setUseCase] = useState<UseCaseId>("property");
+  const [gapOptIn, setGapOptIn] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [room, setRoom] = useState<CreateRoomResult | null>(null);
@@ -60,7 +68,7 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
 
     setPending(true);
     try {
-      const result = await createRoom(parsed.toISOString());
+      const result = await createRoom(parsed.toISOString(), gapOptIn, useCase);
       setRoom(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the room.");
@@ -90,6 +98,8 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
         </p>
       </div>
 
+      <UseCasePicker value={useCase} onChange={setUseCase} />
+
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         Deadline
         <input
@@ -101,6 +111,19 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
           aria-invalid={error != null}
           className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
+      </label>
+
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={gapOptIn}
+          onChange={(event) => setGapOptIn(event.target.checked)}
+          className="mt-0.5 size-4 accent-primary focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <span className="text-muted-foreground">
+          If there’s no deal, allow revealing whether one issue or several block it — never which.
+          Both sides must opt in.
+        </span>
       </label>
 
       {error ? (

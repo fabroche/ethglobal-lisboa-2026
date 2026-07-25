@@ -13,4 +13,5 @@ type Story = StoryObj<typeof VerdictPanel>;
 export const Pending: Story = { args: { verdict: null } };
 export const Workable: Story = { args: { verdict: "workable" } };
 export const NotWorkable: Story = { args: { verdict: "not_workable" } };
-export const GapTiming: Story = { args: { verdict: "gap:timing" } };
+export const GapSingle: Story = { args: { verdict: "gap:single" } };
+export const GapMultiple: Story = { args: { verdict: "gap:multiple" } };

@@ -34,7 +34,9 @@ tells the other side something they did not have. The model may only emit one va
 vocabulary:
 
 - Always: `workable` | `not_workable`
-- Only if **both** sides opted in beforehand: `gap:compensation` | `gap:timing` | `gap:scope`
+- Only if **both** sides opted in beforehand: `gap:single` | `gap:multiple` — whether **one or
+  several** dimensions block, never *which* (D9 as amended; compensation/timing/scope survive only
+  inside the enclave as the counting basis)
 
 Emit the **richest verdict both sides consented to**. If one side wants the bare answer, everyone
 gets the bare answer. Enforce this two ways, belt-and-braces:

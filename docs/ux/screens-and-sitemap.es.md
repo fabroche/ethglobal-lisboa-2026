@@ -185,10 +185,10 @@ ellos** — la sala se crea in situ, así quien abre nunca pierde el QR al pulsa
 │  │ off  ◯───            │  │  opt-in, OFF por defecto
 │  │ If /both/ sides opt  │  │
 │  │ in, the verdict may  │  │
-│  │ name the single      │  │
-│  │ blocking dimension   │  │
-│  │ (compensation /      │  │
-│  │ timing / scope).     │  │
+│  │ say whether one      │  │
+│  │ issue or several     │  │
+│  │ block — never        │  │
+│  │ which.               │  │
 │  │ Nothing else.        │  │
 │  └──────────────────────┘  │
 │                            │
@@ -463,7 +463,8 @@ Variantes:
 |-----------|----------------|-----------|
 | `workable` | `--workable` (verde) | "A deal is likely possible. Worth a conversation." |
 | `not_workable` | `--not-workable` (**gris apagado — nunca rojo**) | "Not on these terms. That's information, not a failure." |
-| `not_workable · gap:compensation` | apagado + badge `gap` | "The blocking dimension is compensation. Both sides asked for this." |
+| `not_workable · gap:single` | apagado + badge `gap` | "One issue blocks the deal — not which. Both sides asked for this." |
+| `not_workable · gap:multiple` | apagado + badge `gap` | "More than one issue blocks the deal. Both sides asked for this." |
 
 > `not_workable` **no es un estado de error.** El rojo le diría a la sala que "no hay trato" es una
 > avería. Es el producto funcionando. Es la decisión de color más importante de la app.

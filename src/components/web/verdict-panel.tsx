@@ -13,9 +13,8 @@ import type { Verdict } from "@/session";
 const VERDICT_META: Record<Verdict, { label: string; tone: string }> = {
   workable: { label: "Workable — a deal is possible", tone: "text-emerald-600 dark:text-emerald-400" },
   not_workable: { label: "Not workable — no deal", tone: "text-foreground" },
-  "gap:compensation": { label: "Blocked on compensation", tone: "text-amber-600 dark:text-amber-400" },
-  "gap:timing": { label: "Blocked on timing", tone: "text-amber-600 dark:text-amber-400" },
-  "gap:scope": { label: "Blocked on scope", tone: "text-amber-600 dark:text-amber-400" },
+  "gap:single": { label: "No deal — one issue blocks", tone: "text-amber-600 dark:text-amber-400" },
+  "gap:multiple": { label: "No deal — several issues block", tone: "text-foreground" },
 };
 
 export interface VerdictPanelProps {

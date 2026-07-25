@@ -31,6 +31,7 @@ Hedera testnet account, D8) · Hedera HCS (append-only log) · Hedera Schedule S
 | RF-M1-004 | Arm the scheduled reveal for that deadline (delegates to M5) | Must |
 | RF-M1-005 | Issue a join **link** and a **QR** encoding the room id | Must |
 | RF-M1-006 | Expose the enclave public key (`OG_ENCLAVE_PUBKEY`) to joining clients so M2 can seal | Should |
+| RF-M1-007 ✅ | Accept a **`useCase`** (`property` \| `job` \| `otc`, D16) and record it in the expiry message; provide the preset map (`src/session/usecases.ts`) consumed by M8 (labels, placeholder, checklist) and M6 (prompt hint) | Must |
 
 ## 4. Non-functional requirements (RNF)
 | ID | Requirement | Metric / criterion |
@@ -47,9 +48,29 @@ classDiagram
     +int v
     +string type "expiry"
     +string roomId
+    +string useCase
     +string deadlineIso
   }
 ```
+
+### Use-case presets (D16 — source of truth: `src/session/usecases.ts`)
+
+Typed const map `{ id, title, tagline, sideLabels, placeholder, checklist: string[], evaluatorHint }`
++ Zod `useCaseIdSchema`. One shared source for the create form + write screen (M8) and the enclave
+prompt hint (M6). Guidance only — positions stay free-form plain language in one sealed blob.
+
+**Landed (S3.5):** `usecases.ts` + unit tests (map completeness; hints contain **no digits** so a
+hint can never smuggle a term into the enclave prompt). `expiryMessageSchema.useCase` is **optional**
+so pre-D16 expiry messages already on the live topic keep parsing (missing ⇒ legacy room).
+`createRoomInputSchema` gains `useCase` (default `property`, the primary demo case); `createRoom`
+records it on the expiry and resolves `sideLabels` from the preset unless the input overrides them
+(`Room.useCase` / `Room.sideLabels`).
+
+| id | Side labels | Checklist (guidance, not fields) |
+|----|-------------|----------------------------------|
+| `property` | Seller / Buyer | price · CPCV amount (% or €) · CPCV date · CPCV→deed duration (deed date follows) |
+| `job` | Employer / Candidate | base salary or range · start date · work mode (remote days/wk) · contract type |
+| `otc` | Seller / Buyer | asset & size · price bound (limit or ±% vs reference) · settlement date · settlement method |
 
 ## 6. Architecture / layer fit
 `web` create screen (M8) → Server Action `createRoom` (Zod) → `src/session/` → `src/registry/write`
@@ -106,7 +127,7 @@ Landed in `src/session/` with co-located Vitest unit tests:
 ## 8. Endpoints / Server Actions / Integrations / Jobs
 | Type | Name | Input | Output | Auth | Notes |
 |------|------|-------|--------|------|-------|
-| Action | `createRoom` | `{ deadlineIso }` | `{ roomId, joinUrl, qr }` | none (public opener) | writes expiry via M4, arms M5 |
+| Action | `createRoom` | `{ deadlineIso, useCase }` | `{ roomId, joinUrl, qr }` | none (public opener) | writes expiry via M4, arms M5 |
 | Integration | HCS `TopicMessageSubmit` | expiry entry | consensus ts | our key | versioned message |
 
 ## 9. UI components (Definition of Done)

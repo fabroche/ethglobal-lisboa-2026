@@ -78,14 +78,16 @@ npm run demo:naive # demo: same product without the enclave leaks (S4.2)
   external SDKs (0G router, `@hashgraph/sdk`, `@worldcoin/idkit`). Env ONLY from `src/config/env.ts`
   (Zod, fail-fast).
 - **Storage IS the HCS topic.** Three versioned message types per session (expiry, commitments, verdict).
-- **Flow**: open room → publish deadline to Hedera before anyone writes → both write + seal in-browser to
-  the enclave key → World Selfie Check (one seat/side) → commitments (`sha256(ciphertext)`) to HCS →
-  scheduled reveal → sealed eval in 0G (pinned model, temp 0, enum output) → verify attestation
-  (**fail closed**) → verdict to topic → both read via Mirror Node.
+- **Flow**: open room (pick use case: `property`/`job`/`otc`, D16 — guidance presets, positions stay
+  free-form) → publish deadline + `useCase` to Hedera before anyone writes → both write + seal in-browser
+  to the enclave key → World Selfie Check (one seat/side) → commitments (`sha256(ciphertext)`) to HCS →
+  scheduled reveal → sealed eval in 0G (pinned model, temp 0, use-case prompt hint, enum output) →
+  verify attestation (**fail closed**) → verdict to topic → both read via Mirror Node.
 
 ## Hard rules (see `agente/guardrails.md`)
 - **No Solidity / no smart contracts.** SDKs only.
-- **No user private keys, ever.** The only key we hold is our own Hedera testnet account.
+- **No user private keys, ever.** The only keys we hold are our own **operating** accounts: the Hedera
+  testnet account and the 0G mainnet wallet (`OG_WALLET_PRIVATE_KEY`). Seam users have no wallet at all.
 - **Enclave emits enum only** (never free text) — leak control. **Fail closed**: no valid attestation ⇒
   no verdict published.
 - Validate every external response (0G / Hedera / World) with **Zod**. Secrets never in the repo.

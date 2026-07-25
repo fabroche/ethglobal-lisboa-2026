@@ -118,9 +118,28 @@ be implemented in S2.2 — treat it as confirmed, not suspected.
   docs did. Use them before guessing.
 - **0G testnet is unusable for us.** Two models: `qwen-image-edit` is TeeML but edits images;
   `qwen2.5-omni` is a chatbot but only TeeTLS. Enclave *or* chat, never both. Hence mainnet (DA8).
-- **`OG_ENCLAVE_PUBKEY = 0x4870CbC4D07d6Ac2EE5aA865588e5985FE77a4E9`** — from `/v1/providers`, the
-  sole provider for our model. **Candidate, unverified.** The spike settles it: on a mismatch it
-  prints the address it actually recovered, which is then the correct value.
+- **`OG_ENCLAVE_PUBKEY = 0x0038f716958a90b753da6937787395e2365db2e8`** ✅ **verified on-chain, 25 Jul.**
+  This is `teeSignerAddress` — **who signs**. It is **not** the provider address
+  `0x4870CbC4D07d6Ac2EE5aA865588e5985FE77a4E9`, which is only **who gets paid**, and which is what we
+  had pinned until now. Both are fields of the same `Service` struct, one index apart in the docs and
+  a world apart in meaning. The old value would have failed *every* verification with
+  `signer_mismatch`; fail-closed means we would have published **no verdict at all** in the demo, and
+  nothing would have shown it until the first real signature arrived.
+
+  `response.js` in the SDK verifies against `svc.teeSignerAddress` (and against
+  `additionalInfo.TargetTeeAddress` instead, but only when `TargetSeparated` is true — ours is false).
+
+  **Verify it yourself** — on-chain, no router, no SDK, no us in the path:
+  ```bash
+  curl -s -X POST https://evmrpc.0g.ai -H "Content-Type: application/json" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"0x47340d900bdFec2BD393c626E12ea0656F938d84","data":"0x15a523020000000000000000000000004870cbc4d07d6ac2ee5aa865588e5985fe77a4e9"},"latest"]}' \
+    | tr -d '\n' | sed 's/.*"result":"0x//;s/".*//' | fold -w64 | sed -n '11p;12p'
+  ```
+  word 11 = `teeSignerAddress`, word 12 = `teeSignerAcknowledged` (must be `1`, and it is).
+  `0x15a52302` is `keccak256("getService(address)")[0:4]`.
+
+  **This is a moving value.** `teeSignerAddress` changes if the enclave is redeployed. Re-run the curl
+  before the demo; if it moved, `.env.local` must move with it.
 - **The model has thinking ON by default** and `temperature: 1` by default. Both wrong for us, and the
   first is a privacy hole: a chain of thought discusses both positions, so *receiving* it hands the
   operator what `security-and-privacy.md` §a says they cannot have. Not publishing it is not enough.

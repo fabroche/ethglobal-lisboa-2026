@@ -224,6 +224,8 @@ type OgEnv = {
   OG_KEY?: string | undefined;
   OG_MODEL?: string | undefined;
   OG_ENCLAVE_PUBKEY?: string | undefined;
+  /** Only to look the signer up on-chain; defaults to our pinned provider. */
+  OG_PROVIDER_ADDRESS?: string | undefined;
 };
 
 type CatalogModel = {
@@ -294,8 +296,100 @@ async function preflightModel(env: OgEnv): Promise<boolean> {
   return true;
 }
 
+/** 0G mainnet coordinates. From the SDK's `constants.js` — values, not code. */
+const OG_RPC = "https://evmrpc.0g.ai";
+const INFERENCE_CONTRACT = "0x47340d900bdFec2BD393c626E12ea0656F938d84";
+/** keccak256("getService(address)")[0:4] */
+const GET_SERVICE_SELECTOR = "15a52302";
+/** Field order of the `Service` struct — see the SDK's InferenceServing.d.ts. */
+const WORD_TEE_SIGNER = 9;
+const WORD_ACKNOWLEDGED = 10;
+
+/**
+ * Is the address we pinned the one that actually signs?
+ *
+ * We got this wrong once, and it is worth understanding why the mistake was
+ * invisible: `/v1/providers` and the `x-provider` header both hand you the
+ * PROVIDER address — the provider's billing identity — while responses are
+ * signed by `teeSignerAddress`, a different field of the same on-chain struct.
+ * Pinning the wrong one fails every verification with `signer_mismatch`, and
+ * because we fail closed, the demo publishes nothing and says nothing about why.
+ *
+ * So we read the truth on-chain, ourselves. `eth_call` against a public RPC:
+ * no 0G router, no SDK, no API key. `teeSignerAddress` also MOVES when the
+ * enclave is redeployed, which is the other reason this must be a check and not
+ * a comment in `.env.example`.
+ */
+async function preflightSigner(env: OgEnv): Promise<void> {
+  const pinned = (env.OG_ENCLAVE_PUBKEY ?? "").trim().toLowerCase();
+  if (!pinned) {
+    skip("pinned key matches teeSignerAddress on-chain", "OG_ENCLAVE_PUBKEY is empty");
+    return;
+  }
+
+  const provider = (env.OG_PROVIDER_ADDRESS ?? "0x4870CbC4D07d6Ac2EE5aA865588e5985FE77a4E9")
+    .trim()
+    .toLowerCase()
+    .replace(/^0x/u, "");
+
+  let result: string;
+  try {
+    const response = await fetch(OG_RPC, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "eth_call",
+        params: [
+          { to: INFERENCE_CONTRACT, data: `0x${GET_SERVICE_SELECTOR}${provider.padStart(64, "0")}` },
+          "latest",
+        ],
+      }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    const json = (await response.json()) as { result?: string };
+    if (!json.result) {
+      check("pinned key matches teeSignerAddress on-chain", false, "RPC returned no result");
+      return;
+    }
+    result = json.result.slice(2);
+  } catch (error) {
+    check(
+      "pinned key matches teeSignerAddress on-chain",
+      false,
+      error instanceof Error ? error.message : String(error),
+    );
+    return;
+  }
+
+  // Single struct return: a 32-byte offset to the tuple, then the tuple's head.
+  const tupleStart = Number.parseInt(result.slice(0, 64), 16) * 2;
+  const wordAt = (i: number) => result.slice(tupleStart + i * 64, tupleStart + (i + 1) * 64);
+  const onChain = `0x${wordAt(WORD_TEE_SIGNER).slice(24)}`;
+  const acknowledged = BigInt(`0x${wordAt(WORD_ACKNOWLEDGED)}`) === 1n;
+
+  const matches = onChain === pinned;
+  check("pinned key matches teeSignerAddress on-chain", matches, matches ? onChain : undefined);
+  if (!matches) {
+    console.log(
+      `\n  ${c.yellow}OG_ENCLAVE_PUBKEY is not the signing key.${c.reset}\n` +
+        `  ${c.dim}pinned   ${pinned}\n` +
+        `  on-chain ${onChain}   <- put THIS in .env.local\n\n` +
+        `  If the pinned value is the provider address, that is the classic mix-up:\n` +
+        `  the provider address is who gets PAID; teeSignerAddress is who SIGNS.\n` +
+        `  If it is simply different, the enclave was redeployed and the key moved.${c.reset}\n`,
+    );
+  }
+  check("TEE signer is acknowledged on-chain", acknowledged, `teeSignerAcknowledged=${acknowledged}`);
+}
+
 async function partBLive(env: OgEnv): Promise<void> {
   heading("PART B · live — does a real 0G response verify?");
+
+  // Runs first and needs no credentials: pinning the wrong key makes every
+  // later check fail for a reason that looks like 0G's fault and isn't.
+  await preflightSigner(env);
 
   if (!env.OG_KEY || !env.OG_MODEL) {
     skip("live sealed call", "set OG_KEY and OG_MODEL in .env.local");

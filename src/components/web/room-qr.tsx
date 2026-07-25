@@ -35,6 +35,8 @@ export interface RoomQrProps {
   about?: string;
   /** The creator's direct write link (`/room/<id>/write?side=X`) — rendered as the primary CTA. */
   writeUrl?: string;
+  /** The room's public deadline, forwarded into the share button's invite text. */
+  deadlineIso?: string;
   className?: string;
 }
 
@@ -163,6 +165,7 @@ export function RoomQr({
   yourLabel,
   about,
   writeUrl,
+  deadlineIso,
   className,
 }: RoomQrProps) {
   const unreachable = isLoopbackUrl(joinUrl);
@@ -223,7 +226,13 @@ export function RoomQr({
 
       <CopyRow url={joinUrl} label="Room join link" />
 
-      {roleMode && theirLabel ? <ShareButton url={joinUrl} roleLabel={theirLabel} /> : null}
+      {roleMode && theirLabel ? (
+        <ShareButton
+          url={joinUrl}
+          roleLabel={theirLabel}
+          {...(deadlineIso ? { deadlineIso } : {})}
+        />
+      ) : null}
 
       {ownUrl ? (
         <div className="flex w-full flex-col gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">

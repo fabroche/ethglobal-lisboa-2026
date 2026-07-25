@@ -16,6 +16,8 @@ export interface ShareViewProps {
   /** Preset side labels when the deal type is known (topic or query). */
   labels?: { A: string; B: string };
   about?: string;
+  /** The room's public deadline, forwarded into the invite text. */
+  deadlineIso?: string;
   /** The creator's declared side from the create redirect — highest-priority source. */
   queryMe?: Side;
   /** Deal type for the bookmark label (creator's redirect only). */
@@ -40,6 +42,7 @@ export function ShareView({
   urlB,
   labels,
   about,
+  deadlineIso,
   queryMe,
   bookmarkLabel,
 }: ShareViewProps) {
@@ -86,6 +89,7 @@ export function ShareView({
         ownUrl={myUrl}
         {...(labels ? { theirLabel: labels[otherSide], yourLabel: labels[mySide] } : {})}
         {...(about ? { about } : {})}
+        {...(deadlineIso ? { deadlineIso } : {})}
         writeUrl={`/room/${roomId}/write?side=${mySide}`}
       />
     </>

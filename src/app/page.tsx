@@ -13,7 +13,7 @@ export default function Home() {
         <span className="serif-accent text-primary">never possible</span>
       </h1>
       <p className="text-lg font-medium">
-        One line. <span className="serif-accent text-primary">No leaks.</span>
+        One answer comes out. <span className="serif-accent text-primary">Your terms never do.</span>
       </p>
       <p className="text-pretty text-muted-foreground">
         Two sides write their terms in private. A model inside sealed hardware answers with a

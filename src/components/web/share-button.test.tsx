@@ -1,58 +1,35 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import "@testing-library/jest-dom";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { ShareButton } from "./share-button";
 
 const URL_ = "https://overlap.app/room/r_1?side=A";
 
-function withNativeShare(share = vi.fn().mockResolvedValue(undefined)) {
-  Object.defineProperty(navigator, "share", { value: share, configurable: true });
-  return share;
-}
-
-function withoutNativeShare() {
-  Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
-}
-
-afterEach(() => {
-  withoutNativeShare();
-});
-
-describe("ShareButton", () => {
-  it("uses the native share sheet when the Web Share API exists", async () => {
-    const share = withNativeShare();
+describe("ShareButton (per-app share links, uniform on every platform)", () => {
+  it("primary action is a direct WhatsApp link carrying the full invite text", () => {
     render(<ShareButton url={URL_} roleLabel="Seller" />);
 
-    fireEvent.click(await screen.findByRole("button", { name: /send to the seller/i }));
+    const wa = screen.getByRole("link", { name: /send via whatsapp to the seller/i });
+    const href = decodeURIComponent(wa.getAttribute("href")!);
+    expect(href).toContain("wa.me");
+    expect(href).toContain("I'd like to check whether there's a deal here at all");
+    expect(href).toContain(`Your link (you'd be the Seller): ${URL_}`);
+  });
 
-    await waitFor(() =>
-      expect(share).toHaveBeenCalledWith({
-        title: "Overlap room",
-        text: `Join our Overlap room as the Seller: ${URL_}`,
-        url: URL_,
-      }),
+  it("weaves the room's public deadline into the message when known", () => {
+    render(<ShareButton url={URL_} roleLabel="Seller" deadlineIso="2026-07-26T08:00:00Z" />);
+    const href = decodeURIComponent(
+      screen.getByRole("link", { name: /send via whatsapp/i }).getAttribute("href")!,
     );
+    expect(href).toContain("the deadline is");
   });
 
-  it("survives the user closing the sheet (no error surfaced)", async () => {
-    withNativeShare(vi.fn().mockRejectedValue(new Error("AbortError")));
-    render(<ShareButton url={URL_} roleLabel="Seller" />);
-    fireEvent.click(await screen.findByRole("button", { name: /send to the seller/i }));
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-  });
-
-  it("falls back to a direct-link menu without the API", async () => {
-    withoutNativeShare();
+  it("More options reveals Telegram and Email share links", () => {
     render(<ShareButton url={URL_} roleLabel="Candidate" />);
 
-    const toggle = await screen.findByRole("button", { name: /send to the candidate/i });
-    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole("button", { name: /more options/i }));
 
-    expect(screen.getByRole("link", { name: /whatsapp/i })).toHaveAttribute(
-      "href",
-      expect.stringContaining("wa.me"),
-    );
     expect(screen.getByRole("link", { name: /telegram/i })).toHaveAttribute(
       "href",
       expect.stringContaining("t.me/share"),
@@ -63,12 +40,11 @@ describe("ShareButton", () => {
     );
   });
 
-  it("the prefilled text carries role + link, never a deal type", async () => {
-    withoutNativeShare();
+  it("the message never carries the deal type", () => {
     render(<ShareButton url={URL_} roleLabel="Seller" />);
-    fireEvent.click(await screen.findByRole("button", { name: /send to the seller/i }));
-    const wa = screen.getByRole("link", { name: /whatsapp/i }).getAttribute("href")!;
-    expect(decodeURIComponent(wa)).toContain("as the Seller");
-    expect(decodeURIComponent(wa)).not.toMatch(/property|job|otc/i);
+    const href = decodeURIComponent(
+      screen.getByRole("link", { name: /send via whatsapp/i }).getAttribute("href")!,
+    );
+    expect(href).not.toMatch(/property|job offer|otc/i);
   });
 });

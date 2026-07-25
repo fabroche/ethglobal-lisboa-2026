@@ -12,11 +12,16 @@ const envSchema = z.object({
   APP_URL: z.string().url().default("http://localhost:3000"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
-  // 0G — sealed inference (OpenAI-compatible router + independent attestation check)
+  // 0G — sealed inference (OpenAI-compatible router + independent attestation check).
+  // MAINNET by default (DA8): 0G testnet has no TeeML chat model, so the sealed
+  // evaluation cannot run there. Hedera stays on testnet — separate networks.
   OG_ROUTER_URL: z.string().url().default("https://router-api.0g.ai/v1"),
-  OG_KEY: z.string().optional(),
-  OG_MODEL: z.string().optional(), // pin an exact model, record its hash
-  OG_ENCLAVE_PUBKEY: z.string().optional(), // for independent attestation verification
+  OG_KEY: z.string().optional(), // Trust mode MUST be `Private` (TEE enclave)
+  // Pinned model (DA6). Single-provider on purpose so the enclave signing key
+  // cannot rotate out from under OG_ENCLAVE_PUBKEY.
+  OG_MODEL: z.string().optional(),
+  OG_ENCLAVE_PUBKEY: z.string().optional(), // signing key — verifies the attestation (M7)
+  OG_ENCLAVE_SEAL_PUBKEY: z.string().optional(), // encryption key — seals positions (M2)
 
   // Hedera — HCS topic (registry) + Schedule Service (clock) + Mirror Node (read)
   HEDERA_ACCOUNT_ID: z.string().optional(),

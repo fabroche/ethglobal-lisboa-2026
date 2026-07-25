@@ -65,6 +65,7 @@
 | S4.4 | README (final) | what/why, architecture, how to run, sponsors | compliance | — | | ⬜ |
 | S4.5 | `ai-usage.md` | which files were AI-assisted (keep updated all weekend) | compliance | — | | ⬜ |
 | S4.6 | output vocabulary | enum verdicts + opt-in `gap:*` consent logic | 0G/web | S2.2 | | ⬜ |
+| S4.7 | repo hygiene sweep | pre-freeze: decide `MEMORIA.md` (pre-pivot, ES — D2; owner's call) · confirm no editor-history/temp paths tracked (`.history/` incident, fixed) · drop stale local drafts or fold them in (`README2.md` → S4.4) · final `.gitignore` re-check | compliance | — | | ⬜ |
 
 ## Phase 5 — Submit · Saturday 22:00 → Sunday 07:00
 | ID | Component | What | Sponsor | Depends on | Owner | Status |

@@ -56,6 +56,7 @@
 | S3.3 | `web` verdict | screen: countdown + one-line verdict (Mirror) | web | S2.5 | dylan | 🟩 |
 | S3.4 | two-browser E2E | full flow across two browsers, QR to join | web | S3.1–S3.3 | | ⬜ |
 | S3.5 | `usecases` presets | preset module (`src/session/usecases.ts`: labels/placeholder/checklist/evaluatorHint + Zod enum) + create-form use-case picker + `useCase` in the expiry message (D16) | web/Hedera | S3.1 | dylan | 🟡 |
+| S3.6 | **`room-qr` demo fixes** | copy button fails **silently** in a non-secure context (`navigator.clipboard` is undefined off HTTPS/localhost), "Copied" never resets, no fallback, no `aria-live`; plus warn when the QR encodes a `localhost` URL — unscannable from a phone. **Found during demo rehearsal.** Touches M8 (dylan's lane) — reassigned with his agreement, he is on World. | web | S3.1 | **frank** | 🟡 |
 
 ## Phase 4 — Demo & track requirements · Saturday late
 | ID | Component | What | Sponsor | Depends on | Owner | Status |

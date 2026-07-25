@@ -31,6 +31,7 @@ classDiagram
     +string side  // "A" | "B"
     +string commitment  // sha256(ciphertext), hex
     +string worldNullifier
+    +bool gapOptIn  // this side's consent (D9); missing = false
     +string submittedAt (ISO-8601)
   }
   class VerdictEntry {
@@ -56,10 +57,15 @@ The clock is public before any position exists, so the opener can't use the dead
 
 ### 2. Commitment entry — one per side, **before the reveal**
 ```json
-{ "v": 1, "type": "commitment", "roomId": "r_9f3a…", "side": "A", "commitment": "3b1f…c7", "worldNullifier": "0x8a…", "submittedAt": "2026-07-26T06:12:04Z" }
+{ "v": 1, "type": "commitment", "roomId": "r_9f3a…", "side": "A", "commitment": "3b1f…c7", "worldNullifier": "0x8a…", "gapOptIn": true, "submittedAt": "2026-07-26T06:12:04Z" }
 ```
 `commitment` is `sha256(ciphertext)`. `worldNullifier` proves one seat for `(room, side)` (M3). The
 plaintext and the ciphertext never touch the topic — only the hash.
+
+`gapOptIn` is **this side's** consent to gap disclosure (D9 as amended), declared at seal time. The
+evaluator may emit `gap:single`/`gap:multiple` only if **both** commitments carry `true`. The field
+is schema-defaulted, so a commitment without it reads as `false` — missing consent fails safe to the
+bare verdict, never to disclosure.
 
 ### 3. Verdict entry — written only after `attest` passes
 ```json

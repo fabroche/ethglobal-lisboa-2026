@@ -18,6 +18,7 @@ answered.
 | DA8 | 0G **network**: testnet or mainnet | testnet (free) vs mainnet (real 0G) | **Mainnet** — testnet has no TeeML chat model, so sealed evaluation cannot run there | 🟩 **decided** | resolved via `/v1/models` |
 | DA9 | Write-screen **checklist depth** (D16 presets) | static guidance text only vs in-browser presence heuristics (has a number / a date) | **Static-only** for the deadline; heuristics are a stretch goal — never blocking, plaintext never leaves the browser either way | 🟧 leaning | Sat PM, time permitting |
 | DA10 | 0G **signature retrieval path** | Router (Bearer key) vs direct-to-broker (on-chain payment) | **Direct to broker** — the Router pays the broker with its own wallet, so it is the broker's customer and we can never obtain a signature for our own call. Being the paying customer is the price of being able to verify | 🟩 **decided 25 Jul** | `handoff-open-threads.md` §1 |
+| DA11 | **Product name** | keep **Seam** vs rename (brainstorm live; strongest alternative raised: Venn) | Keep Seam unless the whole team instantly prefers an alternative — rename touchpoints: README/docs, UI copy, `roomActionId` prefix (`seam-`), World app display name (app_id unaffected), video script | ⬜ open | **before S5.1 video / S4.4 README — Sat night, hard stop** |
 
 ## Notes
 
@@ -25,6 +26,11 @@ answered.
 > checklist) and the collision only surfaced at merge. The 0G one kept the number — it was there first,
 > it is closed, and it is cited from `src/config/env.ts` — and the checklist became **DA9**. Before
 > claiming an ID, `grep` for it on `origin/develop`, not just locally.
+>
+> It happened a second time on the next merge: the **product name** was filed as `DA9` on
+> `develop-dylan` (commit `42319df`) while `DA9`/`DA10` were already taken here. Same rule applied —
+> the older, cited entries keep their numbers and the product name is now **DA11**. It is the only
+> renumbering; nothing else moved.
 
 - **DA3 is the one that can change the architecture.** If a contract address is mandatory, Seam is no
   longer strictly "no contract deployed" and we need a minimal presence on 0G Chain — decide this Friday,

@@ -50,12 +50,26 @@ export function JoinRoomPanel({ roomId, side, className }: JoinRoomPanelProps) {
       <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
         Next you’ll write your position and <span className="serif-accent">seal</span> it in your
         browser — it’s encrypted to the enclave before it ever leaves your device, so the other
-        side never sees it. That step is being wired up.
+        side never sees it.
       </p>
+
+      {side ? (
+        <Link
+          href={`/room/${roomId}/write?side=${side}`}
+          className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Write and seal your position
+        </Link>
+      ) : null}
 
       <Link
         href={`/room/${roomId}/verdict`}
-        className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          "inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-ring",
+          side
+            ? "border border-input hover:border-primary"
+            : "bg-primary text-primary-foreground hover:opacity-90",
+        )}
       >
         View countdown and verdict
       </Link>

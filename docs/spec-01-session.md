@@ -14,7 +14,7 @@ issue a join link/QR, and accept exactly **two commitments** (one per side).
 |---|---|
 | **Input (create)** | `{ deadline: ISO8601, useCase: "property" \| "job" \| "otc", sideLabels?: { a: string, b: string }, gapOptIn?: boolean }` |
 | **Output (create)** | `{ roomId, topicId, expirySeq, joinUrl, qr }` |
-| **Input (commit)** | `{ roomId, side: "a" \| "b", commitment: string /* sha256(ciphertext) */, nullifierRef }` |
+| **Input (commit)** | `{ roomId, side: "a" \| "b", commitment: string /* sha256(ciphertext) */, nullifierRef, gapOptIn: boolean /* this side's consent, D9 */ }` |
 | **Output (commit)** | `{ committedSeq }` |
 
 ## Message shapes (HCS topic, versioned)
@@ -22,9 +22,9 @@ issue a join link/QR, and accept exactly **two commitments** (one per side).
 // expiry (published first, before any write)
 { "v": 1, "type": "expiry", "roomId": "…", "useCase": "property", "deadline": "2026-07-26T09:00:00Z" }
 
-// commitment (one per side)
+// commitment (one per side; gapOptIn = this side's consent to gap disclosure, D9)
 { "v": 1, "type": "commitment", "roomId": "…", "side": "a",
-  "commitment": "sha256-hex-of-ciphertext", "nullifierRef": "…" }
+  "commitment": "sha256-hex-of-ciphertext", "nullifierRef": "…", "gapOptIn": false }
 ```
 Every message carries `v` from message 1 (D4; backlog S2.6). Consensus timestamp is assigned by Hedera,
 **not** placed inside the committed bytes (D12).

@@ -21,7 +21,9 @@ const envSchema = z.object({
   // cannot rotate out from under OG_ENCLAVE_PUBKEY.
   OG_MODEL: z.string().optional(),
   OG_ENCLAVE_PUBKEY: z.string().optional(), // signing key — verifies the attestation (M7)
-  OG_ENCLAVE_SEAL_PUBKEY: z.string().optional(), // encryption key — seals positions (M2)
+  // Enclave ENCRYPTION key for client sealing (spec-04 §2, M2) — distinct from
+  // the attestation key above: you cannot encrypt to a 20-byte signer address.
+  OG_ENCLAVE_SEAL_PUBKEY: z.string().optional(),
   // OUR operating wallet, never a user's (see agente/guardrails.md). Needed
   // because the Router never makes us the broker's customer, so it cannot give
   // us a signature to verify — the whole product rests on getting one.

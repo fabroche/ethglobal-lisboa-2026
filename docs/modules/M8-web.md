@@ -93,10 +93,10 @@ sequenceDiagram
 |-----------|:-----:|:--------:|--------|
 | `create-room-form` | ✅ | ✅ | 🟢 (S3.1) |
 | `room-qr` | ✅ | ✅ | 🟢 (S3.1 — scannable QR via `react-qr-code` + copy) |
-| `seal-position-form` | ⬜ | ⬜ | 🟧 (S3.2 — preset placeholder + checklist, D16) |
+| `seal-position-form` | ✅ | ✅ | 🟢 (S3.2 — preset placeholder + checklist, D16; env-gated on the seal key) |
 | `use-case-picker` | ✅ | ✅ | 🟢 (S3.5 — 3 cards, radio-group semantics, sets labels + `useCase`) |
-| `position-checklist` | ⬜ | ⬜ | 🟧 (S3.2 — static guidance, never blocks sealing; heuristics = DA9 stretch) |
-| `selfie-check-gate` | ⬜ | ⬜ | 🟧 |
+| `position-checklist` | ✅ | ✅ | 🟢 (S3.2 — static guidance, never blocks sealing; heuristics = DA9 stretch) |
+| `selfie-check-gate` | ✅ | ✅ | 🟢 (S3.2 — per-room-per-side action; widget mocked in RTL) |
 | `countdown` | ✅ | ✅ | 🟢 (S3.3) |
 | `verdict-panel` | ✅ | ✅ | 🟢 (S3.3) |
 
@@ -120,6 +120,22 @@ M6/M7). Screen S3.2 (write+seal) remains (blocked on M2 seal).
 - `create-room-form` defaults to `property` and passes the pick to `createRoomAction`, which
   Zod-parses it and records it on the expiry message (M1). The write screen's preset placeholder +
   `position-checklist` remain **S3.2**.
+
+### Implementation notes (S3.2 — write+seal screen)
+`/room/[roomId]/write?side=A|B`, linked from the join landing (link only exists with a valid side).
+The server page reads the room's expiry from Mirror (no expiry ⇒ "nothing can be written" —
+RNF-M1-001 surfaces in UX) and resolves the D16 preset (`useCase`, legacy rooms → property).
+- `seal-position-form` — free-form textarea (preset placeholder), `position-checklist` (guidance,
+  never blocks), per-side **gap consent** checkbox (D9 amended), Selfie-Check-then-seal ordering
+  enforced in-component. Plaintext lives only in component state; `seal()` runs in-browser.
+- `selfie-check-gate` — mounts `IDKitWidget` with action `seam-<roomId>-<side>` (RF-M3-001);
+  proof passes up, verification stays server-side. RTL mocks the widget module.
+- `submitCommitmentAction` — recomputes the commitment from the ciphertext (client untrusted),
+  `claimSeat` (fail closed) **before** any write, parks the sealed payload in an in-memory
+  ciphertext store (`getSealedPayloads(roomId)` — the M6 hand-off), then publishes the versioned
+  commitment. Seats are per-process (no DB, D4); the topic's one-per-side rule is the backstop.
+- **Env-gated**: without `OG_ENCLAVE_SEAL_PUBKEY` the form drafts but won't seal (clear notice);
+  without `WORLD_APP_ID` the gate explains itself. Both light up on config alone.
 
 ### Implementation notes (S3.3 — verdict screen)
 `/room/[roomId]/verdict` reads the room's expiry + verdict from Mirror Node (M4 `registry.read`) at
@@ -158,8 +174,10 @@ Where the UI reflects the backend, and where it doesn't yet.
 - **World Selfie Check invisible** — part of S3.2; the IDKit widget needs `WORLD_APP_ID`.
 - **Verdict colours are placeholders** — Tailwind emerald/amber until the semantic tokens
   (`--workable`/`--not-workable`/`--pending`) are added to `globals.css` (integrator-only).
-- Note: `gapOptIn` is collected but not yet persisted to the topic / enforced — the consent logic is
-  **S4.6**.
+- Note: consent is now **per-side on the commitment message** (`gapOptIn`, D9 as amended — schema +
+  builder landed with the B-side-consent change). The create form's toggle becomes Side A's *prefill*
+  for their own seal-time choice; the write screen (S3.2) must surface the toggle per side and pass
+  it to `buildCommitmentMessage`. Enclave-side enforcement remains **S4.6**.
 
 ## 10. Module acceptance criteria
 - [ ] The two-browser E2E passes with QR join (S3.4).

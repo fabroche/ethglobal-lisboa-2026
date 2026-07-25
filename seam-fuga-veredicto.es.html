@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Cuánto revela un veredicto? — Seam</title>
+<style>
+  :root {
+    --papel: #F7F6F2;
+    --tinta: #232028;
+    --tinta-suave: #5C5763;
+    --sello: #0E7268;
+    --sello-tenue: rgba(14, 114, 104, 0.10);
+    --ambar: #B45309;
+    --ambar-tenue: rgba(180, 83, 9, 0.10);
+    --rojo: #A33D2E;
+    --rojo-tenue: rgba(163, 61, 46, 0.10);
+    --linea: #DDD9D0;
+    --tarjeta: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --papel: #1B1920;
+      --tinta: #E9E6EF;
+      --tinta-suave: #A29CAC;
+      --sello: #3FB8A9;
+      --sello-tenue: rgba(63, 184, 169, 0.12);
+      --ambar: #E8A04C;
+      --ambar-tenue: rgba(232, 160, 76, 0.12);
+      --rojo: #E07A5F;
+      --rojo-tenue: rgba(224, 122, 95, 0.12);
+      --linea: #38333F;
+      --tarjeta: #242129;
+    }
+  }
+  :root[data-theme="light"] {
+    --papel: #F7F6F2; --tinta: #232028; --tinta-suave: #5C5763;
+    --sello: #0E7268; --sello-tenue: rgba(14,114,104,0.10);
+    --ambar: #B45309; --ambar-tenue: rgba(180,83,9,0.10);
+    --rojo: #A33D2E; --rojo-tenue: rgba(163,61,46,0.10);
+    --linea: #DDD9D0; --tarjeta: #FFFFFF;
+  }
+  :root[data-theme="dark"] {
+    --papel: #1B1920; --tinta: #E9E6EF; --tinta-suave: #A29CAC;
+    --sello: #3FB8A9; --sello-tenue: rgba(63,184,169,0.12);
+    --ambar: #E8A04C; --ambar-tenue: rgba(232,160,76,0.12);
+    --rojo: #E07A5F; --rojo-tenue: rgba(224,122,95,0.12);
+    --linea: #38333F; --tarjeta: #242129;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+  }
+  main { max-width: 44rem; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+  h1, h2, h3 {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+  h1 { font-size: 2.35rem; margin: 1.5rem 0 0.5rem; font-weight: 600; }
+  h2 { font-size: 1.55rem; margin: 0 0 1rem; font-weight: 600; }
+  h3 { font-size: 1.15rem; margin: 2rem 0 0.5rem; font-weight: 600; }
+  p { margin: 0 0 1rem; max-width: 68ch; }
+  .subtitulo { color: var(--tinta-suave); font-size: 1.05rem; margin-bottom: 0; }
+  .cabecera { border-bottom: 1px solid var(--linea); padding-bottom: 1.75rem; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--sello);
+    border: 1px solid var(--sello);
+    border-radius: 999px;
+    padding: 0.2rem 0.7rem;
+    margin-bottom: 0.75rem;
+  }
+  section.parte { margin-top: 3.5rem; }
+  code, .enum {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    background: var(--sello-tenue);
+    color: var(--tinta);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  figure {
+    margin: 1.75rem 0;
+    border: 1px solid var(--linea);
+    border-radius: 10px;
+    background: var(--tarjeta);
+    padding: 1.25rem 1rem 0.75rem;
+    overflow-x: auto;
+  }
+  figcaption {
+    font-size: 0.85rem;
+    color: var(--tinta-suave);
+    padding: 0.6rem 0.25rem 0.25rem;
+    border-top: 1px dashed var(--linea);
+    margin-top: 0.75rem;
+  }
+  svg { min-width: 560px; }
+  svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  svg .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+  @media (max-width: 40rem) { .duo { grid-template-columns: 1fr; } }
+  .escenario {
+    border: 1px solid var(--linea);
+    border-radius: 10px;
+    background: var(--tarjeta);
+    padding: 1rem 1.1rem;
+  }
+  .escenario h4 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+  .escenario p { font-size: 0.92rem; margin-bottom: 0.5rem; }
+  .escenario .veredicto {
+    display: inline-block;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 5px;
+    margin-bottom: 0.6rem;
+  }
+  .malo { border-top: 3px solid var(--rojo); }
+  .malo .veredicto { background: var(--rojo-tenue); color: var(--rojo); }
+  .bueno { border-top: 3px solid var(--sello); }
+  .bueno .veredicto { background: var(--sello-tenue); color: var(--sello); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; margin: 1.25rem 0; }
+  th, td { text-align: left; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tinta-suave); font-weight: 600; }
+  td.num { font-variant-numeric: tabular-nums; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.88rem; white-space: nowrap; }
+  tr.elegido td { background: var(--sello-tenue); }
+  tr.elegido td:first-child { border-left: 3px solid var(--sello); }
+
+  .nota {
+    border-left: 3px solid var(--ambar);
+    background: var(--ambar-tenue);
+    border-radius: 0 8px 8px 0;
+    padding: 0.9rem 1.1rem;
+    margin: 1.5rem 0;
+    font-size: 0.97rem;
+  }
+  .nota strong:first-child { color: var(--ambar); }
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--linea);
+    color: var(--tinta-suave);
+    font-size: 0.85rem;
+  }
+  a { color: var(--sello); }
+  :focus-visible { outline: 2px solid var(--sello); outline-offset: 2px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="cabecera">
+  <span class="eyebrow">Seam · decisión D9 (enmendada)</span>
+  <h1>¿Cuánto revela un veredicto?</h1>
+  <p class="subtitulo">Por qué el desvelo del bloqueo pasó de «nombrar la dimensión» a decir solo
+  <code>gap:single</code> / <code>gap:multiple</code> — primero sin tecnicismos, después con los números.</p>
+</header>
+
+<!-- ==================== PARTE 1 — SIN TECNICISMOS ==================== -->
+<section class="parte" aria-labelledby="p1">
+  <span class="eyebrow">Parte 1 · Sin tecnicismos</span>
+  <h2 id="p1">El árbitro que solo puede levantar una tarjeta</h2>
+
+  <p>En Seam, dos personas escriben sus condiciones en sobres sellados. Un árbitro encerrado en una
+  caja fuerte (el enclave) es el único que los lee, y solo puede comunicarse con el exterior
+  <strong>levantando una tarjeta de un mazo fijo</strong>. No puede hablar, ni escribir, ni gesticular:
+  una tarjeta, y nada más.</p>
+
+  <p>La idea clave de toda esta discusión cabe en una frase: <strong>cuantas más tarjetas distintas
+  haya en el mazo, más información entrega cada tarjeta levantada.</strong> Si el mazo solo tiene
+  «hay trato» y «no hay trato», ver una tarjeta te dice muy poco. Si el mazo tiene una tarjeta para
+  cada motivo posible de desacuerdo, ver la tarjeta te cuenta media negociación.</p>
+
+  <figure aria-label="Diagrama: el enclave como árbitro con un mazo de tarjetas">
+    <svg viewBox="0 0 640 210" width="100%" role="img" aria-label="Dos sobres sellados entran en la caja del árbitro; de ella solo sale una tarjeta de un mazo fijo.">
+      <!-- sobre A -->
+      <g>
+        <rect x="10" y="60" width="120" height="76" rx="6" fill="none" stroke="var(--tinta-suave)" stroke-width="1.5"/>
+        <path d="M10 66 L70 106 L130 66" fill="none" stroke="var(--tinta-suave)" stroke-width="1.5"/>
+        <circle cx="70" cy="98" r="9" fill="var(--sello)"/>
+        <text x="70" y="160" text-anchor="middle" font-size="13" fill="var(--tinta)">Vendedor</text>
+        <text x="70" y="177" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">posición sellada</text>
+      </g>
+      <!-- sobre B -->
+      <g>
+        <rect x="510" y="60" width="120" height="76" rx="6" fill="none" stroke="var(--tinta-suave)" stroke-width="1.5"/>
+        <path d="M510 66 L570 106 L630 66" fill="none" stroke="var(--tinta-suave)" stroke-width="1.5"/>
+        <circle cx="570" cy="98" r="9" fill="var(--sello)"/>
+        <text x="570" y="160" text-anchor="middle" font-size="13" fill="var(--tinta)">Comprador</text>
+        <text x="570" y="177" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">posición sellada</text>
+      </g>
+      <!-- flechas -->
+      <line x1="140" y1="98" x2="235" y2="98" stroke="var(--tinta-suave)" stroke-width="1.5"/>
+      <path d="M235 98 l-9 -5 v10 z" fill="var(--tinta-suave)"/>
+      <line x1="500" y1="98" x2="405" y2="98" stroke="var(--tinta-suave)" stroke-width="1.5"/>
+      <path d="M405 98 l9 -5 v10 z" fill="var(--tinta-suave)"/>
+      <!-- caja / enclave -->
+      <rect x="245" y="38" width="150" height="120" rx="10" fill="var(--sello-tenue)" stroke="var(--sello)" stroke-width="2"/>
+      <text x="320" y="66" text-anchor="middle" font-size="13" font-weight="600" fill="var(--tinta)">Árbitro</text>
+      <text x="320" y="84" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">(enclave: nadie</text>
+      <text x="320" y="99" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">ve el interior)</text>
+      <!-- tarjeta que sale -->
+      <g transform="translate(288,112)">
+        <rect x="0" y="0" width="64" height="34" rx="5" fill="var(--tarjeta)" stroke="var(--ambar)" stroke-width="2"/>
+        <text x="32" y="22" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ambar)">1 tarjeta</text>
+      </g>
+      <line x1="320" y1="158" x2="320" y2="186" stroke="var(--ambar)" stroke-width="1.5"/>
+      <path d="M320 186 l-5 -9 h10 z" fill="var(--ambar)"/>
+      <text x="320" y="204" text-anchor="middle" font-size="12" fill="var(--tinta)">ambos ven la misma tarjeta</text>
+    </svg>
+    <figcaption>El enclave solo puede «hablar» eligiendo una tarjeta de un mazo pactado de antemano.
+    El tamaño de ese mazo es el grifo de la información.</figcaption>
+  </figure>
+
+  <h3>Una historia concreta</h3>
+  <p>Vende una casa: el vendedor no baja de 400&nbsp;000&nbsp;€ y quiere firmar el CPCV en agosto.
+  El comprador no pasa de 390&nbsp;000&nbsp;€ y no puede firmar hasta octubre. No hay trato — fallan
+  <em>dos</em> cosas a la vez: el precio y las fechas.</p>
+
+  <p>Ahora compara qué aprende el comprador según el mazo que usemos:</p>
+
+  <div class="duo">
+    <div class="escenario malo">
+      <h4>Diseño descartado: nombrar el motivo exacto</h4>
+      <span class="veredicto">gap:{plazos}</span>
+      <p>La tarjeta dice «lo que bloquea son los plazos». Pero eso también dice, sin querer:
+      <strong>«tu precio era aceptable»</strong>. En la siguiente llamada, el comprador se planta en
+      390&nbsp;000&nbsp;€ (ya sabe que colaba) y solo cede en fechas.</p>
+      <p>Y peor: en nuestro ejemplo bloqueaban <em>dos</em> cosas. Una tarjeta que solo nombra una
+      estaría <strong>mintiendo por omisión</strong>.</p>
+    </div>
+    <div class="escenario bueno">
+      <h4>Diseño elegido: decir solo cuántas</h4>
+      <span class="veredicto">gap:multiple</span>
+      <p>La tarjeta dice «bloquea más de una cosa». El comprador sabe que están lejos —
+      información honesta y útil — pero <strong>no sabe qué palanca tocar</strong> ni qué parte de su
+      oferta ya funcionaba.</p>
+      <p>Si solo hubiera fallado el precio, la tarjeta sería <span class="veredicto" style="margin:0">gap:single</span>:
+      «estáis a un solo tema de distancia; merece una conversación».</p>
+    </div>
+  </div>
+
+  <p>Eso es todo el cambio: el árbitro ya no dice <em>qué</em> falla, solo <em>cuántas cosas</em>
+  fallan — una o varias. Se conserva lo único que de verdad necesitas saber («¿merece la pena otra
+  conversación?») sin regalar el mapa de la negociación.</p>
+</section>
+
+<!-- ==================== PARTE 2 — TÉCNICA ==================== -->
+<section class="parte" aria-labelledby="p2">
+  <span class="eyebrow">Parte 2 · Técnica</span>
+  <h2 id="p2">El presupuesto de fuga, con números</h2>
+
+  <p>Cada veredicto es un mensaje que la contraparte lee. La cota superior de lo que un mensaje puede
+  filtrar la fija <strong>el número de mensajes distintos que podrían haberse emitido</strong>: con
+  <em>n</em> salidas posibles, un veredicto entrega como máximo log<sub>2</sub>(<em>n</em>) bits.
+  D9 («solo enum, nunca texto libre») existe precisamente para acotar ese <em>n</em>; la defensa
+  anti-sondeo de Seam depende de que cada respuesta valga casi nada por sí sola.</p>
+
+  <figure aria-label="Escala de fuga por vocabulario de salida">
+    <svg viewBox="0 0 640 275" width="100%" role="img" aria-label="Barras comparando bits máximos por veredicto para cada vocabulario posible.">
+      <g font-size="12.5">
+        <!-- 1. enum básico -->
+        <text x="8" y="30" fill="var(--tinta)">Enum básico</text>
+        <text x="8" y="46" fill="var(--tinta-suave)" font-size="11">2 salidas</text>
+        <rect x="175" y="20" width="120" height="20" rx="4" fill="var(--tinta-suave)"/>
+        <text x="303" y="35" fill="var(--tinta)" class="mono" font-size="12">1,0 bit</text>
+
+        <!-- 2. elegido -->
+        <text x="8" y="80" fill="var(--tinta)" font-weight="600">single / multiple</text>
+        <text x="8" y="96" fill="var(--tinta-suave)" font-size="11">4 salidas · elegido</text>
+        <rect x="175" y="70" width="240" height="20" rx="4" fill="var(--sello)"/>
+        <text x="423" y="85" fill="var(--tinta)" class="mono" font-size="12">2,0 bits</text>
+        <rect x="170" y="65" width="250" height="30" rx="7" fill="none" stroke="var(--sello)" stroke-width="1.5" opacity="0.5"/>
+
+        <!-- 3. dimensión nombrada -->
+        <text x="8" y="130" fill="var(--tinta)">Dimensión nombrada</text>
+        <text x="8" y="146" fill="var(--tinta-suave)" font-size="11">6 salidas · diseño anterior</text>
+        <rect x="175" y="120" width="310" height="20" rx="4" fill="var(--ambar)"/>
+        <text x="493" y="135" fill="var(--tinta)" class="mono" font-size="12">2,6 bits</text>
+
+        <!-- 4. subconjuntos -->
+        <text x="8" y="180" fill="var(--tinta)">Subconjuntos exactos</text>
+        <text x="8" y="196" fill="var(--tinta-suave)" font-size="11">9 salidas · descartado</text>
+        <rect x="175" y="170" width="380" height="20" rx="4" fill="var(--rojo)"/>
+        <text x="563" y="185" fill="var(--tinta)" class="mono" font-size="12">3,2 bits</text>
+
+        <!-- 5. texto libre -->
+        <text x="8" y="230" fill="var(--tinta)">Texto libre</text>
+        <text x="8" y="246" fill="var(--tinta-suave)" font-size="11">prohibido por D9</text>
+        <g>
+          <rect x="175" y="220" width="380" height="20" rx="4" fill="none" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="185" y1="238" x2="203" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="215" y1="238" x2="233" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="245" y1="238" x2="263" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="275" y1="238" x2="293" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="305" y1="238" x2="323" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="335" y1="238" x2="353" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="365" y1="238" x2="383" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="395" y1="238" x2="413" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="425" y1="238" x2="443" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="455" y1="238" x2="473" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="485" y1="238" x2="503" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+          <line x1="515" y1="238" x2="533" y2="222" stroke="var(--rojo)" stroke-width="1.5"/>
+        </g>
+        <text x="563" y="235" fill="var(--rojo)" class="mono" font-size="12">∞</text>
+      </g>
+      <text x="8" y="268" fill="var(--tinta-suave)" font-size="11">Bits máximos por veredicto = log₂(salidas posibles). Los valores gap:* solo existen con consentimiento de ambos lados.</text>
+    </svg>
+    <figcaption>La escala de fuga. El diseño elegido (4 salidas) casi duplica el enum básico pero se
+    queda muy por debajo de nombrar la dimensión (6) y de los subconjuntos exactos (9).</figcaption>
+  </figure>
+
+  <h3>Los «9 salidas»: de dónde sale el número</h3>
+  <p>La opción de subconjuntos emitiría el <em>conjunto exacto</em> de dimensiones que bloquean.
+  Con tres dimensiones internas —compensación, plazos, alcance— los conjuntos no vacíos son
+  3&nbsp;individuales + 3&nbsp;parejas + 1&nbsp;con las tres = <strong>7 valores gap</strong>, más
+  <code>workable</code> y <code>not_workable</code> a secas: ≈ 9 mensajes distinguibles.</p>
+
+  <p>Su problema no es la deshonestidad — siempre dice la verdad — sino la <strong>certificación por
+  complemento</strong>: nombrar el conjunto que falla certifica todo lo que <em>no</em> está en él.
+  <code>gap:{plazos}</code> no solo dice «fallan las fechas»: certifica que <em>tu precio y tu alcance
+  ya eran aceptables</em>. Eso es exactamente lo que un negociador pagaría por saber.</p>
+
+  <figure aria-label="Diagrama: la certificación por complemento">
+    <svg viewBox="0 0 640 150" width="100%" role="img" aria-label="El veredicto gap plazos revela implícitamente que compensación y alcance eran compatibles.">
+      <rect x="20" y="30" width="180" height="44" rx="7" fill="var(--rojo-tenue)" stroke="var(--rojo)" stroke-width="1.5"/>
+      <text x="110" y="50" text-anchor="middle" font-size="13" class="mono" fill="var(--rojo)">gap:{plazos}</text>
+      <text x="110" y="66" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">lo que se emite</text>
+      <line x1="205" y1="52" x2="290" y2="52" stroke="var(--tinta-suave)" stroke-width="1.5"/>
+      <path d="M290 52 l-9 -5 v10 z" fill="var(--tinta-suave)"/>
+      <text x="247" y="42" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">implica</text>
+      <g font-size="12.5">
+        <text x="305" y="35" fill="var(--tinta)">✗ plazos incompatibles</text>
+        <text x="305" y="60" fill="var(--sello)">✓ compensación compatible — <tspan font-style="italic">gratis</tspan></text>
+        <text x="305" y="85" fill="var(--sello)">✓ alcance compatible — <tspan font-style="italic">gratis</tspan></text>
+      </g>
+      <text x="20" y="125" font-size="12" fill="var(--tinta-suave)">Con gap:single, lo único implicado es «exactamente una dimensión falla» — sin decir cuál ni cuáles funcionan.</text>
+    </svg>
+    <figcaption>Certificación por complemento: nombrar lo que falla regala lo que funciona.</figcaption>
+  </figure>
+
+  <h3>Por qué el diseño anterior era además indefinido</h3>
+  <p>El diseño previo («la dimensión bloqueante», 6 salidas) tenía un defecto peor que la fuga:
+  presuponía que siempre existe <em>un único</em> bloqueo. Falla en dos casos reales:</p>
+  <p><strong>1. Varios bloqueos a la vez</strong> — precio <em>y</em> fechas. Elegir uno (p. ej. por
+  orden de prioridad) fabrica una respuesta falsa: «arregla el dinero» invita a una segunda
+  negociación condenada. Y con un orden de prioridad público, <code>gap:plazos</code> implicaría
+  «la compensación estaba bien» — filtra casi lo mismo que los subconjuntos, mintiendo a veces.
+  Lo peor de los dos mundos.</p>
+  <p><strong>2. Bloqueos entrelazados</strong> — «acepto 380&nbsp;000&nbsp;€ si la escritura es en 30
+  días; si no, 400&nbsp;000&nbsp;€». Si eso falla, ¿es precio o plazos? La pregunta no tiene
+  respuesta única: no hay «la» dimensión que nombrar.</p>
+
+  <div class="nota"><strong>La corrección de raíz:</strong> cambiar la pregunta que responde el enum.
+  De «¿cuál es LA dimensión bloqueante?» (a veces sin respuesta) a «¿se puede atribuir el bloqueo a
+  una sola dimensión, sí o no?» (siempre tiene respuesta). El enclave nunca vuelve a estar obligado a
+  fabricar nada.</div>
+
+  <h3>Semántica exacta (D9 enmendada)</h3>
+  <p>Las tres dimensiones no desaparecen: sobreviven <strong>solo dentro del enclave</strong>, como
+  regla de medir. El modelo evalúa cada una y del recinto sale únicamente el recuento:</p>
+
+  <figure aria-label="Diagrama: la frontera del enclave y la base de conteo interna">
+    <svg viewBox="0 0 640 190" width="100%" role="img" aria-label="Dentro del enclave se evalúan tres dimensiones; solo el recuento cruza la frontera.">
+      <rect x="15" y="15" width="360" height="160" rx="10" fill="var(--sello-tenue)" stroke="var(--sello)" stroke-width="2" stroke-dasharray="7 5"/>
+      <text x="30" y="40" font-size="12" font-weight="600" fill="var(--sello)">DENTRO DEL ENCLAVE</text>
+      <g font-size="13">
+        <text x="30" y="72" fill="var(--tinta)">compensación</text><text x="200" y="72" fill="var(--rojo)">✗ bloquea</text>
+        <text x="30" y="100" fill="var(--tinta)">plazos</text><text x="200" y="100" fill="var(--rojo)">✗ bloquea</text>
+        <text x="30" y="128" fill="var(--tinta)">alcance</text><text x="200" y="128" fill="var(--sello)">✓ compatible</text>
+      </g>
+      <text x="30" y="160" font-size="11.5" fill="var(--tinta-suave)">recuento de bloqueos: 2 → «varios»</text>
+      <!-- frontera -->
+      <line x1="405" y1="10" x2="405" y2="180" stroke="var(--tinta-suave)" stroke-width="1.5"/>
+      <text x="418" y="30" font-size="10.5" fill="var(--tinta-suave)" transform="rotate(90 418 30)">frontera — nada más sale</text>
+      <!-- salida -->
+      <line x1="378" y1="95" x2="470" y2="95" stroke="var(--tinta)" stroke-width="1.5"/>
+      <path d="M470 95 l-9 -5 v10 z" fill="var(--tinta)"/>
+      <rect x="480" y="72" width="145" height="46" rx="7" fill="var(--tarjeta)" stroke="var(--ambar)" stroke-width="2"/>
+      <text x="552" y="93" text-anchor="middle" font-size="13" class="mono" fill="var(--ambar)">gap:multiple</text>
+      <text x="552" y="110" text-anchor="middle" font-size="10.5" fill="var(--tinta-suave)">lo único publicado</text>
+    </svg>
+    <figcaption>La taxonomía pasa de vocabulario de salida a regla de medir interna: da una semántica
+    bien definida a «una vs. varias» sin publicar jamás los nombres.</figcaption>
+  </figure>
+
+  <p>Reglas emitidas por el enclave (siempre con temperatura 0, modelo fijado, validación Zod):</p>
+  <table>
+    <thead><tr><th>Veredicto</th><th>Cuándo</th><th>Fuga máx.</th></tr></thead>
+    <tbody>
+      <tr><td><code>workable</code></td><td>siempre disponible</td><td class="num">—</td></tr>
+      <tr><td><code>not_workable</code></td><td>siempre disponible (sin opt-in es la única respuesta negativa)</td><td class="num">1,0 bit</td></tr>
+      <tr class="elegido"><td><code>gap:single</code></td><td>ambos lados dieron opt-in <em>y</em> exactamente una dimensión bloquea, con atribución limpia</td><td class="num">2,0 bits</td></tr>
+      <tr class="elegido"><td><code>gap:multiple</code></td><td>ambos lados dieron opt-in <em>y</em> bloquean varias — o están demasiado entrelazadas para atribuir a una</td><td class="num">2,0 bits</td></tr>
+    </tbody>
+  </table>
+
+  <p>El caso entrelazado cae en <code>gap:multiple</code> por diseño: es exactamente el valor «no
+  puedo nombrar una sola con honestidad» que faltaba en el vocabulario original. El modelo aún puede
+  equivocarse al contar (M6 lo reconoce: «es un juicio»), pero ahora la semántica define cuál es la
+  respuesta correcta — antes ni siquiera existía.</p>
+
+  <h3>Clasificación final</h3>
+  <p>De menor a mayor fuga por veredicto:
+  enum básico (2) &lt; <strong>single/multiple (4 — elegido)</strong> &lt; dimensión nombrada (6 — el
+  diseño anterior) &lt; subconjuntos exactos (9 — honesto pero caro) &lt; texto libre (prohibido por
+  D9). Los subconjuntos serían la manera honesta de construir un futuro «modo pro» con más
+  desvelo — detrás de un consentimiento explícito más serio. No para este fin de semana.</p>
+</section>
+
+<footer>
+  Seam · ETHGlobal Lisboa 2026 — enmienda D9 registrada el 25 · jul · 2026 (PR #12:
+  ledger D9, DA1, <code>02-data-model.md</code>, <code>spec-02-evaluator.md</code>, M6).
+  Los valores <code>gap:*</code> requieren siempre el opt-in de <em>ambos</em> lados.
+</footer>
+
+</main>
+</body>
+</html>

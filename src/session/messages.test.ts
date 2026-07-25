@@ -63,10 +63,23 @@ describe("buildCommitmentMessage", () => {
       side: "A",
       commitment: HASH,
       worldNullifier: "0x8a",
+      gapOptIn: false,
       submittedAt: "2026-07-26T06:12:04Z",
     });
     expect(msg.side).toBe("A");
     expect(msg.v).toBe(TOPIC_MESSAGE_VERSION);
+  });
+
+  it("records this side's gap consent explicitly (D9 amended)", () => {
+    const msg = buildCommitmentMessage({
+      roomId: ROOM,
+      side: "B",
+      commitment: HASH,
+      worldNullifier: "0x8b",
+      gapOptIn: true,
+      submittedAt: "2026-07-26T06:12:04Z",
+    });
+    expect(msg.gapOptIn).toBe(true);
   });
 
   it("rejects a commitment that is not 64 lowercase hex chars", () => {
@@ -76,6 +89,7 @@ describe("buildCommitmentMessage", () => {
         side: "A",
         commitment: "XYZ",
         worldNullifier: "0x8a",
+        gapOptIn: false,
         submittedAt: "2026-07-26T06:12:04Z",
       }),
     ).toThrow();
@@ -89,9 +103,27 @@ describe("buildCommitmentMessage", () => {
         side: "C",
         commitment: HASH,
         worldNullifier: "0x8a",
+        gapOptIn: false,
         submittedAt: "2026-07-26T06:12:04Z",
       }),
     ).toThrow();
+  });
+});
+
+describe("commitment gap consent — legacy fail-safe", () => {
+  it("a pre-D9-amendment commitment without gapOptIn parses as consent = false", () => {
+    const legacy = {
+      v: 1,
+      type: "commitment",
+      roomId: ROOM,
+      side: "A",
+      commitment: HASH,
+      worldNullifier: "0x8a",
+      submittedAt: "2026-07-26T06:12:04Z",
+    };
+    const parsed = parseTopicMessage(legacy);
+    expect(parsed.type).toBe("commitment");
+    if (parsed.type === "commitment") expect(parsed.gapOptIn).toBe(false);
   });
 });
 

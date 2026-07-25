@@ -42,7 +42,11 @@ export const expiryMessageSchema = z.object({
 });
 export type ExpiryMessage = z.infer<typeof expiryMessageSchema>;
 
-/** Commitment — one per side; carries `sha256(ciphertext)`, never plaintext (D5/D8). */
+/** Commitment — one per side; carries `sha256(ciphertext)`, never plaintext (D5/D8).
+ * `gapOptIn` is this side's consent to gap disclosure (D9 as amended): `gap:*` verdicts are
+ * allowed only if BOTH commitments carry `true`. Defaulted (not required) at parse so a
+ * pre-existing commitment without the field reads as `false` — missing consent fails safe
+ * to the bare verdict, never to disclosure. */
 export const commitmentMessageSchema = z.object({
   v: z.literal(TOPIC_MESSAGE_VERSION),
   type: z.literal("commitment"),
@@ -50,6 +54,7 @@ export const commitmentMessageSchema = z.object({
   side: sideSchema,
   commitment: sha256Hex,
   worldNullifier: z.string().min(1),
+  gapOptIn: z.boolean().default(false),
   submittedAt: isoInstant,
 });
 export type CommitmentMessage = z.infer<typeof commitmentMessageSchema>;
@@ -113,12 +118,16 @@ export function buildExpiryMessage(input: {
   });
 }
 
-/** Build a validated commitment message. Pure/deterministic (see {@link buildExpiryMessage}). */
+/** Build a validated commitment message. Pure/deterministic (see {@link buildExpiryMessage}).
+ * `gapOptIn` is required here on purpose: the writer (S3.2) must pass the side's explicit
+ * choice — the schema default exists only to fail legacy reads safe, not to let a writer
+ * forget consent. */
 export function buildCommitmentMessage(input: {
   roomId: string;
   side: Side;
   commitment: string;
   worldNullifier: string;
+  gapOptIn: boolean;
   submittedAt: string;
 }): CommitmentMessage {
   return commitmentMessageSchema.parse({

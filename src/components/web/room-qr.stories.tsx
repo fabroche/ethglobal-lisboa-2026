@@ -43,3 +43,17 @@ export const LanAddress: Story = {
     joinUrl: "http://10.1.1.167:3000/room/r_9f3a?side=B",
   },
 };
+
+/**
+ * What the creator sees after opening a room (S3.8): the link to share AND their
+ * own way back in. Without the second one there is no route back to a room that
+ * already exists — no accounts, no sign-in, and the create screen previously
+ * showed side B's link alone.
+ */
+export const WithOwnLink: Story = {
+  args: {
+    roomId: "r_9f3a",
+    joinUrl: "https://seam.app/room/r_9f3a?side=B",
+    ownUrl: "https://seam.app/room/r_9f3a?side=A",
+  },
+};

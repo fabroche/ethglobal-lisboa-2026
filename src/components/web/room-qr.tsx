@@ -7,7 +7,21 @@ import { cn } from "@/lib/utils";
 
 export interface RoomQrProps {
   roomId: string;
+  /** The link to hand to the OTHER side. This is what the QR encodes. */
   joinUrl: string;
+  /**
+   * The creator's own link (`?side=A`), when there is one.
+   *
+   * Shown because without it the creator has no way back in — the room is
+   * reachable only by URL, and the create screen used to display B's link alone.
+   * They could not even return to write their own position (S3.8).
+   *
+   * NOT a secret, and the UI must not imply otherwise: `buildJoinUrl` is
+   * deterministic and public, so anyone holding the room id can construct either
+   * side's link. What actually keeps a seat is World Selfie Check — one per side,
+   * per room. The `side` parameter is a routing hint, never an authorisation.
+   */
+  ownUrl?: string;
   className?: string;
 }
 
@@ -51,7 +65,8 @@ const LABEL: Record<CopyState, string> = {
   failed: "Copy failed",
 };
 
-export function RoomQr({ roomId, joinUrl, className }: RoomQrProps) {
+/** One read-only URL with its own copy button and its own feedback state. */
+function CopyRow({ url, label }: { url: string; label: string }) {
   const [state, setState] = useState<CopyState>("idle");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -71,7 +86,7 @@ export function RoomQr({ roomId, joinUrl, className }: RoomQrProps) {
     // and only the first one has a useful fallback.
     if (navigator.clipboard?.writeText) {
       try {
-        await navigator.clipboard.writeText(joinUrl);
+        await navigator.clipboard.writeText(url);
         setState("copied");
         return;
       } catch {
@@ -92,6 +107,42 @@ export function RoomQr({ roomId, joinUrl, className }: RoomQrProps) {
     setState("failed");
   }
 
+  return (
+    <>
+      <div className="flex w-full items-center gap-2">
+        <input
+          ref={inputRef}
+          readOnly
+          value={url}
+          aria-label={label}
+          onFocus={(event) => event.currentTarget.select()}
+          className="min-h-11 w-full flex-1 truncate rounded-lg border border-input bg-background px-3 text-sm"
+        />
+        {/* The aria-label is STATIC and names the action; the visible text carries
+            the state and the live region announces it. A control whose accessible
+            NAME changes as you use it is disorienting with a screen reader — the
+            thing you just found stops being called what it was called. */}
+        <button
+          type="button"
+          onClick={copy}
+          aria-label={`Copy ${label.toLowerCase()}`}
+          className="min-h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {LABEL[state]}
+        </button>
+      </div>
+
+      {/* Announced to screen readers, which a button relabelling itself is not. */}
+      <p aria-live="polite" className="sr-only">
+        {state === "copied" ? `${label} copied to clipboard.` : null}
+        {state === "selected" ? `${label} selected. Press Control or Command plus C to copy.` : null}
+        {state === "failed" ? `Could not copy ${label}. Select it manually.` : null}
+      </p>
+    </>
+  );
+}
+
+export function RoomQr({ roomId, joinUrl, ownUrl, className }: RoomQrProps) {
   const unreachable = isLoopbackUrl(joinUrl);
 
   return (
@@ -125,33 +176,19 @@ export function RoomQr({ roomId, joinUrl, className }: RoomQrProps) {
         </p>
       ) : null}
 
-      <div className="flex w-full items-center gap-2">
-        <input
-          ref={inputRef}
-          readOnly
-          value={joinUrl}
-          aria-label="Room join link"
-          onFocus={(event) => event.currentTarget.select()}
-          className="min-h-11 w-full flex-1 truncate rounded-lg border border-input bg-background px-3 text-sm"
-        />
-        {/* No aria-label: the visible text already names the action, and the
-            live region below announces the outcome. An aria-label here would also
-            shadow the input's, since both would contain "join link". */}
-        <button
-          type="button"
-          onClick={copy}
-          className="min-h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {LABEL[state]}
-        </button>
-      </div>
+      <CopyRow url={joinUrl} label="Room join link" />
 
-      {/* Announced to screen readers, which the button's own text change is not. */}
-      <p aria-live="polite" className="sr-only">
-        {state === "copied" ? "Link copied to clipboard." : null}
-        {state === "selected" ? "Link selected. Press Control or Command plus C to copy." : null}
-        {state === "failed" ? "Could not copy the link. Select it manually." : null}
-      </p>
+      {ownUrl ? (
+        <div className="flex w-full flex-col gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+          <p className="text-xs">
+            <span className="font-semibold">Your own link.</span> The room has no accounts and no
+            sign-in, so this URL is how you get back to write your position and read the verdict.{" "}
+            <span className="font-semibold">Save it now</span> — close this page without it and you
+            would need the full address to return.
+          </p>
+          <CopyRow url={ownUrl} label="Your own link" />
+        </div>
+      ) : null}
 
       <Link
         href={`/room/${roomId}/verdict`}

@@ -5,6 +5,7 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { RoomQr, isLoopbackUrl } from "./room-qr";
 
 const URL_ = "https://seam.app/room/r_9f3a?side=B";
+const OWN_ = "https://seam.app/room/r_9f3a?side=A";
 
 /** Remove the Clipboard API, reproducing any non-secure context (a LAN IP). */
 function withoutClipboard(): void {
@@ -16,6 +17,15 @@ function withClipboard(writeText = vi.fn().mockResolvedValue(undefined)): typeof
   return writeText;
 }
 
+/**
+ * The copy button's accessible NAME is static (it names the action); its visible
+ * TEXT carries the state. So queries find it by name and assert on textContent —
+ * which is also what a sighted user actually reads.
+ */
+const shareButton = () => screen.getByRole("button", { name: /^copy room join link$/i });
+const shareInput = () => screen.getByRole("textbox", { name: /^room join link$/i });
+const ownButton = () => screen.getByRole("button", { name: /^copy your own link$/i });
+
 describe("RoomQr", () => {
   beforeEach(() => {
     withClipboard();
@@ -23,7 +33,7 @@ describe("RoomQr", () => {
 
   it("shows the join link", () => {
     render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
-    expect(screen.getByLabelText(/join link/i)).toHaveValue(URL_);
+    expect(shareInput()).toHaveValue(URL_);
   });
 
   it("renders a scannable QR (SVG) labelled with the room", () => {
@@ -44,10 +54,20 @@ describe("RoomQr", () => {
     const writeText = withClipboard();
     render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^copy$/i }));
+    fireEvent.click(shareButton());
 
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(URL_));
-    expect(await screen.findByRole("button", { name: /copied/i })).toBeInTheDocument();
+    await waitFor(() => expect(shareButton()).toHaveTextContent(/copied/i));
+  });
+
+  it("keeps the button's accessible name stable as the state changes", async () => {
+    // A control whose name changes while you use it is disorienting with a screen
+    // reader: the thing you just found stops being called what it was called.
+    render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
+    fireEvent.click(shareButton());
+
+    await waitFor(() => expect(shareButton()).toHaveTextContent(/copied/i));
+    expect(shareButton()).toBeInTheDocument();
   });
 });
 
@@ -64,19 +84,18 @@ describe("RoomQr · copy without the Clipboard API (non-secure context)", () => 
 
   it("falls back to selecting the text instead of doing nothing", async () => {
     render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
-    const input = screen.getByLabelText(/join link/i) as HTMLInputElement;
-    const select = vi.spyOn(input, "select");
+    const select = vi.spyOn(shareInput() as HTMLInputElement, "select");
 
-    fireEvent.click(screen.getByRole("button", { name: /^copy$/i }));
+    fireEvent.click(shareButton());
 
     expect(select).toHaveBeenCalled();
     // And it TELLS the user what to do next, rather than failing silently.
-    expect(await screen.findByRole("button", { name: /press ctrl\+c/i })).toBeInTheDocument();
+    await waitFor(() => expect(shareButton()).toHaveTextContent(/press ctrl\+c/i));
   });
 
   it("announces the fallback to screen readers", async () => {
     render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
-    fireEvent.click(screen.getByRole("button", { name: /^copy$/i }));
+    fireEvent.click(shareButton());
 
     expect(await screen.findByText(/press control or command plus c/i)).toBeInTheDocument();
   });
@@ -85,12 +104,11 @@ describe("RoomQr · copy without the Clipboard API (non-secure context)", () => 
     // The original bug: catch { setCopied(false) } put the state back where it
     // already was, so a click produced no observable effect whatsoever.
     render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
-    const button = screen.getByRole("button", { name: /^copy$/i });
-    const before = button.textContent;
+    const before = shareButton().textContent;
 
-    fireEvent.click(button);
+    fireEvent.click(shareButton());
 
-    await waitFor(() => expect(button.textContent).not.toBe(before));
+    await waitFor(() => expect(shareButton().textContent).not.toBe(before));
   });
 });
 
@@ -100,9 +118,9 @@ describe("RoomQr · a rejected clipboard write still falls back", () => {
     withClipboard(vi.fn().mockRejectedValue(new Error("denied")));
     render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^copy$/i }));
+    fireEvent.click(shareButton());
 
-    expect(await screen.findByRole("button", { name: /press ctrl\+c/i })).toBeInTheDocument();
+    await waitFor(() => expect(shareButton()).toHaveTextContent(/press ctrl\+c/i));
   });
 });
 
@@ -117,17 +135,65 @@ describe("RoomQr · the feedback resets", () => {
 
   it("returns to Copy so a second copy also gives a signal", async () => {
     render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
-    fireEvent.click(screen.getByRole("button", { name: /^copy$/i }));
+    fireEvent.click(shareButton());
 
     await act(async () => {
       await Promise.resolve();
     });
-    expect(screen.getByRole("button", { name: /copied/i })).toBeInTheDocument();
+    expect(shareButton()).toHaveTextContent(/copied/i);
 
     await act(async () => {
       vi.advanceTimersByTime(2500);
     });
-    expect(screen.getByRole("button", { name: /^copy$/i })).toBeInTheDocument();
+    expect(shareButton()).toHaveTextContent(/^copy$/i);
+  });
+});
+
+/**
+ * S3.8. Without this the creator has no way back into their own room — the create
+ * screen used to show side B's link alone, so A could not even return to write
+ * their own position.
+ */
+describe("RoomQr · the creator's own link", () => {
+  beforeEach(() => {
+    withClipboard();
+  });
+
+  it("shows it, separately from the one to share", () => {
+    render(<RoomQr roomId="r_9f3a" joinUrl={URL_} ownUrl={OWN_} />);
+
+    expect(screen.getByRole("textbox", { name: /^your own link$/i })).toHaveValue(OWN_);
+    expect(shareInput()).toHaveValue(URL_);
+  });
+
+  it("tells the user it is the only way back, since there are no accounts", () => {
+    render(<RoomQr roomId="r_9f3a" joinUrl={URL_} ownUrl={OWN_} />);
+    expect(screen.getByText(/save it now/i)).toBeInTheDocument();
+  });
+
+  it("gives each link its own copy button and independent feedback", async () => {
+    const writeText = withClipboard();
+    render(<RoomQr roomId="r_9f3a" joinUrl={URL_} ownUrl={OWN_} />);
+
+    fireEvent.click(ownButton());
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(OWN_));
+    // The OWN button confirms; the share button must NOT — one shared state would
+    // tell the user they copied something they did not.
+    await waitFor(() => expect(ownButton()).toHaveTextContent(/copied/i));
+    expect(shareButton()).toHaveTextContent(/^copy$/i);
+  });
+
+  it("omits the section entirely when there is no own link", () => {
+    render(<RoomQr roomId="r_9f3a" joinUrl={URL_} />);
+    expect(screen.queryByRole("textbox", { name: /^your own link$/i })).not.toBeInTheDocument();
+  });
+
+  it("encodes the OTHER side's link in the QR, not the creator's", () => {
+    // Scanning your own QR would walk the creator into side B's seat.
+    const { container } = render(<RoomQr roomId="r_9f3a" joinUrl={URL_} ownUrl={OWN_} />);
+    expect(container.querySelectorAll("svg")).toHaveLength(1);
+    expect(shareInput()).toHaveValue(URL_);
   });
 });
 

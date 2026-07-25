@@ -19,11 +19,13 @@ export default async function VerdictPage({
 
   let deadlineIso: string | undefined;
   let initialVerdict: Verdict | null = null;
+  let committedCount = 0;
   try {
     const topicId = requireEnv("HEDERA_TOPIC_ID");
     const view = await createReader(hederaMirrorClient()).readSession(topicId, { roomId });
     deadlineIso = view.expiry?.deadline;
     initialVerdict = view.verdict?.verdict ?? null;
+    committedCount = view.commitments.length;
   } catch {
     // No env / Mirror lag — render pending and let the client poll.
   }
@@ -39,6 +41,9 @@ export default async function VerdictPage({
         </Link>
         <span className="font-mono text-xs text-muted-foreground">{roomId}</span>
       </nav>
+      <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+        {committedCount} of 2 sides committed
+      </p>
       <VerdictView
         deadlineIso={deadlineIso}
         initialVerdict={initialVerdict}

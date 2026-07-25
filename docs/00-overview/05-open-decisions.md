@@ -16,7 +16,7 @@ answered.
 | DA6 | Which exact **0G model** to pin + record its hash | candidate models on the 0G router | Pick one small, fast, deterministic-friendly model; record `OG_MODEL` hash | ⬜ open | during `M7` spike (Fri night) |
 | DA7 | Exact **attestation package/endpoint** | `@foundryprotocol/0gkit-attestation` `verifyEnvelope` vs whatever the booth confirms | Use `verifyEnvelope`; treat package/endpoint as unconfirmed until the booth | 🟧 leaning | 0G workshop / `M7` spike |
 | DA8 | Write-screen **checklist depth** (D16 presets) | static guidance text only vs in-browser presence heuristics (has a number / a date) | **Static-only** for the deadline; heuristics are a stretch goal — never blocking, plaintext never leaves the browser either way | 🟧 leaning | Sat PM, time permitting |
-| DA9 | **Product name** | keep **Seam** vs rename (brainstorm live; strongest alternative raised: Venn) | Keep Seam unless the whole team instantly prefers an alternative — rename touchpoints: README/docs, UI copy, `roomActionId` prefix (`seam-`), World app display name (app_id unaffected), video script | ⬜ open | **before S5.1 video / S4.4 README — Sat night, hard stop** |
+| DA9 | **Product name** | keep **Seam** vs rename → **Overlap** (alts raised: Venn, BlindMatch, SealedBid) | **Lean Overlap** — Dylan's pick; converging-chevrons mark + tokens designed (design-system §Brand — Overlap; exploration artifact). **Confirm with Frank, then apply via S4.8.** Rename touchpoints: README/docs, UI copy, `roomActionId` prefix (`seam-`→`overlap-` — changes derived nullifiers, fine pre-launch), World app display name (app_id unaffected), video script | 🟧 leaning | **before S5.1 video / S4.4 README — Sat night, hard stop** |
 
 ## Notes
 

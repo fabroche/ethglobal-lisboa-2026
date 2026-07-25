@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 
 // The widget is World's own bundle — mock it; what we test is OUR wiring: the per-room
 // action string, the proof pass-through, and the gated states.
-vi.mock("@worldcoin/idkit", () => ({
+vi.mock("idkit2", () => ({
   VerificationLevel: { Device: "device", Orb: "orb" },
   IDKitWidget: ({
     action,

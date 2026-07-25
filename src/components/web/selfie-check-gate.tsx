@@ -1,6 +1,6 @@
 "use client";
 
-import { IDKitWidget, VerificationLevel, type ISuccessResult } from "@worldcoin/idkit";
+import { IDKitWidget, VerificationLevel, type ISuccessResult } from "idkit2";
 import { cn } from "@/lib/utils";
 import type { Side } from "@/session";
 import { worldProofSchema, type WorldProof } from "@/worldid";

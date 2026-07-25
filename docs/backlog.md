@@ -51,7 +51,7 @@
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
 |----|-----------|------|---------|-----------|-------|:------:|
 | S3.1 | `web` create | screen: open a room, set deadline, get QR/link | web | S1.2 | dylan | 🟩 |
-| S3.2 | `web` write+seal | screen: write position (preset placeholder + soft checklist, D16), seal in-browser | web | S1.4, S3.5 | | ⬜ |
+| S3.2 | `web` write+seal | screen: write position (preset placeholder + soft checklist, D16), seal in-browser | web | S1.4, S3.5 | dylan | 🟡 |
 | S3.3 | `web` verdict | screen: countdown + one-line verdict (Mirror) | web | S2.5 | dylan | 🟩 |
 | S3.4 | two-browser E2E | full flow across two browsers, QR to join | web | S3.1–S3.3 | | ⬜ |
 | S3.5 | `usecases` presets | preset module (`src/session/usecases.ts`: labels/placeholder/checklist/evaluatorHint + Zod enum) + create-form use-case picker + `useCase` in the expiry message (D16) | web/Hedera | S3.1 | dylan | 🟡 |
@@ -61,7 +61,7 @@
 |----|-----------|------|---------|-----------|-------|:------:|
 | S4.1 | `inspect.ts` | demo: show our store holds only ciphertext (no key) | demo | S1.3 | dylan | 🟩 |
 | S4.2 | `demo-naive.ts` | demo: same product w/o enclave → plaintext leaks | demo | S2.2 | | ⬜ |
-| S4.3 | World testing doc | developer friction + user friction (track requirement) | World | S1.5 | | ⬜ |
+| S4.3 | World testing doc | developer friction + user friction (track requirement) | World | S1.5 | dylan | 🟡 (dev half + skeleton; user half after S3.2) |
 | S4.4 | README (final) | what/why, architecture, how to run, sponsors | compliance | — | | ⬜ |
 | S4.5 | `ai-usage.md` | which files were AI-assisted (keep updated all weekend) | compliance | — | | ⬜ |
 | S4.6 | output vocabulary | enum verdicts + opt-in `gap:*` consent logic | 0G/web | S2.2 | | ⬜ |

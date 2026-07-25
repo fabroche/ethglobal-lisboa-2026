@@ -12,12 +12,22 @@ const envSchema = z.object({
   APP_URL: z.string().url().default("http://localhost:3000"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
-  // 0G — sealed inference (OpenAI-compatible router + independent attestation check)
+  // 0G — sealed inference (OpenAI-compatible router + independent attestation check).
+  // MAINNET by default (DA8): 0G testnet has no TeeML chat model, so the sealed
+  // evaluation cannot run there. Hedera stays on testnet — separate networks.
   OG_ROUTER_URL: z.string().url().default("https://router-api.0g.ai/v1"),
-  OG_KEY: z.string().optional(),
-  OG_MODEL: z.string().optional(), // pin an exact model, record its hash
-  OG_ENCLAVE_PUBKEY: z.string().optional(), // for independent attestation verification
-  OG_ENCLAVE_SEAL_PUBKEY: z.string().optional(), // enclave ENCRYPTION key for client sealing (spec-04 §2) — distinct from the attestation key above
+  OG_KEY: z.string().optional(), // Trust mode MUST be `Private` (TEE enclave)
+  // Pinned model (DA6). Single-provider on purpose so the enclave signing key
+  // cannot rotate out from under OG_ENCLAVE_PUBKEY.
+  OG_MODEL: z.string().optional(),
+  OG_ENCLAVE_PUBKEY: z.string().optional(), // signing key — verifies the attestation (M7)
+  // Enclave ENCRYPTION key for client sealing (spec-04 §2, M2) — distinct from
+  // the attestation key above: you cannot encrypt to a 20-byte signer address.
+  OG_ENCLAVE_SEAL_PUBKEY: z.string().optional(),
+  // OUR operating wallet, never a user's (see agente/guardrails.md). Needed
+  // because the Router never makes us the broker's customer, so it cannot give
+  // us a signature to verify — the whole product rests on getting one.
+  OG_WALLET_PRIVATE_KEY: z.string().optional(),
 
   // Hedera — HCS topic (registry) + Schedule Service (clock) + Mirror Node (read)
   HEDERA_ACCOUNT_ID: z.string().optional(),

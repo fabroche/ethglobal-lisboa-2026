@@ -34,7 +34,7 @@ export default async function VerdictPage({
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-2 px-6">
+    <main className="mx-auto flex w-full flex-1 max-w-2xl flex-col items-center justify-center gap-2 px-6">
       <nav className="mb-4 flex w-full max-w-md items-center justify-between">
         <Link
           href={`/room/${roomId}/share`}

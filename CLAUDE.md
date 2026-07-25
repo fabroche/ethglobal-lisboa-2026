@@ -9,21 +9,47 @@ terms. **No database, no smart contract, no Solidity.**
 > backlog `S0.3`) is the whole gamble: if the attestation can't be verified independently, the core
 > claim collapses — surface it that night, not Sunday.
 
-## Status — the gamble is half won (S0.3, 24 Jul)
-`npm run spike` **PART A: GO.** We verify a TEE signature with general-purpose crypto only
-(`@noble/*`) — **no 0G code in the trust path**. Tampered payload, tampered signature and wrong
-pinned key are all rejected; 40 unit tests green. The vendor package `@foundryprotocol/0gkit-attestation`
-turned out to be unresolvable, so **we implement `verifyEnvelope` ourselves** — which satisfies
-RNF-M7-001 more convincingly anyway (spec-03 §1).
+## Status — 🎉 the gamble is WON (S0.3, 25 Jul 15:45)
+`npm run spike` is **FULL GO, exit 0.** A **real enclave signature verifies against our pinned key**,
+using general-purpose crypto only (`@noble/*`) — **no 0G code in the trust path**. Flipping one
+character of the real payload is rejected. 149 tests green.
 
-**PART B (live 0G) has never run** — needs `OG_KEY`/`OG_MODEL`/`OG_ENCLAVE_PUBKEY` in `.env.local`.
-So the *design* is proven and the *wire format* is not. Two booth answers can still move us:
-whether the signature **covers the input** (if not, the pitch needs rewording), and whether the
-enclave pubkey is **stable across requests** (if not, it can't be a static env var). See
-`docs/spec-03-attest.md` §8.
+**The signature covers the INPUT as well as the output** — proven empirically, so *"this model saw
+these inputs and returned this verdict"* is supported and the pitch needs no rewording. That was the
+highest-stakes open question (spec-03 §8.1) and it fell our way.
+
+Three things had to be understood, all of them non-obvious and all written up in
+`docs/handoff-open-threads.md` §1:
+1. **The Router can never give a signature.** It pays the broker with its own wallet, so the broker's
+   customer is the Router, not us. Only a **direct, on-chain-paid** call yields a verifiable response.
+   One-time setup: `npm run og:setup` (ledger minimum is **3 0G** — an account-opening floor, not a
+   usage cost; a call is ~0.0005 0G).
+2. **`OG_ENCLAVE_PUBKEY` is `teeSignerAddress`, not the provider address.** Every source we had
+   reached for hands you the provider address, so the wrong value looked corroborated three ways. The
+   spike now checks it on-chain, because that key **moves** if the enclave is redeployed.
+3. **0G signs a raw string, so canonical serialisation breaks it.** Hence `encoding: "canonical" |
+   "utf8"` on the envelope. Getting this wrong fails as `signer_mismatch`, which is indistinguishable
+   at a glance from a wrongly pinned key — a test keeps that trap caught.
 
 **We verify the last link and pin the enclave key** — no TDX quote parsing / cert-chain walk to an
 Intel root. Say it that way in the Q&A; overstating it is how this demo loses (spec-03 §5).
+0G's SDK is a dependency now, for **payment and transport only** — it never judges a signature, and we
+deliberately never call `processResponse()`.
+
+## `evaluator` (S2.2) done — and it counts dimensions correctly
+`npm run eval:live` is **GO** against the real enclave. Bare verdicts are right with no consent; with
+two-sided consent the model returned `gap:multiple` when price *and* timing blocked and `gap:single`
+when only timing did, so D9-as-amended works in practice. 225 tests green.
+
+Consent is enforced **twice**: the `gap:*` vocabulary is never offered in the prompt without it, and
+`applyConsent` degrades a gap to `not_workable` on the way out — a prompt is a request, and this is a
+privacy boundary. `parseVerdict` refuses to extract an enum value out of prose, because recovering one
+would make the enum guarantee true in the types and false in reality.
+
+**One honest gap, D-M6-2:** `evaluate()` takes **plaintext**. The router is a chat API, so the enclave
+cannot run our ECIES decryption, and `OG_ENCLAVE_SEAL_PUBKEY` is still unanswered. Sealing in the
+browser and the ciphertext-only store are real and demonstrable; *"plaintext exists only inside the
+TEE"* is **not yet true** — do not say it (spec-02, D-M6-2).
 
 **`seal` (S1.4) done.** ECIES to the enclave key, suite tagged in the payload. One correction worth
 knowing: **sealing is randomized on purpose.** `M2-seal.md` asked for "same plaintext ⇒ identical
@@ -32,6 +58,7 @@ guessed position offline by comparing commitments — the probing attack from an
 control doesn't cover. A test enforces that two seals of the same text differ (spec-04 §1).
 
 ## 🧭 If you are a Claude working on this repo, read in this order
+0. **`docs/handoff-open-threads.md`** — what's blocked right now and what to pick up. Read it first.
 1. **This file** (context + hard rules).
 2. **`docs/branching-strategy.md`** — how we use Git (pull-based, no squash, commit every ~30 min).
 3. **`docs/backlog.md`** — claim the next item (commit the claim first) + the **Definition of Done**.
@@ -54,9 +81,13 @@ npm run lint       # ESLint
 npm run typecheck  # tsc --noEmit
 npm run test       # Vitest
 npm run test:e2e   # Playwright (two-browser E2E)
-npm run spike      # scripts/spike-attest.ts — the Friday-night 0G go/no-go (S0.3)
+npm run spike      # scripts/spike-attest.ts — the 0G go/no-go (S0.3). FULL GO, exit 0
+npm run eval:live  # S2.2 evaluator against the real enclave. GO
+npm run og:status  # 0G wallet + compute-ledger balance. READ-ONLY, spends nothing
+npm run og:setup   # one-time: ledger deposit + acknowledge. DRY RUN unless -- --confirm
 npm run inspect    # demo: our store holds only ciphertext (S4.1)
-npm run demo:naive # demo: same product without the enclave leaks (S4.2)
+npm run demo:naive # demo Act 3: same product without the enclave leaks (S4.2)
+                   #   add `-- --live` to have the real enclave return the SAME verdict
 ```
 
 ## Architecture (nine modules, no DB, no contract)
@@ -72,7 +103,8 @@ npm run demo:naive # demo: same product without the enclave leaks (S4.2)
 
 ## Hard rules (see `agente/guardrails.md`)
 - **No Solidity / no smart contracts.** SDKs only.
-- **No user private keys, ever.** The only key we hold is our own Hedera testnet account.
+- **No user private keys, ever.** The only keys we hold are our own **operating** accounts: the Hedera
+  testnet account and the 0G mainnet wallet (`OG_WALLET_PRIVATE_KEY`). Seam users have no wallet at all.
 - **Enclave emits enum only** (never free text) — leak control. **Fail closed**: no valid attestation ⇒
   no verdict published.
 - Validate every external response (0G / Hedera / World) with **Zod**. Secrets never in the repo.

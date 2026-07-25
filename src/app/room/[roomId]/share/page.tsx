@@ -2,23 +2,41 @@ import Link from "next/link";
 import { buildJoinUrl } from "@/session";
 import { env } from "@/config/env";
 import { RoomQr } from "@/components/web/room-qr";
+import { RememberRoom } from "@/components/web/remember-room";
+import { bookmarkLabelSchema } from "@/lib/room-bookmarks";
 
 /**
- * Share/QR view: `/room/<roomId>/share`. A stable URL for a room's join QR + link (the QR the
- * create screen shows inline lives only in that page's state, so this gives it a permanent home
- * and a target for the verdict screen's "back" button). Rebuilds the join URL from the room id.
+ * Share/QR view: `/room/<roomId>/share`. The landing the create flow redirects to (S3.8), so a
+ * reload no longer destroys the room's links the way the create form's local state did.
+ *
+ * Both links are rebuilt from the room id — nothing is stored. Note that makes them PUBLIC by
+ * construction: `buildJoinUrl` is deterministic, so anyone holding the room id can derive either
+ * side's URL. The `side` parameter routes, it does not authorise; what protects a seat is World
+ * Selfie Check (one per side, per room), and the UI must not imply the URL is a credential.
  */
 export default async function SharePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ roomId: string }>;
+  searchParams: Promise<{ uc?: string }>;
 }) {
   const { roomId } = await params;
+  const { uc } = await searchParams;
   const joinUrl = buildJoinUrl(env.APP_URL, roomId, "B");
+  const ownUrl = buildJoinUrl(env.APP_URL, roomId, "A");
+
+  // Set by the create redirect so the bookmark can carry a searchable label
+  // (S3.11). Validated rather than trusted — it arrives from a URL.
+  const label = bookmarkLabelSchema.safeParse(uc);
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-6 px-6">
-      <RoomQr roomId={roomId} joinUrl={joinUrl} />
+    <main className="mx-auto flex w-full flex-1 max-w-2xl flex-col items-center justify-center gap-6 px-6">
+      {/* You reach this page by creating the room, so you are side A (S3.9).
+          Saved here as well as on the join landing, because the creator may never
+          click their own link — they came straight from /create. */}
+      <RememberRoom roomId={roomId} side="A" {...(label.success ? { label: label.data } : {})} />
+      <RoomQr roomId={roomId} joinUrl={joinUrl} ownUrl={ownUrl} />
       <Link
         href="/create"
         className="text-sm font-medium text-muted-foreground underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"

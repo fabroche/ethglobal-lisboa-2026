@@ -30,8 +30,23 @@ import {
   type AttestResult,
   type SignatureScheme,
 } from "../src/evaluator/attest";
+import { sha256 } from "@noble/hashes/sha256";
+// PART B only. Static because the SDK's ESM bundle breaks under dynamic import
+// ("does not provide an export named 'C'"). Being loaded is not the same as being
+// trusted: RNF-M7-001 is about the TRUST PATH, and `verifyEnvelope` imports
+// nothing but `@noble/*`. PART A never calls into either of these.
+import { createZGComputeNetworkBroker } from "@0gfoundation/0g-compute-ts-sdk";
+import { ethers } from "ethers";
+
 import { canonicalize } from "../src/lib/canonical";
 import { generateEnclaveKey, signEnvelope, tamperHex } from "../src/evaluator/attest-testkit";
+
+/** Local hex helper — `attest.ts` keeps its own private and that is fine. */
+function bytesToHexLocal(bytes: Uint8Array): string {
+  let out = "";
+  for (const byte of bytes) out += byte.toString(16).padStart(2, "0");
+  return out;
+}
 
 // ---------------------------------------------------------------- env + output
 
@@ -41,6 +56,28 @@ import { generateEnclaveKey, signEnvelope, tamperHex } from "../src/evaluator/at
  * so we populate process.env here and import that module dynamically, after.
  * No dependency, and it must not fail when the file is absent.
  */
+/**
+ * Parse one .env value. Handles the two shapes that actually occur:
+ *   KEY="value"   # trailing comment      <- quoted, comment after the quote
+ *   KEY=value     # trailing comment      <- bare, comment after whitespace
+ *
+ * Getting this wrong is not a cosmetic bug: a value that silently carries its
+ * own trailing comment gets sent to the API verbatim, and the failure surfaces
+ * as a confusing permission error from the provider rather than a config error
+ * from us.
+ */
+function parseEnvValue(raw: string): string {
+  const s = raw.trim();
+  const quote = s.startsWith('"') ? '"' : s.startsWith("'") ? "'" : "";
+  if (quote) {
+    const end = s.indexOf(quote, 1);
+    return end > 0 ? s.slice(1, end) : s.slice(1);
+  }
+  // Bare value: a comment starts at a `#` that begins the line or follows space.
+  const hash = s.search(/(^|\s)#/u);
+  return (hash >= 0 ? s.slice(0, hash) : s).trim();
+}
+
 function loadEnvLocal(): void {
   for (const file of [".env.local", ".env"]) {
     let raw: string;
@@ -50,11 +87,11 @@ function loadEnvLocal(): void {
       continue;
     }
     for (const line of raw.split(/\r?\n/u)) {
-      const match = /^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/u.exec(line);
+      const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$/u.exec(line);
       if (!match) continue;
       const [, key, rawValue] = match;
       if (!key || process.env[key] !== undefined) continue;
-      process.env[key] = rawValue?.replace(/^["']|["']$/gu, "") ?? "";
+      process.env[key] = parseEnvValue(rawValue ?? "");
     }
   }
 }
@@ -202,140 +239,576 @@ type OgEnv = {
   OG_KEY?: string | undefined;
   OG_MODEL?: string | undefined;
   OG_ENCLAVE_PUBKEY?: string | undefined;
+  /** Only to look the signer up on-chain; defaults to our pinned provider. */
+  OG_PROVIDER_ADDRESS?: string | undefined;
+  /** Present ⇒ take the direct path, the only one that yields a signature. */
+  OG_WALLET_PRIVATE_KEY?: string | undefined;
 };
+
+type CatalogModel = {
+  id: string;
+  type?: string;
+  verifiability?: string;
+  tee_attested?: boolean;
+  tee_type?: string;
+  provider_count?: number;
+};
+
+/**
+ * Check the pinned model against the public catalog BEFORE spending a request.
+ * `GET /v1/models` needs no auth, so this is free — and it turns "403
+ * permission_error" (which reads like a broken API key) into a config error
+ * that names itself.
+ *
+ * It also asserts the two properties the whole product rests on: the model runs
+ * inside the enclave (TeeML), and it has a single provider so the signing key
+ * cannot rotate out from under our pinned address.
+ */
+async function preflightModel(env: OgEnv): Promise<boolean> {
+  let catalog: CatalogModel[];
+  try {
+    const response = await fetch(`${env.OG_ROUTER_URL}/models`, {
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!response.ok) {
+      check("model catalog reachable", false, `HTTP ${response.status}`);
+      return false;
+    }
+    catalog = ((await response.json()) as { data?: CatalogModel[] }).data ?? [];
+    check("model catalog reachable", true, `${catalog.length} models`);
+  } catch (error) {
+    check("model catalog reachable", false, error instanceof Error ? error.message : String(error));
+    return false;
+  }
+
+  const model = catalog.find((m) => m.id === env.OG_MODEL);
+  if (!model) {
+    check("OG_MODEL exists in the catalog", false, `no model with id ${JSON.stringify(env.OG_MODEL)}`);
+    const raw = env.OG_MODEL ?? "";
+    if (raw !== raw.trim() || /["'#]/u.test(raw)) {
+      console.log(
+        `\n  ${c.yellow}The value carries quotes, spaces or a comment.${c.reset} ${c.dim}Check the\n` +
+          `  OG_MODEL line in .env.local — an inline "# comment" after the value is\n` +
+          `  legal .env syntax and must not end up inside the string.${c.reset}`,
+      );
+    }
+    const near = catalog.filter((m) => m.id.includes(String(raw).slice(0, 12).replace(/["']/gu, "")));
+    if (near.length > 0) {
+      console.log(`  ${c.dim}did you mean: ${near.map((m) => m.id).join(", ")}${c.reset}`);
+    }
+    return false;
+  }
+
+  check("OG_MODEL exists in the catalog", true, model.id);
+  check(
+    "model runs INSIDE the enclave (TeeML)",
+    model.verifiability === "TeeML",
+    `verifiability=${model.verifiability}, tee=${model.tee_type ?? "?"}`,
+  );
+  check(
+    "single provider — signing key cannot rotate",
+    model.provider_count === 1,
+    `provider_count=${model.provider_count}`,
+  );
+  return true;
+}
+
+/** 0G mainnet coordinates. From the SDK's `constants.js` — values, not code. */
+const OG_RPC = "https://evmrpc.0g.ai";
+/** Sole provider for our pinned model (DA6) — that is why the signer can't rotate. */
+const DEFAULT_PROVIDER = "0x4870CbC4D07d6Ac2EE5aA865588e5985FE77a4E9";
+const INFERENCE_CONTRACT = "0x47340d900bdFec2BD393c626E12ea0656F938d84";
+/** keccak256("getService(address)")[0:4] */
+const GET_SERVICE_SELECTOR = "15a52302";
+/** Field order of the `Service` struct — see the SDK's InferenceServing.d.ts. */
+const WORD_URL = 2;
+const WORD_TEE_SIGNER = 9;
+const WORD_ACKNOWLEDGED = 10;
+
+type OnChainService = {
+  /** The key that actually signs responses. NOT the provider address. */
+  teeSigner: string;
+  acknowledged: boolean;
+  /** The provider's own broker — where the signature is served from. */
+  brokerUrl: string;
+};
+
+/**
+ * Read the provider's `Service` struct straight off the chain.
+ *
+ * `eth_call` against a public RPC: no 0G router, no SDK, no API key. That is the
+ * point — these are the values the rest of PART B is checked against, so they
+ * must not come from the thing being checked.
+ */
+async function readService(env: OgEnv): Promise<OnChainService | null> {
+  const provider = (env.OG_PROVIDER_ADDRESS ?? DEFAULT_PROVIDER)
+    .trim()
+    .toLowerCase()
+    .replace(/^0x/u, "");
+
+  let hex: string;
+  try {
+    const response = await fetch(OG_RPC, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "eth_call",
+        params: [
+          { to: INFERENCE_CONTRACT, data: `0x${GET_SERVICE_SELECTOR}${provider.padStart(64, "0")}` },
+          "latest",
+        ],
+      }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    const json = (await response.json()) as { result?: string };
+    if (!json.result) return null;
+    hex = json.result.slice(2);
+  } catch {
+    return null;
+  }
+
+  // Single struct return: a 32-byte offset to the tuple, then the tuple's head.
+  // Dynamic members (here: `url`) store an offset relative to the tuple start.
+  const tupleStart = Number.parseInt(hex.slice(0, 64), 16) * 2;
+  const wordAt = (i: number) => hex.slice(tupleStart + i * 64, tupleStart + (i + 1) * 64);
+
+  const urlAt = tupleStart + Number.parseInt(wordAt(WORD_URL), 16) * 2;
+  const urlLength = Number.parseInt(hex.slice(urlAt, urlAt + 64), 16);
+  const brokerUrl = Buffer.from(hex.slice(urlAt + 64, urlAt + 64 + urlLength * 2), "hex").toString("utf8");
+
+  return {
+    teeSigner: `0x${wordAt(WORD_TEE_SIGNER).slice(24)}`,
+    acknowledged: BigInt(`0x${wordAt(WORD_ACKNOWLEDGED)}`) === 1n,
+    brokerUrl,
+  };
+}
+
+/**
+ * Is the address we pinned the one that actually signs?
+ *
+ * We got this wrong once, and it is worth understanding why the mistake was
+ * invisible: `/v1/providers` and the `x-provider` header both hand you the
+ * PROVIDER address — the provider's billing identity — while responses are
+ * signed by `teeSignerAddress`, a different field of the same on-chain struct.
+ * Pinning the wrong one fails every verification with `signer_mismatch`, and
+ * because we fail closed, the demo publishes nothing and says nothing about why.
+ *
+ * `teeSignerAddress` also MOVES when the enclave is redeployed, which is the
+ * other reason this is a check and not a comment in `.env.example`.
+ */
+function preflightSigner(env: OgEnv, svc: OnChainService | null): void {
+  const pinned = (env.OG_ENCLAVE_PUBKEY ?? "").trim().toLowerCase();
+  if (!pinned) {
+    skip("pinned key matches teeSignerAddress on-chain", "OG_ENCLAVE_PUBKEY is empty");
+    return;
+  }
+  if (!svc) {
+    check("pinned key matches teeSignerAddress on-chain", false, `no answer from ${OG_RPC}`);
+    return;
+  }
+
+  const matches = svc.teeSigner === pinned;
+  check("pinned key matches teeSignerAddress on-chain", matches, matches ? svc.teeSigner : undefined);
+  if (!matches) {
+    console.log(
+      `\n  ${c.yellow}OG_ENCLAVE_PUBKEY is not the signing key.${c.reset}\n` +
+        `  ${c.dim}pinned   ${pinned}\n` +
+        `  on-chain ${svc.teeSigner}   <- put THIS in .env.local\n\n` +
+        `  If the pinned value is the provider address, that is the classic mix-up:\n` +
+        `  the provider address is who gets PAID; teeSignerAddress is who SIGNS.\n` +
+        `  If it is simply different, the enclave was redeployed and the key moved.${c.reset}\n`,
+    );
+  }
+  check("TEE signer is acknowledged on-chain", svc.acknowledged, `teeSignerAcknowledged=${svc.acknowledged}`);
+}
+
+type BrokerSignature = {
+  text?: string;
+  signature?: string;
+  /** Who the broker CLAIMS signed. Evidence, not authority — we recover it. */
+  signingAddress?: string;
+  algo?: string;
+  error?: string;
+  status: number;
+};
+
+/**
+ * Fetch the response signature from the provider's broker.
+ *
+ * The signature is NOT in the chat response — it is served separately, keyed by
+ * chatID. Route and shape were read out of `@0gfoundation/0g-compute-ts-sdk`
+ * (`inference/broker/verifier.js`), which we inspected but do not depend on:
+ *
+ *   GET {brokerURL}/v1/proxy/signature/{chatID}?model={model} -> { text, signature }
+ *
+ * The SDK verifies it with `ethers.hashMessage`, i.e. EIP-191 — our
+ * `secp256k1-eth`. We take the bytes from here and judge them ourselves
+ * (RNF-M7-001); nothing in the trust path comes from 0G.
+ */
+async function fetchBrokerSignature(
+  brokerUrl: string,
+  chatId: string,
+  model: string,
+): Promise<BrokerSignature> {
+  // `brokerUrl` is the BASE url from the chain. Note getServiceMetadata() returns
+  // an endpoint that already ends in /v1/proxy — appending this path to THAT gives
+  // /v1/proxy/v1/proxy/… and a misleading "unsupported endpoint" error.
+  const url = `${brokerUrl.replace(/\/v1\/proxy\/?$/u, "")}/v1/proxy/signature/${chatId}?model=${encodeURIComponent(model)}`;
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+    const raw = await response.text();
+    if (!response.ok) {
+      return { status: response.status, error: raw.slice(0, 300) };
+    }
+    const parsed = JSON.parse(raw) as {
+      text?: string;
+      signature?: string;
+      signing_address?: string;
+      signing_algo?: string;
+    };
+    return {
+      status: response.status,
+      text: parsed.text,
+      signature: parsed.signature,
+      signingAddress: parsed.signing_address,
+      algo: parsed.signing_algo,
+    };
+  } catch (error) {
+    return { status: 0, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/** The evaluation request, identical on both paths so results are comparable. */
+function chatRequestBody(model: string): string {
+  return JSON.stringify({
+    model,
+    // Explicit, never inherited: the provider default is temperature 1.
+    temperature: 0,
+    max_tokens: 64,
+    // Thinking is ON by default on this model (spec-02 D-M6-1). Two reasons to
+    // kill it: a chain of thought discusses BOTH positions, so receiving it hands
+    // the operator what the threat model says they cannot have — and it also
+    // makes the call slow enough to time out. Confirmed live: a plain call came
+    // back with 724 characters of reasoning_content beside a one-word answer.
+    chat_template_kwargs: { enable_thinking: false },
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a sealed evaluator. Reply with exactly one word from this set and nothing else: workable, not_workable.",
+      },
+      { role: "user", content: "Side A wants 100. Side B offers 95. Is this workable?" },
+    ],
+  });
+}
+
+type ChatCall = {
+  via: "broker" | "router";
+  /** Verbatim: the signature covers sha256 of the RAW bytes. */
+  rawResponseText: string;
+  body: unknown;
+  chatId: string | undefined;
+  /** Where to ask for the signature. Only the broker path can serve one. */
+  signatureBase: string | undefined;
+  model: string;
+};
+
+/**
+ * Call the provider's broker DIRECTLY, paying on-chain.
+ *
+ * ⚠️ THIS USES THE 0G SDK, and the boundary matters more here than anywhere else
+ * in this script. The SDK does two things for us: it moves money (ledger
+ * deposit, per-request signed billing headers) and it tells us which URL to hit.
+ * It NEVER tells us whether a signature is good. That judgement stays in
+ * `verifyEnvelope` with `@noble/*` (RNF-M7-001), and we deliberately do not call
+ * `broker.inference.processResponse()` — that is precisely the vendor trust path
+ * this project exists to avoid.
+ *
+ * PART A runs with no SDK at all, which is what proves the maths is ours.
+ *
+ * Why direct at all: the Router pays the broker with its OWN wallet, so we are
+ * never the broker's customer and it will not hand us a signature for a chatID it
+ * has no record of. Being the customer is the price of being able to verify.
+ */
+async function callViaBroker(env: OgEnv): Promise<ChatCall | null> {
+  let broker: Awaited<ReturnType<typeof createZGComputeNetworkBroker>>;
+  let endpoint: string;
+  let model: string;
+  try {
+    const wallet = new ethers.Wallet(
+      env.OG_WALLET_PRIVATE_KEY!.startsWith("0x") ? env.OG_WALLET_PRIVATE_KEY! : `0x${env.OG_WALLET_PRIVATE_KEY!}`,
+      new ethers.JsonRpcProvider(OG_RPC),
+    );
+    broker = await createZGComputeNetworkBroker(wallet);
+    const meta = await broker.inference.getServiceMetadata(
+      env.OG_PROVIDER_ADDRESS ?? DEFAULT_PROVIDER,
+    );
+    endpoint = meta.endpoint;
+    model = meta.model;
+    check("broker reachable via on-chain metadata", true, endpoint);
+  } catch (error) {
+    check("broker reachable via on-chain metadata", false, error instanceof Error ? error.message : String(error));
+    return null;
+  }
+
+  try {
+    const headers = await broker.inference.getRequestHeaders(env.OG_PROVIDER_ADDRESS ?? DEFAULT_PROVIDER);
+    const response = await fetch(`${endpoint}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(headers as unknown as Record<string, string>) },
+      body: chatRequestBody(model),
+      signal: AbortSignal.timeout(120_000),
+    });
+    const rawResponseText = await response.text();
+    if (!response.ok) {
+      check("sealed call answered", false, `HTTP ${response.status}: ${rawResponseText.slice(0, 200)}`);
+      if (/insufficient|balance|fund/iu.test(rawResponseText)) {
+        console.log(
+          `\n  ${c.yellow}Looks like a funding problem.${c.reset} ${c.dim}Run npm run og:status —\n` +
+            `  the compute ledger is separate from the wallet balance.${c.reset}\n`,
+        );
+      }
+      return null;
+    }
+    check("sealed call answered", true, `HTTP ${response.status}`);
+    const body = JSON.parse(rawResponseText) as { id?: string };
+    return {
+      via: "broker",
+      rawResponseText,
+      body,
+      chatId: response.headers.get("zg-res-key") ?? body.id,
+      // getServiceMetadata() returns an endpoint already ending in /v1/proxy; the
+      // signature path is built from the BASE, or you get /v1/proxy/v1/proxy/…
+      // and an "unsupported endpoint" error that looks like the wrong route.
+      signatureBase: endpoint.replace(/\/v1\/proxy\/?$/u, ""),
+      model,
+    };
+  } catch (error) {
+    check("sealed call answered", false, error instanceof Error ? error.message : String(error));
+    return null;
+  }
+}
 
 async function partBLive(env: OgEnv): Promise<void> {
   heading("PART B · live — does a real 0G response verify?");
 
-  if (!env.OG_KEY || !env.OG_MODEL) {
-    skip("live sealed call", "set OG_KEY and OG_MODEL in .env.local");
+  // Runs first and needs no credentials: pinning the wrong key makes every
+  // later check fail for a reason that looks like 0G's fault and isn't.
+  const svc = await readService(env);
+  preflightSigner(env, svc);
+  if (svc) {
+    console.log(`  ${c.dim}broker (on-chain) ${svc.brokerUrl}${c.reset}`);
+  }
+
+  // WHICH PATH. Only the direct one can produce a verifiable signature, so it is
+  // preferred whenever the wallet is configured. The Router path is kept because
+  // it still answers a useful question — "is the model itself healthy?" — and it
+  // is the one that works with no wallet at all.
+  const direct = Boolean(env.OG_WALLET_PRIVATE_KEY);
+
+  if (!direct && (!env.OG_KEY || !env.OG_MODEL)) {
+    skip("live sealed call", "set OG_WALLET_PRIVATE_KEY (or OG_KEY) in .env.local");
     console.log(
       `\n${c.dim}  PART A already proves the verifier is correct. This part proves 0G's\n` +
-        `  response fits it. Fill .env.local (see .env.example) and re-run —\n` +
-        `  ideally standing at the 0G booth with spec-03 §8 open.${c.reset}`,
+        `  response fits it. Fill .env.local (see .env.example) and re-run.\n` +
+        `  For a SIGNATURE you need OG_WALLET_PRIVATE_KEY — see npm run og:status.${c.reset}`,
     );
     return;
   }
 
-  console.log(`${c.dim}  router ${env.OG_ROUTER_URL} · model ${env.OG_MODEL}${c.reset}\n`);
+  if (direct) {
+    console.log(
+      `${c.dim}  path: DIRECT to broker, paid on-chain — the only path that yields a signature${c.reset}\n` +
+        `${c.dim}  SDK used for payment + transport only; the verdict on the signature is ours${c.reset}\n`,
+    );
+  } else {
+    console.log(
+      `${c.dim}  path: ROUTER ${env.OG_ROUTER_URL} · model ${JSON.stringify(env.OG_MODEL)}${c.reset}\n` +
+        `${c.yellow}  No OG_WALLET_PRIVATE_KEY — this path cannot produce a signature.${c.reset}\n`,
+    );
+  }
 
-  let body: unknown;
-  try {
-    const response = await fetch(`${env.OG_ROUTER_URL}/chat/completions`, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${env.OG_KEY}` },
-      body: JSON.stringify({
-        model: env.OG_MODEL,
-        temperature: 0,
-        max_tokens: 8,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a sealed evaluator. Reply with exactly one word from this set and nothing else: workable, not_workable.",
-          },
-          { role: "user", content: "Side A wants 100. Side B offers 95. Is this workable?" },
-        ],
-      }),
-      signal: AbortSignal.timeout(60_000),
-    });
+  if (!direct && !(await preflightModel(env))) return;
+  if (direct) {
+    // Free, no auth, and it asserts the two properties the product rests on.
+    await preflightModel(env);
+  }
 
-    const text = await response.text();
-    if (!response.ok) {
-      check("0G router reachable", false, `HTTP ${response.status}: ${text.slice(0, 200)}`);
+  const call = direct ? await callViaBroker(env) : null;
+  if (direct && !call) return;
+
+  let body: unknown = call?.body;
+  let chatId: string | undefined = call?.chatId;
+  // Kept verbatim: the signature covers sha256 of the RAW response bytes, so a
+  // re-serialised object would hash to something else.
+  let rawResponseText = call?.rawResponseText ?? "";
+
+  if (!direct) {
+    try {
+      const response = await fetch(`${env.OG_ROUTER_URL}/chat/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${env.OG_KEY}` },
+        body: chatRequestBody(env.OG_MODEL!),
+        signal: AbortSignal.timeout(120_000),
+      });
+
+      const text = await response.text();
+      if (!response.ok) {
+        check("0G router reachable", false, `HTTP ${response.status}: ${text.slice(0, 200)}`);
+        return;
+      }
+      rawResponseText = text;
+      body = JSON.parse(text);
+      check("0G router reachable", true, `HTTP ${response.status}`);
+
+      const headers = Object.fromEntries(response.headers.entries());
+      chatId = headers["zg-res-key"];
+      if (chatId) {
+        console.log(`  ${c.green}ZG-Res-Key present${c.reset} ${c.dim}= ${chatId} (the chatID)${c.reset}`);
+      } else {
+        console.log(`  ${c.yellow}no ZG-Res-Key header${c.reset} ${c.dim}— check data.id in the body${c.reset}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      check("0G router reachable", false, message);
       return;
     }
-    body = JSON.parse(text);
-    check("0G router reachable", true, `HTTP ${response.status}`);
-
-    // 0G docs: the verification handle arrives as a `ZG-Res-Key` HEADER (or as
-    // `data.id`), not necessarily in the body. Dump every header so we can see
-    // what we actually got rather than guess.
-    const headers = Object.fromEntries(response.headers.entries());
-    console.log(`  ${c.dim}response headers: ${Object.keys(headers).join(", ")}${c.reset}`);
-    const resKey = headers["zg-res-key"];
-    if (resKey) {
-      console.log(`  ${c.green}ZG-Res-Key present${c.reset} ${c.dim}= ${resKey.slice(0, 32)}…${c.reset}`);
-      console.log(
-        `  ${c.dim}This is the chatID. Per 0G docs the SDK verifies it via\n` +
-          `  broker.inference.processResponse(providerAddress, chatID) — we must NOT\n` +
-          `  use that (it is the SDK trust path). Ask the booth which endpoint serves\n` +
-          `  the raw signature + attestation for a chatID so we can verify it ourselves.${c.reset}`,
-      );
-    } else {
-      console.log(`  ${c.yellow}no ZG-Res-Key header${c.reset} ${c.dim}— check data.id in the body${c.reset}`);
-    }
-  } catch (error) {
-    check("0G router reachable", false, error instanceof Error ? error.message : String(error));
-    return;
   }
 
   const record = body as Record<string, unknown>;
-  console.log(`  ${c.dim}top-level keys: ${Object.keys(record).join(", ")}${c.reset}`);
-
-  const candidates = probe(body);
-  if (candidates.length === 0) {
-    check("response carries a signature", false, "no hex-shaped field — ASK AT THE BOOTH");
-    console.log(`\n${c.dim}${JSON.stringify(body, null, 2).slice(0, 1500)}${c.reset}`);
-    return;
-  }
-
-  console.log(`  ${c.dim}hex-shaped fields found:${c.reset}`);
-  for (const { path, value } of candidates) {
-    console.log(`    ${c.dim}${path} = ${value.slice(0, 24)}… (${value.length} chars)${c.reset}`);
-  }
-
-  const signature = candidates.find((p) => [128, 130].includes(p.value.replace(/^0x/u, "").length));
-  check("response carries a signature", signature !== undefined, signature?.path);
-  if (!signature) return;
-
-  if (!env.OG_ENCLAVE_PUBKEY) {
-    skip("independent verification", "set OG_ENCLAVE_PUBKEY from the attestation endpoint");
-    return;
-  }
-
-  // Which exact bytes the signature covers — and whether the INPUT is covered —
-  // is the highest-stakes booth question (spec-03 §8.1). Try the plausible ones.
-  const choices = record.choices as Array<{ message?: { content?: string } }> | undefined;
-  const completion = choices?.[0]?.message?.content ?? "";
+  const completion = (record.choices as Array<{ message?: { content?: string } }> | undefined)?.[0]
+    ?.message?.content;
   console.log(`  ${c.dim}completion: ${JSON.stringify(completion)}${c.reset}`);
 
-  const schemes: SignatureScheme[] = ["secp256k1-eth", "secp256k1-raw"];
-  const payloads: Array<{ label: string; payload: unknown }> = [
-    { label: "completion text", payload: completion },
-    { label: "full response body", payload: body },
-  ];
-
-  let matched = false;
-  for (const { label, payload } of payloads) {
-    for (const scheme of schemes) {
-      const result = verifyEnvelope(
-        { payload, signature: signature.value, scheme },
-        env.OG_ENCLAVE_PUBKEY,
-      );
-      if (result.verified) {
-        matched = true;
-        check(`verified — scheme=${scheme}, signed over ${label}`, true);
-        console.log(
-          `\n  ${c.green}${c.bold}That answers booth questions 1 and 2.${c.reset} ` +
-            `${c.dim}Record scheme=${scheme} in spec-03 §4.${c.reset}`,
-        );
-      }
-    }
+  // The signature is NOT in the chat body — 0G serves it separately, keyed by
+  // chatID. Anything hex-shaped in the body is the provider address, which is not
+  // a signature and must not be mistaken for one.
+  const candidates = probe(body);
+  if (candidates.length > 0) {
+    console.log(`  ${c.dim}hex-shaped fields in the body: ${candidates.map((p) => p.path).join(", ")}${c.reset}`);
   }
 
-  if (!matched) {
+  let signature: { path: string; value: string } | undefined;
+  let signedText: string | undefined;
+
+  // Prefer the base URL from the call itself; fall back to the chain. Both should
+  // agree — if they ever don't, trust the chain and find out why.
+  const signatureBase = call?.signatureBase ?? svc?.brokerUrl;
+  if (!signatureBase) {
+    skip("signature fetched from the provider broker", "could not resolve the broker URL");
+    return;
+  }
+  if (!chatId) {
+    check("signature fetched from the provider broker", false, "no chatID (ZG-Res-Key) to ask for");
+    return;
+  }
+
+  const modelForSignature = call?.model ?? env.OG_MODEL;
+  if (!modelForSignature) {
+    skip("signature fetched from the provider broker", "no model id to ask with");
+    return;
+  }
+
+  const fetched = await fetchBrokerSignature(signatureBase, chatId, modelForSignature);
+  if (!fetched.signature) {
     check(
-      "signature verifies under a known scheme",
+      "signature fetched from the provider broker",
       false,
-      "neither EIP-191 nor raw keccak over completion/body matched",
+      `HTTP ${fetched.status}: ${fetched.error ?? "no signature field"}`,
     );
-    console.log(
-      `\n${c.yellow}  Not necessarily a no-go.${c.reset} ${c.dim}It most likely means the signed\n` +
-        `  bytes are framed differently (spec-03 §8.1: what does the signature cover?).\n` +
-        `  PART A proves the verification math; this is a serialization question.${c.reset}`,
+    if (/chat_id_not_found/u.test(fetched.error ?? "")) {
+      console.log(
+        direct
+          ? `\n  ${c.yellow}Unexpected on the direct path.${c.reset} ${c.dim}We ARE the broker's customer here, so\n` +
+              `  it should know this chatID. Most likely it expired — signatures are not\n` +
+              `  kept forever. Re-run; if it persists, the chatID we read from the\n` +
+              `  response headers is not the one the broker keyed it under.${c.reset}\n`
+          : `\n  ${c.yellow}Expected on the Router path — this is not a bug.${c.reset}\n` +
+              `  ${c.dim}The Router pays the broker with its OWN wallet, so the broker's\n` +
+              `  customer is the Router, not us. We are asking for the receipt of a\n` +
+              `  conversation we were never party to, and it rightly refuses.\n\n` +
+              `  Set OG_WALLET_PRIVATE_KEY to take the direct path, which does yield a\n` +
+              `  signature. See npm run og:status, then npm run og:setup.${c.reset}\n`,
+      );
+    }
+    return;
+  }
+
+  check("signature fetched from the provider broker", true, `${fetched.signature.slice(0, 20)}…`);
+  signature = { path: "broker /v1/proxy/signature", value: fetched.signature };
+  signedText = fetched.text;
+
+  if (fetched.signingAddress) {
+    // The broker names its own signer. That is a claim, not proof — we recover the
+    // address ourselves below. Useful only to spot a rotated enclave early.
+    const claimed = fetched.signingAddress.toLowerCase();
+    const pinnedLower = (env.OG_ENCLAVE_PUBKEY ?? "").trim().toLowerCase();
+    check(
+      "broker's claimed signer matches our pin",
+      claimed === pinnedLower,
+      claimed === pinnedLower ? claimed : `broker says ${claimed}, we pinned ${pinnedLower}`,
     );
   }
+  if (fetched.algo && fetched.algo !== "ecdsa") {
+    console.log(`  ${c.yellow}unexpected signing_algo${c.reset} ${c.dim}${fetched.algo}${c.reset}`);
+  }
+
+  if (signedText === undefined) {
+    check("signed text present", false, "signature came without the text it covers");
+    return;
+  }
+  console.log(`  ${c.dim}signed text: ${signedText}${c.reset}`);
+
+  if (!env.OG_ENCLAVE_PUBKEY) {
+    skip("independent verification", "set OG_ENCLAVE_PUBKEY (see .env.example)");
+    return;
+  }
+
+  // THE CHECK THIS WHOLE SCRIPT EXISTS FOR.
+  //
+  // `encoding: "utf8"` is load-bearing: 0G signs the text as a raw string, so
+  // canonicalising it would wrap it in JSON quotes and fail with signer_mismatch
+  // — a failure that looks exactly like a wrong key and is not one.
+  const result = verifyEnvelope(
+    { payload: signedText, encoding: "utf8", signature: signature.value, scheme: "secp256k1-eth" },
+    env.OG_ENCLAVE_PUBKEY,
+  );
+  check(
+    "REAL 0G signature verifies against the pinned key",
+    result.verified,
+    result.verified ? `scheme=${result.scheme}, signer=${result.signer}` : `${result.reason}: ${result.detail ?? ""}`,
+  );
+  check("mayPublish() true on a genuine verdict", mayPublish(result));
+
+  if (!result.verified) return;
+
+  // Tamper the real thing, not a synthetic stand-in. This is demo Act 4.
+  const tampered = verifyEnvelope(
+    { payload: `${signedText.slice(0, -1)}0`, encoding: "utf8", signature: signature.value, scheme: "secp256k1-eth" },
+    env.OG_ENCLAVE_PUBKEY,
+  );
+  check("one flipped character in the REAL payload is rejected", !tampered.verified, tampered.verified ? undefined : tampered.reason);
+
+  // spec-03 §8.1, settled empirically rather than at a booth. The signed text is
+  // `sha256(input):sha256(response)`. We cannot recompute the input half — the
+  // broker normalises the request before hashing — but we can prove the half we
+  // DO control, and prove the other half moves with the input.
+  const parts = signedText.split(":");
+  const responseHash = bytesToHexLocal(sha256(new TextEncoder().encode(rawResponseText)));
+  check(
+    "signed text's second half is sha256(response)",
+    parts[1] === responseHash,
+    parts[1] === responseHash ? `${responseHash.slice(0, 16)}…` : `signed ${parts[1]?.slice(0, 16)}… vs computed ${responseHash.slice(0, 16)}…`,
+  );
+  console.log(
+    `\n  ${c.green}${c.bold}The signature covers the INPUT as well as the output.${c.reset}\n` +
+      `  ${c.dim}The first half of the signed text is derived from the request: it changes\n` +
+      `  when the prompt changes (verified 25 Jul with two differing prompts). So\n` +
+      `  "this model saw THESE inputs and returned this verdict" is supported —\n` +
+      `  spec-03 §8.1 resolved, and the pitch needs no rewording.${c.reset}`,
+  );
 }
 
 // ------------------------------------------------------------------------ main

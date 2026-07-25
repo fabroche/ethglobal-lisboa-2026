@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * Use-case guidance presets (D16). Single source of truth consumed by:
  *  - M8 create screen — the 3-card picker (title/tagline/side labels),
- *  - M8 write+seal screen (S3.2) — placeholder + soft checklist (never blocks sealing, DA8),
+ *  - M8 write+seal screen (S3.2) — placeholder + soft checklist (never blocks sealing, DA9),
  *  - M6 evaluator — `evaluatorHint`, prepended to the enclave prompt (RF-M6-007).
  *
  * Presets are guidance only: positions stay free-form plain language in one sealed blob.

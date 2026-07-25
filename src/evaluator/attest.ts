@@ -38,11 +38,29 @@ const hexString = z
   .regex(/^(0x)?[0-9a-fA-F]*$/u, "not hex")
   .refine((s) => (s.startsWith("0x") ? s.length : s.length + 2) % 2 === 0, "odd-length hex");
 
+/**
+ * How the payload becomes the bytes that were signed.
+ *
+ * `canonical` — serialise per spec-03 §3. Correct for anything WE construct: two
+ * machines must agree byte-for-byte regardless of key order.
+ *
+ * `utf8` — the payload is already the exact string that was signed; encode it and
+ * do nothing else. Required by the real 0G wire format, confirmed live on 25 Jul:
+ * the broker signs `sha256(input):sha256(response)` as a raw string. Canonicalising
+ * that wraps it in JSON quotes, which are not the bytes the enclave hashed, and
+ * verification fails with `signer_mismatch` — a failure that reads exactly like a
+ * wrong key and is not one. Hence an explicit field rather than a guess.
+ */
+export const PAYLOAD_ENCODINGS = ["canonical", "utf8"] as const;
+export type PayloadEncoding = (typeof PAYLOAD_ENCODINGS)[number];
+
 /** Envelope shape, spec-03 §2. Validated here (D11) — a malformed response is a
  *  verification failure, never a crash. */
 export const envelopeSchema = z.object({
   /** Exactly what the enclave signed over. For Seam: the verdict record. */
   payload: z.unknown(),
+  /** Defaults to `canonical` so existing callers and fixtures are unaffected. */
+  encoding: z.enum(PAYLOAD_ENCODINGS).default("canonical"),
   signature: hexString,
   /** What the response CLAIMS signed it. Evidence, not authority. */
   signer: hexString.optional(),
@@ -57,6 +75,8 @@ export const envelopeSchema = z.object({
 export type Envelope = z.infer<typeof envelopeSchema>;
 
 export type AttestFailure =
+  /** `encoding: "utf8"` but the payload is not a string — nothing to encode. */
+  | "payload_not_text"
   | "missing_signature"
   | "missing_signer"
   | "malformed_signature"
@@ -239,11 +259,21 @@ export function verifyEnvelope(input: unknown, pinnedKey: string): AttestResult 
     }
 
     let message: Uint8Array;
-    try {
-      message = canonicalBytes(envelope.payload);
-    } catch (error) {
-      if (error instanceof NotCanonicalError) return fail("not_canonical", error.message);
-      throw error;
+    if (envelope.encoding === "utf8") {
+      // The caller asserts these ARE the signed bytes. Refuse to stringify
+      // something that is not already text: `String(obj)` would happily produce
+      // "[object Object]" and verify nothing.
+      if (typeof envelope.payload !== "string") {
+        return fail("payload_not_text", `encoding "utf8" needs a string payload, got ${typeof envelope.payload}`);
+      }
+      message = new TextEncoder().encode(envelope.payload);
+    } else {
+      try {
+        message = canonicalBytes(envelope.payload);
+      } catch (error) {
+        if (error instanceof NotCanonicalError) return fail("not_canonical", error.message);
+        throw error;
+      }
     }
 
     let signature: Uint8Array;

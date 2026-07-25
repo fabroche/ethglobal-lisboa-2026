@@ -1,3 +1,13 @@
+>  ⚠️ **DOCUMENTO HISTÓRICO — PRE-PIVOT. No describe el producto actual.**
+>
+>  Escrito el 2026-07-24, **antes** de que el equipo llegara a Seam. Recomienda "Idea A — Crypto
+>  Copilot", que fue descartada. Se conserva porque es el registro de cómo se eligió: la comparación
+>  de premios, el test de "cada sponsor debe ser imprescindible" y las ideas que se mataron. Movido de
+>  la raíz a `agente/` en S4.7 para que nadie lo lea como vigente.
+>
+>  El producto actual es **Seam** → `CLAUDE.md`, `docs/README.md`, `docs/idea-brainstorm.md`.
+>  Está en español a propósito (excepción a D2, como los espejos de `docs/ux/`).
+
 # ETHGlobal Lisboa 2026 — Memoria del proyecto
 
 > Documento de contexto para la hackathon. Registra lo conversado y decidido hasta ahora.

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { UseCaseId } from "@/session";
-import { RoomQr } from "./room-qr";
 import { UseCasePicker } from "./use-case-picker";
 
 /** Format a Date as a `datetime-local` value (`YYYY-MM-DDTHH:mm`) in local time. */
@@ -14,7 +14,10 @@ function toLocalInputValue(d: Date): string {
 
 export interface CreateRoomResult {
   roomId: string;
+  /** Side B's link — the one to share. */
   joinUrl: string;
+  /** Side A's link — the creator's way back in (S3.8). */
+  ownUrl?: string;
 }
 
 export interface CreateRoomFormProps {
@@ -38,7 +41,7 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
   const [gapOptIn, setGapOptIn] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [room, setRoom] = useState<CreateRoomResult | null>(null);
+  const router = useRouter();
   // Set the picker's floor to "now" after mount (avoids an SSR/client hydration mismatch —
   // computing it during render would differ between server and client).
   const [minDeadline, setMinDeadline] = useState("");
@@ -69,16 +72,22 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
     setPending(true);
     try {
       const result = await createRoom(parsed.toISOString(), gapOptIn, useCase);
-      setRoom(result);
+      // NAVIGATE, don't render inline (S3.8). The QR used to be shown from this
+      // component's state, so a plain reload destroyed it: no URL, no history entry,
+      // and no way back to a room that already exists on the topic. Pushing to
+      // /share gives the room a real address — which also makes the browser's own
+      // history a free recovery path.
+      // `uc` rides along so the share screen can label the bookmark (S3.11). It is
+      // on the CREATOR's own redirect only — the join link they hand over carries
+      // just the side, so the deal type is not forwarded with it.
+      router.push(`/room/${result.roomId}/share?uc=${useCase}`);
+      // `pending` deliberately stays true: navigation is in flight, and
+      // re-enabling the button here would invite a second room being created —
+      // which costs a Hedera message and leaves an orphan on the topic.
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the room.");
-    } finally {
       setPending(false);
     }
-  }
-
-  if (room) {
-    return <RoomQr roomId={room.roomId} joinUrl={room.joinUrl} className={className} />;
   }
 
   return (

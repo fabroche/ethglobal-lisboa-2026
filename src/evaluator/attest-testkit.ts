@@ -12,7 +12,13 @@
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { ed25519 } from "@noble/curves/ed25519";
 
-import { addressFromPublicKey, digestFor, type Envelope, type SignatureScheme } from "./attest";
+import {
+  addressFromPublicKey,
+  digestFor,
+  type Envelope,
+  type PayloadEncoding,
+  type SignatureScheme,
+} from "./attest";
 import { canonicalBytes } from "../lib/canonical";
 
 export type TestKeyPair = {
@@ -39,13 +45,23 @@ export function generateEnclaveKey(scheme: SignatureScheme): TestKeyPair {
   return { scheme, privateKey, pinned: `0x${pinned}` };
 }
 
-/** Sign a payload the way we believe the enclave signs it. */
+/**
+ * Sign a payload the way the enclave signs it.
+ *
+ * `encoding` mirrors `verifyEnvelope`: `canonical` for payloads we construct,
+ * `utf8` to reproduce 0G's real wire format, where the signed thing is already a
+ * string (`sha256(input):sha256(response)`) and canonicalising it would change
+ * the bytes.
+ */
 export function signEnvelope(
   payload: unknown,
   key: TestKeyPair,
   extra: Partial<Pick<Envelope, "model" | "attestationRef" | "signer">> = {},
+  encoding: PayloadEncoding = "canonical",
 ): Envelope {
-  const message = digestFor(key.scheme, canonicalBytes(payload));
+  const bytes =
+    encoding === "utf8" ? new TextEncoder().encode(payload as string) : canonicalBytes(payload);
+  const message = digestFor(key.scheme, bytes);
 
   let signature: string;
   if (key.scheme === "ed25519") {
@@ -58,6 +74,7 @@ export function signEnvelope(
 
   return {
     payload,
+    encoding,
     signature,
     scheme: key.scheme,
     signer: key.pinned,

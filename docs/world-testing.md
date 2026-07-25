@@ -38,6 +38,13 @@ two-browser flow, per-side action strings)._
    docs. A resumable wizard, or an explicit "registration pending/failed" status on the app page,
    would have saved the evening. _Resolution: (fill in — restart worked / new app worked / booth.)_
 
+7. **What the docs never said but the API confirmed (Sat night, live precheck calls):** unregistered
+   actions **auto-create on first reference** (`status: active`, `max_verifications: 1`) — our
+   per-room `seam-<roomId>-<side>` scoping works with zero pre-registration. This is the single most
+   important integration fact for our design and we found it by probing `POST /api/v1/precheck`,
+   not in any doc. Also visible only via API: `enable_face_check: true` on our app — nothing in the
+   portal UI shows Selfie Check's enablement state.
+
 ## B. User friction (to be filled from real runs — do not write ahead of testing)
 
 Protocol: two-browser run (laptop + phone via QR), first-time users, Property demo room.

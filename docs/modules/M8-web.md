@@ -125,6 +125,32 @@ load, then the client polls for the verdict until it lands:
 Works end-to-end **now** with a live countdown + pending state; real verdicts render once M6/M7 write
 them to the topic. RF-M8-003 (countdown → verdict via Mirror) satisfied for the read side.
 
+**Navigation:** `/room/[roomId]/share` is a stable QR/share view (reuses `room-qr`, rebuilds the join
+URL from the id) so the QR — which otherwise only lives in the create page's state — has a permanent
+URL. The verdict screen has a **"← Back to QR"** link to it; the share view links on to the verdict
+screen. Round-trip: create → verdict ⇄ share.
+
+### UI ↔ backend audit
+Where the UI reflects the backend, and where it doesn't yet.
+
+**Fixed (UI now reflects the backend):**
+- **Gap opt-in** — the create form surfaces `gapOptIn` (was accepted by `createRoom` but never shown).
+- **Commitment count** — the verdict screen shows `n of 2 sides committed` from `registry.read`.
+- **Room existence** — the verdict screen shows "Room not found" when nothing for the id is on the
+  topic, instead of a fake countdown.
+
+**Gated (UI implies more than the backend delivers — blocked on other work):**
+- **The reveal never fires** — the countdown promises a verdict, but `createRoomAction` doesn't arm
+  the reveal (`scheduler.armReveal` needs the verdict tx) and nothing writes a verdict. Gated on
+  **M6 evaluator + M7 attest** (Frank) and wiring `armReveal`.
+- **No write/seal/commit UI (S3.2)** — gated on `OG_ENCLAVE_SEAL_PUBKEY` (enclave *encryption* key,
+  distinct from the attestation `OG_ENCLAVE_PUBKEY`) + `WORLD_APP_ID`.
+- **World Selfie Check invisible** — part of S3.2; the IDKit widget needs `WORLD_APP_ID`.
+- **Verdict colours are placeholders** — Tailwind emerald/amber until the semantic tokens
+  (`--workable`/`--not-workable`/`--pending`) are added to `globals.css` (integrator-only).
+- Note: `gapOptIn` is collected but not yet persisted to the topic / enforced — the consent logic is
+  **S4.6**.
+
 ## 10. Module acceptance criteria
 - [ ] The two-browser E2E passes with QR join (S3.4).
 - [ ] Plaintext never leaves the browser (RNF-M8-002).

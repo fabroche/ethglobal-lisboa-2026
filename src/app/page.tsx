@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-6 px-6 text-center">
@@ -8,10 +10,15 @@ export default function Home() {
         One line. <span className="serif-accent text-primary">No leaks.</span>
       </h1>
       <p className="text-pretty text-muted-foreground">
-        Sealed two-party negotiation. Scaffold in progress — see{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 text-sm">docs/</code> and{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 text-sm">docs/backlog.md</code>.
+        Two sides write their terms; a model inside sealed hardware returns a single line —
+        whether a deal is possible — without either side, or us, ever seeing the other’s.
       </p>
+      <Link
+        href="/create"
+        className="mt-2 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-8 text-base font-medium text-primary-foreground transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        Open a room
+      </Link>
     </main>
   );
 }

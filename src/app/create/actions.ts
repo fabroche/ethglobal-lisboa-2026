@@ -11,8 +11,9 @@ import { env } from "@/config/env";
  */
 export async function createRoomAction(
   deadlineIso: string,
+  gapOptIn: boolean,
 ): Promise<{ roomId: string; joinUrl: string }> {
   const registry = createRegistry(hederaTopicClient());
-  const room = await createRoom({ deadlineIso }, { registry, baseUrl: env.APP_URL });
+  const room = await createRoom({ deadlineIso, gapOptIn }, { registry, baseUrl: env.APP_URL });
   return { roomId: room.roomId, joinUrl: room.joinUrls.B };
 }

@@ -22,49 +22,95 @@ decide that consciously rather than by running out of time.
 
 ## 1. The one thing blocking 0G · ⛔ START HERE
 
-**`npm run spike` PART A passes. PART B cannot complete: the chat call returns zero bytes.**
+> **Updated Sat 25 Jul ~12:45.** The "zero bytes" hang from Friday night is **GONE** — the chat call
+> now returns `HTTP 200` with a full body. Do not spend any more time on the balance/deposit theory.
+> The blocker moved, and the new one is much better understood. Everything below is current.
 
-What is already proven, so don't re-investigate it:
+**`npm run spike` PART A passes. PART B fails on one check: `response carries a signature`.**
 
-- The API key is valid — an unknown model is rejected with `403` in **~0.24s**.
-- `0gm-1.0-35b-a3b` **is** on the key's allow-list (an unlisted model gets a different 403).
-- The model is right: `TeeML`, `TDX`, `provider_count: 1`, `is_healthy: true`.
-- All four spike preflight checks are green.
-- It is not the network: TCP connects in 0.07s, then silence until timeout. Streaming behaves the same.
+The chat response is fine, but **the signature is not in it.** The body carries
+`choices / created / id / metadata / model / object / usage / x_0g_trace`, and the only hex-shaped
+field is the provider address. The signature is fetched **separately, by chatID**.
 
-So the router authenticates and authorises, then hangs going to the provider.
+### What the signature path actually is (read out of the SDK, not guessed)
 
-**Diagnose in this order** (the spike prints these on timeout too):
+From `@0gfoundation/0g-compute-ts-sdk@0.9.0`, `lib.commonjs/inference/broker/{response,verifier}.js`:
 
-1. **Check the balance at [pc.0g.ai](https://pc.0g.ai), top right.** Owning 0G in the wallet is *not*
-   the same as depositing it into the Router's payment contract — that deposit is a separate
-   transaction. This is the prime suspect and takes 30 seconds to rule in or out.
-2. If funded: temporarily allow `0gm-1.0-35b-a3b-sia` on the key and retry. If *that* answers, the
-   problem is the provider, not us — switch models and move on.
-3. Still stuck: booth. Ask whether a Router API key needs the provider **acknowledged** before first use.
+```
+GET {brokerURL}/v1/proxy/signature/{chatID}?model={model}   ->   { text, signature }
+verify: ethers.hashMessage(text) + recoverAddress == signingAddress
+```
 
-There is no public balance endpoint — `/v1/account`, `/v1/balance`, `/v1/credits` and five other
-guesses all 404. It has to be read from the dashboard.
+Two things fall out of that, both good for us:
+
+- **The scheme is EIP-191 `personal_sign`** — `ethers.hashMessage` *is* the `\x19Ethereum Signed
+  Message:\n` framing. That is exactly our `secp256k1-eth`, already our `DEFAULT_SCHEME`. Our guess
+  in spec-03 §4 was right; `eip191Digest()` in `src/evaluator/attest.ts` needs no change.
+- **The signed thing is `text`**, a field the broker returns. What `text` *contains* is what settles
+  booth question §3.2 (does the signature cover the input?) — read it the moment we can fetch one.
+
+### Coordinates, all resolved (nothing here needs the booth)
+
+| What | Value | Where it came from |
+|---|---|---|
+| Broker URL | `https://compute-network-20.integratenetwork.work` | on-chain `getService(provider).url` |
+| Inference contract (mainnet) | `0x47340d900bdFec2BD393c626E12ea0656F938d84` | SDK `constants.js` |
+| 0G mainnet RPC / chain id | `https://evmrpc.0g.ai` / `16661` | SDK `constants.js` |
+| Architecture | `TargetSeparated: false` → combined TEE, **one** report, signer = `teeSignerAddress` | on-chain `additionalInfo` |
+| TEE verifier | `dstack` (Intel TDX), `verifier-v0.5.5` | on-chain `additionalInfo` |
+
+### ⛔ Where it is stuck now
+
+**The broker does not recognise any chatID produced by a call through `router-api.0g.ai`.** All three
+candidate identifiers return `HTTP 400 {"error":"...Chat id not found or expired, chat_id_not_found"}`:
+
+- `zg-res-key` response header (e.g. `4d3349ea-…`)
+- `body.id` (`chatcmpl-…`)
+- `body.x_0g_trace.request_id`
+
+Note the endpoint itself is **correct** — a wrong path returns `404 page not found`, and this returns
+a *business* error. So the route is right and the ID is wrong.
+
+**Leading hypothesis:** the Router is an intermediary that opens its own session with the broker under
+its own chatID. Only calls made **directly to the broker** produce a chatID the broker can sign for.
+Going direct means the SDK's on-chain payment flow (0G wallet + `ledger` contract + per-request signed
+headers + auto-funding) — a much heavier path than a Bearer key against the router.
+
+**Decide next** (this is a real fork, see §7):
+1. Ask the booth: *how do we get the response signature for a call made through the Router?* This is
+   now the single highest-value question we have — it is one sentence and it unblocks the core claim.
+2. If the answer is "you can't, go direct to the broker" → weigh the direct-broker path against
+   rewording the claim. Do not start the direct-broker work before the window is checked (§5).
+
+### Also confirmed live: D-M6-1 is real, not theoretical
+
+A plain call with `max_tokens: 10` came back with `content: null` and `reasoning_content` **populated**
+("Here's a thinking process: …"). With `max_tokens: 400` the answer was correct but still carried
+**724 characters of reasoning**. The model really does return its chain of thought by default, and it
+really would hand the operator prose derived from both positions. `spec-02-evaluator.md` §D-M6-1 must
+be implemented in S2.2 — treat it as confirmed, not suspected.
 
 ## 2. Waiting on a human
 
 | What | Who | Why it matters |
 |---|---|---|
-| **Merge PR [#9](https://github.com/fabroche/ethglobal-lisboa-2026/pull/9)** | integrator | **Blocks Dylan's S2.7.** `src/lib/canonical.ts` isn't on `develop`, so the handoff doc reads like nonsense to him. Was `MERGEABLE / CLEAN` at 01:10. **Rebase-and-merge or merge commit — never squash.** |
-| Check the 0G balance | Dylan | §1 |
-| Two booth questions | either | §3 |
+| ~~Merge PR #9~~ | ~~integrator~~ | ✅ **Done.** Merged 00:03, and Dylan's S2.7 (#10) merged 00:32 on top of it. |
+| ~~Check the 0G balance~~ | ~~Dylan~~ | ✅ **Moot.** The hang is gone; the chat call returns 200 (§1). |
+| **Booth Q: signature for a Router call** | either | **Now the top question.** §1, "Where it is stuck now". |
+| Booth Q: enclave encryption key | either | §3.1 — still open, still blocks sealing to the *real* enclave. |
 
 ## 3. Still unanswered by 0G
-
-Two left. The other two got answered by querying the API instead of queuing at a booth.
 
 1. **Is there a separate *encryption* key for the enclave?** `seal` needs one and
    `OG_ENCLAVE_SEAL_PUBKEY` is empty. The attestation value is a 20-byte address and **you cannot
    encrypt to an address**. Without this, S3.2 can seal to a test key but not to the real enclave.
-2. **Does the response signature cover the request input, or only the output?** Our pitch is "this
-   model saw *these* inputs and returned this verdict". If the input isn't covered, that sentence is
-   not supported and the wording must change **before** the demo, not during the Q&A. Fallback if
-   not covered: hash the sealed inputs into the prompt so it echoes back inside the signed completion.
+2. ~~**Does the response signature cover the request input?**~~ → **Half-answered by the SDK.** The
+   signed message is the broker's `text` field (§1). Whether `text` includes the prompt is answered by
+   *reading one real signature response* — no booth queue needed, as soon as a chatID resolves.
+   Fallback if it turns out to be output-only is unchanged: hash the sealed inputs into the prompt so
+   they echo back inside the signed completion.
+3. **How do we get the response signature for a call made through the Router?** (§1) — the one that
+   matters most now.
 
 ## 4. Facts that were expensive to find — don't rediscover them
 

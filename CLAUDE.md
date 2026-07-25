@@ -32,6 +32,7 @@ guessed position offline by comparing commitments — the probing attack from an
 control doesn't cover. A test enforces that two seals of the same text differ (spec-04 §1).
 
 ## 🧭 If you are a Claude working on this repo, read in this order
+0. **`docs/handoff-open-threads.md`** — what's blocked right now and what to pick up. Read it first.
 1. **This file** (context + hard rules).
 2. **`docs/branching-strategy.md`** — how we use Git (pull-based, no squash, commit every ~30 min).
 3. **`docs/backlog.md`** — claim the next item (commit the claim first) + the **Definition of Done**.

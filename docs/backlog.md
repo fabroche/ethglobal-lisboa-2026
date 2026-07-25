@@ -46,6 +46,7 @@
 | S2.5 | `registry.read` | read verdict via Mirror Node REST | Hedera | S1.3 | dylan | 🟩 |
 | S2.6 | topic versioning | 3 message types per session (expiry/commitments/verdict), versioned from commit 1 | Hedera | S1.3 | | ⬜ |
 | S2.7 | canonical consolidation | migrate `registry` off its own serializer onto `src/lib/canonical.ts`; delete `src/registry/canonical.ts` | — | S1.4 | dylan | 🟩 |
+| S2.8 | per-side gap consent → evaluator | **P0 (Frank).** Land `c879e20` (per-side `gapOptIn` on the commitment message) on `develop` + provide the wiring: derive `consent: { a, b }` from BOTH commitments on the topic (missing/legacy ⇒ `false`, fail-safe) for `evaluate()`. Consent never comes from the create form (A's prefill only). | 0G/Hedera | S2.2, S1.3 | dylan | 🟡 |
 
 ## Phase 3 — Usable · Saturday evening
 | ID | Component | What | Sponsor | Depends on | Owner | Status |

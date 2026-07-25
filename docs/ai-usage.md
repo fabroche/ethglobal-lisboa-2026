@@ -17,7 +17,8 @@ disclosure.
 ## Attribution table
 | File / Area | AI-assisted? | Notes |
 |-------------|:------------:|-------|
-| `docs/**` (this documentation set) | ✅ | Generated with Claude Code under human direction; human-reviewed. RF/RNF specs, architecture, threat model, transversal docs. |
+| `docs/**` (this documentation set) | ✅ | Generated with Claude Code under human direction; human-reviewed. RF/RNF specs, architecture, threat model, transversal docs. Incl. the D16 use-case-preset decision records (README ledger, open-decisions DA8, data-model, spec-01/02, M1/M6/M8, backlog S3.5). |
+| `CLAUDE.md` | ✅ | Maintained with Claude Code (status + flow updates); human-reviewed. |
 | `docs/spec-01-session.md` · `spec-02-evaluator.md` · `spec-03-attest.md` · `spec-04-seal.md` | ✅ | Specs written before code (spec-driven rule). |
 | `docs/ux/**` | ✅ | Screens, sitemap, wireframes and the sponsor-value map, drafted with Claude Code from the existing specs; bilingual (EN canonical, ES mirror) for the team design review. |
 | Project scaffold (Next.js 16 · Tailwind v4 · shadcn) | ✅ | Boilerplate generated; config reviewed by a human. |

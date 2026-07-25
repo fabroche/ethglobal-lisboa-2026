@@ -14,6 +14,24 @@ disclosure.
   edits, tests and is accountable for every merged line. AI output is never merged unread.
 - No AI voiceover in the submission video (auto-reject) — narration is human.
 
+## Concrete human decisions (not generic — each is traceable in the repo)
+
+- **The idea itself and the kill-test.** The pivot away from sponsor-first ideas to Seam, and the
+  "each sponsor load-bearing or drop the idea" test — see `idea-brainstorm.md`. Humans set the
+  design constraint; the AI worked inside it.
+- **The D9 amendment came from a human catching the AI's flaw** (25 Jul). Dylan spotted that
+  "reveal the single blocking dimension" wrongly assumed a unique blocker, **rejected the AI's
+  first fix** (a priority-order pick) as a workaround that fabricates answers, and proposed the
+  final design himself: `gap:single` | `gap:multiple` — count, never which. Trail: DA1 in
+  `00-overview/05-open-decisions.md`, D9 in the ledger, PR #12.
+- **D16 was a human choice between argued options.** Free-form positions + guidance presets vs.
+  parsed criteria: the AI laid out trade-offs, Dylan decided, and defined the property criteria
+  (price, CPCV amount, CPCV date, CPCV→deed duration) from domain knowledge.
+- **Frank/integrator gatekeeping.** Every PR is human-reviewed and merged by the integrator;
+  the D9 vocabulary change additionally required Frank's explicit agreement before it shipped.
+- **Sponsor workshops and credentials** (DA3–DA7 confirmations, World/0G keys) — humans at the
+  booths; the AI only consumed the answers.
+
 ## Attribution table
 | File / Area | AI-assisted? | Notes |
 |-------------|:------------:|-------|
@@ -32,7 +50,7 @@ disclosure.
 | `src/evaluator/attest.ts` (+ test) | ✅ | M7/S0.3. Independent `verifyEnvelope` — signature recovery + fail-closed gate. Drafted with Claude Code; the design decision to drop the unresolvable vendor package and verify with general-purpose crypto was made explicitly (spec-03 §1). 24 unit tests. |
 | `src/evaluator/attest-testkit.ts` | ✅ | M7/S0.3. Ephemeral-key signing helpers for the spike + tests. **Not a production path** — Seam never signs anything. |
 | `scripts/spike-attest.ts` | ✅ | M7/S0.3, the Friday-night spike. PART A (offline) passes; PART B (live 0G) pending credentials + booth answers. Human-verified against the 0G booth answers. |
-| `src/components/web/**` · `src/app/create/**` · `src/app/room/**` | ✅ | M8 web screens: create (S3.1: `create-room-form`, `room-qr`; S3.5: `use-case-picker`), join landing, and verdict (S3.3: `countdown`, `verdict-panel`, `verdict-view`) + stories + RTL, and the routes/Server Actions wiring M1/M4. Drafted with Claude Code under human direction; human-reviewed. |
+| `src/components/web/**` · `src/app/create/**` · `src/app/room/**` | ✅ | M8 web screens: create (S3.1: `create-room-form`, `room-qr`; S3.5: `use-case-picker`), join landing, write+seal (S3.2: `seal-position-form`, `position-checklist`, `selfie-check-gate` + `submitCommitmentAction`), and verdict (S3.3: `countdown`, `verdict-panel`, `verdict-view`) + stories + RTL, and the routes/Server Actions wiring M1–M4. Drafted with Claude Code under human direction; human-reviewed. |
 | Submission video | ❌ | Human narration only (no AI voiceover — track rule). |
 
 Legend: ✅ AI-assisted · ⬜ pending (fill when built) · ❌ not AI-assisted.

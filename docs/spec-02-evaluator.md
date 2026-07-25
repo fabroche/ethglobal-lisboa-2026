@@ -16,6 +16,9 @@ run a **pinned model at temperature 0**, and emit a **single enum verdict** — 
 
 The enclave emits the **richest verdict both sides consented to**: a `gap:*` value is allowed **only if
 `gapOptIn.a && gapOptIn.b`**; otherwise the output is the bare `workable` / `not_workable`.
+The two consent booleans are read from the topic: each side declares `gapOptIn` on its **commitment
+message** at seal time (see `00-overview/02-data-model.md` §2); a commitment without the field counts
+as `false` (fail-safe).
 
 **Gap semantics (D9 as amended).** The gap values reveal **how many** dimensions block, never
 **which**. The counting basis is the three internal dimensions — compensation, timing, scope —

@@ -47,6 +47,11 @@ export {
 } from "./session";
 
 export {
+  consentFromCommitments,
+  type GapConsent,
+} from "./consent";
+
+export {
   initCommitmentState,
   acceptCommitment,
   isRoomComplete,

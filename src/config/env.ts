@@ -17,6 +17,7 @@ const envSchema = z.object({
   OG_KEY: z.string().optional(),
   OG_MODEL: z.string().optional(), // pin an exact model, record its hash
   OG_ENCLAVE_PUBKEY: z.string().optional(), // for independent attestation verification
+  OG_ENCLAVE_SEAL_PUBKEY: z.string().optional(), // enclave ENCRYPTION key for client sealing (spec-04 §2) — distinct from the attestation key above
 
   // Hedera — HCS topic (registry) + Schedule Service (clock) + Mirror Node (read)
   HEDERA_ACCOUNT_ID: z.string().optional(),

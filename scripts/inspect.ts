@@ -55,6 +55,7 @@ async function seedDemoCommitment(topic: string): Promise<void> {
     side: "A",
     commitment,
     worldNullifier: "world:demo-nullifier",
+    gapOptIn: false,
     submittedAt: new Date().toISOString(),
   });
   const client = Client.forName(network).setOperator(

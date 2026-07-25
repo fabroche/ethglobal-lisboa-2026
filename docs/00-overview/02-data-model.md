@@ -1,6 +1,6 @@
 # 02 · Data model — there is no database
 
-Status: 🟧 draft · Last updated: 2026-07-24
+Status: 🟧 draft · Last updated: 2026-07-25
 
 Seam has **no relational database, no ORM, no server-side store of terms** (D4). The source of truth is
 a single **Hedera Consensus Service (HCS) topic**: an append-only, consensus-ordered log. Each message
@@ -22,6 +22,7 @@ classDiagram
   }
   class ExpiryEntry {
     +type = "expiry"
+    +string useCase  // "property" | "job" | "otc"
     +string deadline (ISO-8601)
     +string createdAt (ISO-8601)
   }
@@ -45,9 +46,13 @@ classDiagram
 
 ### 1. Expiry entry — written **before anyone writes a word**
 ```json
-{ "v": 1, "type": "expiry", "roomId": "r_9f3a…", "deadline": "2026-07-26T08:00:00Z", "createdAt": "2026-07-26T06:00:00Z" }
+{ "v": 1, "type": "expiry", "roomId": "r_9f3a…", "useCase": "property", "deadline": "2026-07-26T08:00:00Z", "createdAt": "2026-07-26T06:00:00Z" }
 ```
 The clock is public before any position exists, so the opener can't use the deadline as leverage.
+
+`useCase` (`"property" | "job" | "otc"`, D16) is **public metadata**: both parties obviously know what
+*kind* of deal they are negotiating — only their positions are sealed. It selects the guidance preset
+(side labels, placeholder, checklist) and the evaluator's prompt hint (M6). It never carries terms.
 
 ### 2. Commitment entry — one per side, **before the reveal**
 ```json

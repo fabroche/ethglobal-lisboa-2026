@@ -96,6 +96,7 @@ docs/
 | D13 | **Mermaid diagrams** | All diagrams embedded as Mermaid, versioned per PR. |
 | D14 | **date-fns** | Deadlines / consensus timestamps handled with date-fns (no Moment). |
 | D15 | **Deploy TBD — Vercel vs VPS** | Vercel is fast for the hackathon; a Hostinger VPS + Dokploy path exists as the fallback. No worker, no DB either way. See `transversal/infra-devops.md`. |
+| D16 | **Free-form positions + use-case guidance presets** | Positions stay plain language in one sealed blob — no structured criteria, no parsing (a parser can't live client-side reliably or server-side privately, and fully structured input would reduce the sealed model to arithmetic). A **use-case preset** (`property` \| `job` \| `otc`) sets side labels, placeholder text, a **non-blocking** checklist on the write screen, and a per-use-case hint in the enclave prompt. `useCase` is public metadata in the expiry message; the sealed payload and commitment path are unchanged (D12). Presets live in `src/session/usecases.ts` (single source for M1/M6/M8). |
 
 ---
 

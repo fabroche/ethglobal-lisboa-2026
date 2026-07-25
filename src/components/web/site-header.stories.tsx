@@ -17,7 +17,7 @@ type Story = StoryObj<typeof SiteHeader>;
  * Nothing here varies with the page or with who is looking: no room id, no
  * breadcrumb, no room count, and the Rooms link is present whether or not this
  * device remembers any (S3.12). The header appears in every screenshot anyone
- * takes of Seam, so anything that changed with the user's state would be
+ * takes of Overlap, so anything that changed with the user's state would be
  * reporting that state to whoever is looking at the screen.
  */
 export const Default: Story = {};

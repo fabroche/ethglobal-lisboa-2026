@@ -5,7 +5,7 @@ export default function CreatePage() {
   return (
     <main className="mx-auto flex w-full flex-1 max-w-2xl flex-col items-center justify-center gap-8 px-6">
       <div className="flex flex-col items-center gap-2 text-center">
-        <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Seam</p>
+        <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Overlap</p>
         <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
           Open a <span className="serif-accent text-primary">room</span>
         </h1>

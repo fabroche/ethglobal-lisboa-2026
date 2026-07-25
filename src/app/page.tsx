@@ -9,11 +9,15 @@ export default function Home() {
         ETHGlobal · Lisbon 2026
       </p>
       <h1 className="text-balance text-4xl font-semibold sm:text-5xl">
-        One line. <span className="serif-accent text-primary">No leaks.</span>
+        Stop negotiating deals that were{" "}
+        <span className="serif-accent text-primary">never possible</span>
       </h1>
+      <p className="text-lg font-medium">
+        One line. <span className="serif-accent text-primary">No leaks.</span>
+      </p>
       <p className="text-pretty text-muted-foreground">
-        Two sides write their terms; a model inside sealed hardware returns a single line —
-        whether a deal is possible — without either side, or us, ever seeing the other’s.
+        Two sides write their terms in private. A model inside sealed hardware answers with a
+        single line: whether a deal is possible. Neither side ever sees the other&apos;s terms.
       </p>
       <Link
         href="/create"

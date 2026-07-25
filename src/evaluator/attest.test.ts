@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 import { generateEnclaveKey, signEnvelope, tamperHex } from "./attest-testkit";
 import { mayPublish, verifyEnvelope, type SignatureScheme } from "./attest";
 
-/** A Seam-shaped verdict record — what the enclave actually signs. */
+/** A Overlap-shaped verdict record — what the enclave actually signs. */
 const VERDICT = {
   sessionId: "seam-0xdeadbeef",
   verdict: "workable",

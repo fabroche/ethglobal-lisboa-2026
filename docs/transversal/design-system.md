@@ -27,6 +27,52 @@ app that must read calmly under demo pressure). Defined entirely in `src/app/glo
   Use these **always** (`text-workable`, `bg-pending`, …), never loose colours.
 - Decorative accent palette and soft gradients (`--glow-*`) with dark variants.
 
+## Brand — Overlap
+Adopted name + identity (DA9). Two "sides" (teal + indigo) that meet on a lit common bar — the
+*overlap*. Apply via **S4.8** (the token block below goes in `globals.css`, an integrator-owned file);
+until then `verdict-panel` keeps its placeholder Tailwind colours.
+
+**Tokens** — brand + the semantic verdict tokens named above. Keep the existing slate neutrals; only
+these change. The old violet `--primary` becomes the indigo below (nearly the same hue — cards/buttons
+barely shift).
+
+```css
+:root {
+  --primary: #635bf3;            /* Side B / indigo — primary action */
+  --primary-foreground: #ffffff;
+  --side-a: #12b8a6;             /* Side A — teal */
+  --side-b: #635bf3;             /* Side B — indigo */
+  --seam:   #4d8fd6;             /* the common bar where the two sides meet */
+  --workable:     #0ea472;       /* a deal is possible */
+  --not-workable: #64748b;       /* neutral slate — "no deal", NOT an error */
+  --pending:      #d98a0b;       /* amber — sealed, awaiting the reveal */
+}
+.dark {
+  --primary: #8b85ff; --primary-foreground: #14122e;
+  --side-a: #2dd4bf; --side-b: #8b85ff; --seam: #8fbdf0;
+  --workable: #2fd39a; --not-workable: #94a3b8; --pending: #f5b841;
+}
+@theme inline {
+  --color-side-a: var(--side-a); --color-side-b: var(--side-b); --color-seam: var(--seam);
+  --color-workable: var(--workable); --color-not-workable: var(--not-workable); --color-pending: var(--pending);
+}
+```
+
+**Wordmark** — `overlap`, all-lowercase, Inter Tight **800**, letter-spacing **−0.03em**.
+
+**Mark** — two chevrons (the two sides) converging on a lit common bar. Ship as `<OverlapMark/>`
+(tokens, so it themes):
+
+```html
+<svg viewBox="0 0 56 44" fill="none" role="img" aria-label="Overlap">
+  <path d="M9 8 L23 22 L9 36" stroke="var(--side-a)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M47 8 L33 22 L47 36" stroke="var(--side-b)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="25" y="13.5" width="6" height="17" rx="3" fill="var(--seam)"/>
+</svg>
+```
+
+Full identity board + brand kit (palette, type, applications, misuse): the exploration artifact linked in DA9.
+
 ## Shapes & effects
 - **Pill buttons** (`rounded-full`) with hover inversion.
 - **Cards** `rounded-xl` with `shadow-soft`; a `hover` variant with subtle elevation.

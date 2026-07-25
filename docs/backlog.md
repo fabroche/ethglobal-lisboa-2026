@@ -46,16 +46,18 @@
 | S2.5 | `registry.read` | read verdict via Mirror Node REST | Hedera | S1.3 | dylan | 🟩 |
 | S2.6 | topic versioning | 3 message types per session (expiry/commitments/verdict), versioned from commit 1 | Hedera | S1.3 | | ⬜ |
 | S2.7 | canonical consolidation | migrate `registry` off its own serializer onto `src/lib/canonical.ts`; delete `src/registry/canonical.ts` | — | S1.4 | dylan | 🟩 |
-| S2.8 | per-side gap consent → evaluator | **P0 (Frank).** Land `c879e20` (per-side `gapOptIn` on the commitment message) on `develop` + provide the wiring: derive `consent: { a, b }` from BOTH commitments on the topic (missing/legacy ⇒ `false`, fail-safe) for `evaluate()`. Consent never comes from the create form (A's prefill only). | 0G/Hedera | S2.2, S1.3 | dylan | 🟡 |
+| S2.8 | per-side gap consent → evaluator | **P0 (Frank).** Land `c879e20` (per-side `gapOptIn` on the commitment message) on `develop` + provide the wiring: derive `consent: { a, b }` from BOTH commitments on the topic (missing/legacy ⇒ `false`, fail-safe) for `evaluate()`. Consent never comes from the create form (A's prefill only). | 0G/Hedera | S2.2, S1.3 | dylan | 🟩 |
+| S2.9 | reveal runner + validaciones | **P0 (para Frank — ver `docs/handoff-frank-validaciones.es.md`).** (a) Wire the reveal: scheduler fires → read both commitments → `evaluate()` (inputs ready on `develop`: `getSealedPayloads`, `consentFromCommitments`) → attest → publish verdict — today nothing writes a verdict. (b) Answer the 4 validations: HTTPS tunnel go/no-go · seal-key yes/no (§3.1) · 4.0-vs-v2 track call · `MEMORIA.md`. | 0G/Hedera | S2.2, S2.8, S3.2 | frank | ⬜ |
 
 ## Phase 3 — Usable · Saturday evening
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
 |----|-----------|------|---------|-----------|-------|:------:|
 | S3.1 | `web` create | screen: open a room, set deadline, get QR/link | web | S1.2 | dylan | 🟩 |
-| S3.2 | `web` write+seal | screen: write position (preset placeholder + soft checklist, D16), seal in-browser | web | S1.4, S3.5 | dylan | 🟡 |
+| S3.2 | `web` write+seal | screen: write position (preset placeholder + soft checklist, D16), seal in-browser | web | S1.4, S3.5 | dylan | 🟩 |
 | S3.3 | `web` verdict | screen: countdown + one-line verdict (Mirror) | web | S2.5 | dylan | 🟩 |
-| S3.4 | two-browser E2E | full flow across two browsers, QR to join | web | S3.1–S3.3 | | ⬜ |
-| S3.5 | `usecases` presets | preset module (`src/session/usecases.ts`: labels/placeholder/checklist/evaluatorHint + Zod enum) + create-form use-case picker + `useCase` in the expiry message (D16) | web/Hedera | S3.1 | dylan | 🟡 |
+| S3.4 | two-browser E2E | full flow across two browsers, QR to join. **Prereq: HTTPS origin** — phone browsers disable WebCrypto (IDKit bridge + our `seal()`) on plain-HTTP LAN; `APP_URL` must carry the HTTPS origin so QRs encode it (tunnel vs local TLS: pending team OK) | web | S3.1–S3.3 | | ⬜ |
+| S3.5 | `usecases` presets | preset module (`src/session/usecases.ts`: labels/placeholder/checklist/evaluatorHint + Zod enum) + create-form use-case picker + `useCase` in the expiry message (D16) | web/Hedera | S3.1 | dylan | 🟩 |
+| S3.6 | worldid 4.0 + Selfie Check | migrate M3 to World ID 4.0: IDKit 4.x, server-signed `rp_context` (`WORLD_SIGNING_KEY`), `selfieCheckLegacy` preset, verify via `POST /api/v4/verify/{rp_id}` (plain HTTP — drops the SDK from the server path). Selfie Check is 4.x-only; v2 `device` flow is the fallback if timeboxed out. See `transversal/integration-worldid.md` §5. | World | S3.2 | dylan | 🟡 |
 
 ## Phase 4 — Demo & track requirements · Saturday late
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
@@ -67,6 +69,7 @@
 | S4.5 | `ai-usage.md` | which files were AI-assisted (keep updated all weekend) | compliance | — | | ⬜ |
 | S4.6 | output vocabulary | enum verdicts + opt-in `gap:*` consent logic | 0G/web | S2.2 | | ⬜ |
 | S4.7 | repo hygiene sweep | pre-freeze: decide `MEMORIA.md` (pre-pivot, ES — D2; owner's call) · confirm no editor-history/temp paths tracked (`.history/` incident, fixed) · drop stale local drafts or fold them in (`README2.md` → S4.4) · final `.gitignore` re-check | compliance | — | | ⬜ |
+| S4.8 | brand — apply Overlap | per DA9 (confirm w/ Frank first): **tokens** → `globals.css` (integrator) from design-system §Brand — Overlap (indigo `--primary` + `--side-a`/`--side-b`/`--seam` + semantic `--workable`/`--not-workable`/`--pending`); **`<OverlapMark>`** logo component (chevron SVG) + `overlap` wordmark; migrate `verdict-panel` off placeholder Tailwind colours onto the tokens; **rename** Seam→Overlap (README/docs, UI copy, `roomActionId` prefix `seam-`→`overlap-`, World app display name) | web/compliance | DA9 | dylan | ⬜ |
 
 ## Phase 5 — Submit · Saturday 22:00 → Sunday 07:00
 | ID | Component | What | Sponsor | Depends on | Owner | Status |

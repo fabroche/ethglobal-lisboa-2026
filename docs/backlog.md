@@ -47,6 +47,7 @@
 | S2.6 | topic versioning | 3 message types per session (expiry/commitments/verdict), versioned from commit 1 | Hedera | S1.3 | | ⬜ |
 | S2.7 | canonical consolidation | migrate `registry` off its own serializer onto `src/lib/canonical.ts`; delete `src/registry/canonical.ts` | — | S1.4 | dylan | 🟩 |
 | S2.8 | per-side gap consent → evaluator | **P0 (Frank).** Land `c879e20` (per-side `gapOptIn` on the commitment message) on `develop` + provide the wiring: derive `consent: { a, b }` from BOTH commitments on the topic (missing/legacy ⇒ `false`, fail-safe) for `evaluate()`. Consent never comes from the create form (A's prefill only). | 0G/Hedera | S2.2, S1.3 | dylan | 🟩 |
+| S2.9 | reveal runner + validaciones | **P0 (para Frank — ver `docs/handoff-frank-validaciones.es.md`).** (a) Wire the reveal: scheduler fires → read both commitments → `evaluate()` (inputs ready on `develop`: `getSealedPayloads`, `consentFromCommitments`) → attest → publish verdict — today nothing writes a verdict. (b) Answer the 4 validations: HTTPS tunnel go/no-go · seal-key yes/no (§3.1) · 4.0-vs-v2 track call · `MEMORIA.md`. | 0G/Hedera | S2.2, S2.8, S3.2 | frank | ⬜ |
 
 ## Phase 3 — Usable · Saturday evening
 | ID | Component | What | Sponsor | Depends on | Owner | Status |

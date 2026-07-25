@@ -24,6 +24,14 @@ const envSchema = z.object({
   // Enclave ENCRYPTION key for client sealing (spec-04 §2, M2) — distinct from
   // the attestation key above: you cannot encrypt to a 20-byte signer address.
   OG_ENCLAVE_SEAL_PUBKEY: z.string().optional(),
+  // The private half of OG_ENCLAVE_SEAL_PUBKEY, for the DEMO sealing path (S2.9).
+  //
+  // This exists because there is no 0G enclave encryption key to seal to (D-M6-2): the
+  // router is a chat API, so it cannot run our ECIES decryption inside the enclave. The
+  // server therefore unseals here, immediately before the enclave call. That is a real
+  // boundary and the demo says so out loud — with this set, "plaintext exists only inside
+  // the TEE" is NOT true of this build.
+  OG_DEMO_SEAL_SECRET: z.string().optional(),
   // OUR operating wallet, never a user's (see agente/guardrails.md). Needed
   // because the Router never makes us the broker's customer, so it cannot give
   // us a signature to verify — the whole product rests on getting one.

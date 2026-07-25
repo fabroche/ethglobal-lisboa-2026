@@ -46,6 +46,7 @@
 | S2.5 | `registry.read` | read verdict via Mirror Node REST | Hedera | S1.3 | dylan | 🟩 |
 | S2.6 | topic versioning | 3 message types per session (expiry/commitments/verdict), versioned from commit 1 | Hedera | S1.3 | | ⬜ |
 | S2.7 | canonical consolidation | migrate `registry` off its own serializer onto `src/lib/canonical.ts`; delete `src/registry/canonical.ts` | — | S1.4 | dylan | 🟩 |
+| **S2.8** | **per-side gap consent → evaluator** | **⛔ BLOCKING THE NEXT MERGE.** Land `c879e20` (per-side `gapOptIn` on the commitment message) on `develop`, then **wire it through**: read BOTH commitments from the topic and pass `consent: { a, b }` into `evaluate()`. Today `gapOptIn` is a **single room-level boolean set by whoever creates the room** (`room.ts:22`), so side B never consents to anything — the two-sided guarantee is aspirational until this lands. Consent must come from the two commitments, never from the create form (which is only A's prefill). | 0G/Hedera | S2.2, S1.3 | **dylan** | ⬜ **P0** |
 
 ## Phase 3 — Usable · Saturday evening
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
@@ -78,6 +79,12 @@
 `S0.2 → S0.3 (spike)` gates everything on 0G. In parallel, Hedera side can start `S1.1 → S1.2/S1.3`
 without waiting. The core loop (`S2.2` + `S2.3` + `S2.5`) is the "it works" milestone; the web UI and
 the two demo scripts (`S4.1`, `S4.2`) are what actually win the room.
+
+**⛔ `S2.8` is P0 and blocks the next merge to `develop`.** It is the difference between a consent
+guarantee we can demonstrate and one we only describe. A judge asking *"where does the other party
+agree to this?"* is a question we should want, not fear — and right now the honest answer is that they
+don't, because one person ticks a box for both. `c879e20` on `develop-dylan` already does the schema
+half; what is missing is reading both commitments and passing `{ a, b }` into `evaluate()`.
 
 ---
 

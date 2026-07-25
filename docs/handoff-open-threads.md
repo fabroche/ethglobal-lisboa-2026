@@ -150,8 +150,30 @@ be implemented in S2.2 — treat it as confirmed, not suspected.
 |---|---|---|
 | ~~Merge PR #9~~ | ~~integrator~~ | ✅ **Done.** Merged 00:03, and Dylan's S2.7 (#10) merged 00:32 on top of it. |
 | ~~Check the 0G balance~~ | ~~Dylan~~ | ✅ **Moot.** The hang is gone; the chat call returns 200 (§1). |
-| **Booth Q: signature for a Router call** | either | **Now the top question.** §1, "Where it is stuck now". |
+| ~~Booth Q: signature for a Router call~~ | — | ✅ Answered: you can't. Go direct to the broker (§1). |
 | Booth Q: enclave encryption key | either | §3.1 — still open, still blocks sealing to the *real* enclave. |
+| **⛔ Land `c879e20` + wire per-side consent (S2.8, P0)** | **dylan** | **Blocks the next merge to `develop`.** See below. |
+
+### ⛔ S2.8 · per-side gap consent — blocking, P0
+
+**Right now one person consents on behalf of both.** `gapOptIn` is a single room-level boolean set by
+whoever creates the room (`src/session/room.ts:22`, a checkbox on the create form), so **side B never
+agrees to anything.** The two-sided consent guarantee — *"if one side wants the bare answer, everyone
+gets the bare answer"* — is currently aspirational.
+
+`c879e20` on `develop-dylan` does the schema half and does it well: `gapOptIn` per side on the
+commitment message, required in the builder so the S3.2 writer must pass an explicit choice, and
+schema-defaulted `false` at parse so legacy commitments read as no-consent (missing consent fails safe
+to the bare verdict, never to disclosure).
+
+**What is still missing is the wiring:** read BOTH commitments off the topic and pass
+`consent: { a: commitmentA.gapOptIn, b: commitmentB.gapOptIn }` into `evaluate()`. The evaluator has
+enforced the rule since S2.2 — twice, in fact (the prompt withholds the `gap:*` vocabulary, and
+`applyConsent` degrades on the way out) — but it can only enforce what it is handed. Consent must come
+from the two commitments, **never** from the create form, which is only A's prefill.
+
+Why it is P0 rather than a nice-to-have: a judge asking *"where does the other party agree to this?"* is
+a question we should want. Today the honest answer is that they don't.
 
 ## 3. Still unanswered by 0G
 

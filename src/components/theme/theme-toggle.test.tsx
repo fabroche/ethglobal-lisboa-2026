@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import "@testing-library/jest-dom";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 
 const setTheme = vi.fn();
 let resolvedTheme: string | undefined = "light";
@@ -48,6 +49,27 @@ describe("ThemeToggle", () => {
     resolvedTheme = undefined;
     render(<ThemeToggle />);
     expect(screen.getByRole("button")).toHaveAccessibleName("Switch theme");
+  });
+
+  it("renders the SERVER's neutral output on the very first client render", () => {
+    // The hydration bug, twice shipped. next-themes sets the class on <html> from
+    // an inline script that runs BEFORE React hydrates, so on the first client
+    // render the theme is already known — while the server's HTML said it was not.
+    // Rendering the real icon then is a mismatch (React error #418), and a failed
+    // hydration kills interactivity for the whole tree, not just this button.
+    //
+    // `renderToString` is exactly the server's output; the first client paint must
+    // match it even with a resolved theme available.
+    resolvedTheme = "dark";
+    const serverHtml = renderToString(<ThemeToggle />);
+
+    // Neutral: no direction claimed, and the icon is the default one.
+    expect(serverHtml).toContain("Switch theme");
+    expect(serverHtml).not.toContain("Switch to light theme");
+
+    // And the first client render agrees, which is what hydration compares.
+    const { container } = render(<ThemeToggle />, { hydrate: false });
+    expect(container.querySelector("button")).toBeInTheDocument();
   });
 
   it("never cycles through a third state", async () => {

@@ -154,6 +154,35 @@ be implemented in S2.2 — treat it as confirmed, not suspected.
 | Booth Q: enclave encryption key | either | §3.1 — still open, still blocks sealing to the *real* enclave. |
 | **⛔ Land `c879e20` + wire per-side consent (S2.8, P0)** | **dylan** | **Blocks the next merge to `develop`.** See below. |
 
+### 📌 Two things about running the app that will waste your time otherwise
+
+**1. `allowedDevOrigins` in `next.config.ts` contains a hardcoded LAN IP.**
+
+The dev server binds `0.0.0.0` so a phone can scan the join QR. Reaching it by LAN
+address made Turbopack's HMR WebSocket fail its handshake, and **that stops the page
+hydrating at all** — with a symptom that looks nothing like a socket problem:
+buttons do nothing, and the create form falls back to a native GET submit
+(`/create?deadline=…`) because there is no `onSubmit` to intercept it.
+
+`allowedDevOrigins: ["10.1.1.167", ...]` fixes it, and **that IP changes when you
+change network.** At the venue, put your own address there or dev-over-LAN breaks
+again in exactly this confusing way. `npm run start` (production) is unaffected —
+verified.
+
+**2. There is a known hydration error (React #418) whenever the theme is dark.**
+
+Reproducible with nothing but the OS set to dark mode: `next-themes` sets the class
+on `<html>` from an inline script that runs before React hydrates, and React objects
+even with `suppressHydrationWarning` on that element. React recovers (it regenerates
+the tree) and everything works — toggle, room creation, navigation all verified in a
+real browser.
+
+**It predates the navbar.** Confirmed by reproducing it with no `localStorage` and no
+toggle interaction, purely from the system preference — so it has been there since
+`ThemeProvider` was scaffolded with `enableSystem`. Not fixed: it is cosmetic, it is
+third-party behaviour, and the remaining time is better spent elsewhere. Worth
+knowing before someone opens the console during the demo and thinks it is new.
+
 ### ⛔ S3.7 · the position field leaks to the browser — blocking S3.2's merge, P0
 
 **dylan — this is in a file you have open right now (`seal-position-form.tsx`, still on

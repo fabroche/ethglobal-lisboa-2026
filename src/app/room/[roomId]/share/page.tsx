@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buildJoinUrl } from "@/session";
 import { env } from "@/config/env";
 import { RoomQr } from "@/components/web/room-qr";
+import { RememberRoom } from "@/components/web/remember-room";
 
 /**
  * Share/QR view: `/room/<roomId>/share`. The landing the create flow redirects to (S3.8), so a
@@ -23,6 +24,10 @@ export default async function SharePage({
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-6 px-6">
+      {/* You reach this page by creating the room, so you are side A (S3.9).
+          Saved here as well as on the join landing, because the creator may never
+          click their own link — they came straight from /create. */}
+      <RememberRoom roomId={roomId} side="A" />
       <RoomQr roomId={roomId} joinUrl={joinUrl} ownUrl={ownUrl} />
       <Link
         href="/create"

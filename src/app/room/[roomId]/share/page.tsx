@@ -23,7 +23,7 @@ export default async function SharePage({
   const ownUrl = buildJoinUrl(env.APP_URL, roomId, "A");
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-6 px-6">
+    <main className="mx-auto flex w-full flex-1 max-w-2xl flex-col items-center justify-center gap-6 px-6">
       {/* You reach this page by creating the room, so you are side A (S3.9).
           Saved here as well as on the join landing, because the creator may never
           click their own link — they came straight from /create. */}

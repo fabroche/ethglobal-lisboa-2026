@@ -3,7 +3,7 @@ import { createRoomAction } from "./actions";
 
 export default function CreatePage() {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-8 px-6">
+    <main className="mx-auto flex w-full flex-1 max-w-2xl flex-col items-center justify-center gap-8 px-6">
       <div className="flex flex-col items-center gap-2 text-center">
         <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Seam</p>
         <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">

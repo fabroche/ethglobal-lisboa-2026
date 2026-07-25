@@ -1,6 +1,6 @@
 # Open threads — pick up here
 
-Last updated: **2026-07-25, ~02:30 WEST** · written by frank (0G workstream) at end of session.
+Last updated: **2026-07-25, ~19:00 WEST** · written by frank (0G workstream) at end of session.
 
 > **Read this first if you are a Claude resuming work.** Then `CLAUDE.md`, then `docs/backlog.md`.
 > Everything below is committed and pushed; nothing is only in a chat window.
@@ -11,12 +11,70 @@ Last updated: **2026-07-25, ~02:30 WEST** · written by frank (0G workstream) at
 
 | | |
 |---|---|
-| Now | Sat 25 Jul, ~02:30 |
-| **Feature freeze** | **Sat 25 Jul, 22:00** (~19h) |
+| Now | Sat 25 Jul, **~19:00** |
+| **Feature freeze** | **Sat 25 Jul, 22:00** (~3h) |
 | Submission | Sun 26 Jul, 09:00 |
 
-The remaining scope is large for that window. §5 lists what to cut first if it comes to that —
-decide that consciously rather than by running out of time.
+**Three hours, and the video still has to be recorded.** Two or three items fit, not more. §0 is the
+recommended order and the reasoning behind it — read it before claiming anything.
+
+---
+
+## 0. ⚡ START HERE — what to do with the remaining ~3h
+
+**The 0G gamble is won** (§1) and `evaluator` is live-verified. What is NOT done is the thing the pitch
+rests on:
+
+### 🔴 First: `S2.3` — wire the attest gate into the publish path
+
+`attest` is built, has 30 unit tests, and **verifies a real enclave signature** (`npm run spike` exits
+0). But it is **not connected to the code that writes the verdict.** So "fail closed — no valid
+attestation, no verdict" is true of the module and not yet true of the system.
+
+That is the single most valuable hour left. It touches `src/registry` (dylan's lane) — coordinate.
+
+### 🟠 Then: `S4.4` — the README
+
+The judges read it. Nothing else in the repo substitutes for it.
+
+### ⚪ Only if time remains
+
+`S3.12` (reach `/rooms` from the navbar — small, and a real gap), `S3.4` (two-browser E2E).
+
+### 📋 Blocked on dylan, both P0
+
+`S2.8` (per-side gap consent → evaluator) and `S3.7` (the position textarea leaks to the browser).
+Details in §2. **S3.7 blocks S3.2's merge** and is a privacy hole in the write screen.
+
+---
+
+## What this session did (25 Jul, 12:00→19:00)
+
+Won the 0G gamble and closed the 0G workstream, then spent the afternoon on web fixes found by
+rehearsing the demo.
+
+| | |
+|---|---|
+| **S0.3** | `npm run spike` **FULL GO** — a real enclave signature verifies against our pinned key |
+| **S2.2** | `evaluator` built + live-verified (`npm run eval:live` GO) |
+| **S4.2** | `demo-naive.ts` — Act 3 of the demo, `--live` shows the identical verdict |
+| **S3.6** | `room-qr` — copy button failed *silently* off HTTPS; warns on a localhost QR |
+| **S3.8** | post-create navigation + the creator's own link (a reload used to destroy the room) |
+| **S3.9/S3.11** | rooms remembered on-device behind a swappable port, `/rooms` with search |
+| **S3.10** | site header (every page was a dead end) + the theme toggle |
+| — | `OG_WALLET_PRIVATE_KEY`, `og:status`, `og:setup`, DA9/DA10, guardrail amended |
+
+**309 tests · typecheck · lint · build · spike · eval:live — all green** at `1ae7e81`.
+
+### A pattern worth knowing about, because it bit three times today
+
+**Green unit tests coexisted with broken behaviour in the browser, three separate times:** the copy
+button (clipboard was mocked), the theme toggle (next-themes was mocked), and hydration failing
+entirely over LAN. Mocks do not see the browser.
+
+There is no Playwright config yet — that is `S3.4`. Until it exists, **verify UI work in a real
+browser**, not only with `npm run test`. Playwright's browsers ARE installed, so a throwaway script is
+enough; there are examples of exactly that in this session's history.
 
 ---
 
@@ -154,7 +212,24 @@ be implemented in S2.2 — treat it as confirmed, not suspected.
 | Booth Q: enclave encryption key | either | §3.1 — still open, still blocks sealing to the *real* enclave. |
 | **⛔ Land `c879e20` + wire per-side consent (S2.8, P0)** | **dylan** | **Blocks the next merge to `develop`.** See below. |
 
-### 📌 Two things about running the app that will waste your time otherwise
+### 📌 Three things about running the app that will waste your time otherwise
+
+**0. On Windows, `pkill -f "next dev"` does NOT kill the whole tree.**
+
+Cost 20 minutes this session. `npm run dev` spawns npm → next → server → turbopack worker, and killing
+by pattern leaves some alive. A zombie then holds port 3000, your "clean" server silently starts on
+**3002**, and you spend the next twenty minutes testing against a dead server that is still returning
+HTTP 500 for every chunk because its `.next` was deleted underneath it.
+
+Before starting, and whenever the app behaves impossibly:
+
+```bash
+netstat -ano | grep ":300" | grep LISTENING   # should be empty, or only your server
+```
+
+Kill by PID with `taskkill //F //PID <pid>`. And **do not alternate `npm run build` and `npm run dev`
+without `rm -rf .next`** — the directory ends up holding both sets of artefacts.
+
 
 **1. `allowedDevOrigins` in `next.config.ts` contains a hardcoded LAN IP.**
 
@@ -294,26 +369,37 @@ Only one left, and it is no longer on the critical path.
   `0gm-1.0-35b-a3b` has 1, so the signing key cannot rotate. **Expect this in the Q&A** — a stable
   signer beats a smarter model when the product is proving who signed something.
 
-## 5. What's ready to start, in priority order
+## 5. What's ready to start — see §0 for the recommended order
 
-Nothing below is blocked by §1 except where noted.
+Done since this list was written: **S2.2** ✅ · **S4.1/S4.2** ✅ · **S0.3** ✅ (FULL GO).
 
-1. **S2.2 `evaluator`** — spec is ready and now carries D-M6-1. Can be built and unit-tested with a
-   mocked router; only the final wiring needs the live call.
-2. **S2.3 `attest` gate** — small. `mayPublish()` exists; it needs wiring into the verdict write path.
-   Touches `src/registry` (Dylan's lane) — **coordinate before editing**.
-3. **S3.2 `web` write+seal** — the last missing screen. `seal` is done and tested; can use a test
-   recipient key until §3.1 is answered.
-4. Then: S3.4 E2E · S4.1/S4.2 demo scripts · S4.4 README · S5.1 video.
+Still open, and none of it blocked by §1:
+
+1. **S2.3 `attest` gate** — `mayPublish()` exists and is verified; it needs wiring into the verdict
+   write path. Touches `src/registry` (dylan's lane) — **coordinate before editing**. **This is the
+   highest-value item left**, because it is the fail-closed guarantee the pitch is built on.
+2. **S4.4 README** — compliance, and the judges read it.
+3. **S3.12** — `/rooms` cannot be reached from the navbar (left undone in S3.11; small).
+4. **S3.4 two-browser E2E** — would also have caught the three browser-only bugs found today.
+5. **S3.2 `web` write+seal** — dylan's, on `develop-dylan`, **blocked by S3.7**.
 
 **If the window gets tight, cut in this order:** S4.6 output vocabulary (`gap:*` opt-in) → S2.6 topic
-versioning → S4.3 World testing doc. **Never cut** S4.1/S4.2 (the two demo scripts are what actually
-win the room) or the video.
+versioning → S4.3 World testing doc → S3.12 → S3.4. **Never cut** S4.1/S4.2 (both now done — the two
+demo scripts are what actually win the room) or the video.
 
 ## 6. State of the code
 
-`typecheck` · `lint` · `test` · `build` all green. **146 tests, 20 files**, both workstreams merged
-locally on `develop-frank`.
+`typecheck` · `lint` · `test` · `build` · `npm run spike` · `npm run eval:live` — **all green** at
+`1ae7e81` on `develop-frank`, pushed. **309 tests, 31 files.**
 
-Done this session: **S0.2** (spec-03) · **S0.3** (attest + spike, PART A GO) · **S1.4** (`seal`) ·
-shared `src/lib/canonical.ts` · DA6/DA7/DA8 decided · project config pinned to 0G mainnet.
+`develop-frank` is ahead of `develop`: everything from this session needs a PR (**no squash**).
+`develop-dylan` has three unmerged commits including `c879e20` (see §2, S2.8) and S3.2's write screen.
+
+Commands worth knowing about that did not exist this morning:
+
+```powershell
+npm run og:status   # 0G wallet + compute-ledger balance. READ-ONLY, spends nothing
+npm run og:setup    # one-time on-chain setup. DRY RUN unless `-- --confirm`
+npm run eval:live   # S2.2 against the real enclave. GO
+npm run demo:naive  # demo Act 3; `-- --live` has the enclave return the SAME verdict
+```

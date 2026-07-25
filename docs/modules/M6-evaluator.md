@@ -32,6 +32,7 @@ runs the pinned model, signs the result) · the two sides (their opt-in consent 
 | RF-M6-004 | Emit `gap:*` **only if both sides opted in**; otherwise the bare verdict | Must |
 | RF-M6-005 | Record the model hash alongside the verdict for reproducibility | Must |
 | RF-M6-006 | Validate the enclave response shape with Zod (D11); reject anything off-enum | Must |
+| RF-M6-007 | Prepend the room's **use-case prompt hint** (`usecases[useCase].evaluatorHint`, D16 — shared source `src/session/usecases.ts`, M1) so the model knows which dimensions matter; hint names dimensions, never terms; output stays enum-only | Should |
 
 ## 4. Non-functional requirements (RNF)
 | ID | Requirement | Metric / criterion |
@@ -77,7 +78,7 @@ sequenceDiagram
 ## 8. Endpoints / Server Actions / Integrations / Jobs
 | Type | Name | Input | Output | Auth | Notes |
 |------|------|-------|--------|------|-------|
-| Integration | `evaluate` | `{ ciphertextA, ciphertextB, consent }` | `{ verdict, modelHash, attestation }` | `OG_KEY` | pinned model, temp 0, enum schema |
+| Integration | `evaluate` | `{ ciphertextA, ciphertextB, useCase, consent }` | `{ verdict, modelHash, attestation }` | `OG_KEY` | pinned model, temp 0, enum schema, use-case hint (RF-M6-007) |
 
 ## 9. UI components (Definition of Done)
 | Component | Story | RTL test | Status |

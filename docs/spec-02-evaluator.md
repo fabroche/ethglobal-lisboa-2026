@@ -11,7 +11,7 @@ run a **pinned model at temperature 0**, and emit a **single enum verdict** — 
 ## Inputs / outputs
 | | Shape |
 |---|---|
-| **Input** | `{ ciphertextA, ciphertextB, gapOptIn: { a: boolean, b: boolean } }` |
+| **Input** | `{ ciphertextA, ciphertextB, useCase: "property" \| "job" \| "otc", gapOptIn: { a: boolean, b: boolean } }` |
 | **Output** | `{ verdict: "workable" \| "not_workable" \| "gap:compensation" \| "gap:timing" \| "gap:scope" }` |
 
 The enclave emits the **richest verdict both sides consented to**: a `gap:*` value is allowed **only if
@@ -29,6 +29,10 @@ async function evaluate(input: EvaluatorInput): Promise<Verdict> {
 ```
 - `OG_MODEL` is pinned to an exact model and its hash is recorded (see `transversal/integration-0g.md`).
 - Output is **constrained** to the enum (structured output / grammar) and re-validated with Zod (D11).
+- The prompt **prepends `usecases[useCase].evaluatorHint`** (D16, from `src/session/usecases.ts` —
+  shared with M1/M8), e.g. *"This is a property negotiation — judge workability on price, CPCV amount,
+  CPCV date, CPCV→deed timing."* The hint names dimensions, never terms; positions remain free-form
+  and the output enum is unchanged (D9).
 
 ## Acceptance criteria
 - [ ] Output is **always** one of the enum values; free text is impossible/rejected.

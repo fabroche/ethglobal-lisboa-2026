@@ -302,37 +302,32 @@ const INFERENCE_CONTRACT = "0x47340d900bdFec2BD393c626E12ea0656F938d84";
 /** keccak256("getService(address)")[0:4] */
 const GET_SERVICE_SELECTOR = "15a52302";
 /** Field order of the `Service` struct — see the SDK's InferenceServing.d.ts. */
+const WORD_URL = 2;
 const WORD_TEE_SIGNER = 9;
 const WORD_ACKNOWLEDGED = 10;
 
-/**
- * Is the address we pinned the one that actually signs?
- *
- * We got this wrong once, and it is worth understanding why the mistake was
- * invisible: `/v1/providers` and the `x-provider` header both hand you the
- * PROVIDER address — the provider's billing identity — while responses are
- * signed by `teeSignerAddress`, a different field of the same on-chain struct.
- * Pinning the wrong one fails every verification with `signer_mismatch`, and
- * because we fail closed, the demo publishes nothing and says nothing about why.
- *
- * So we read the truth on-chain, ourselves. `eth_call` against a public RPC:
- * no 0G router, no SDK, no API key. `teeSignerAddress` also MOVES when the
- * enclave is redeployed, which is the other reason this must be a check and not
- * a comment in `.env.example`.
- */
-async function preflightSigner(env: OgEnv): Promise<void> {
-  const pinned = (env.OG_ENCLAVE_PUBKEY ?? "").trim().toLowerCase();
-  if (!pinned) {
-    skip("pinned key matches teeSignerAddress on-chain", "OG_ENCLAVE_PUBKEY is empty");
-    return;
-  }
+type OnChainService = {
+  /** The key that actually signs responses. NOT the provider address. */
+  teeSigner: string;
+  acknowledged: boolean;
+  /** The provider's own broker — where the signature is served from. */
+  brokerUrl: string;
+};
 
+/**
+ * Read the provider's `Service` struct straight off the chain.
+ *
+ * `eth_call` against a public RPC: no 0G router, no SDK, no API key. That is the
+ * point — these are the values the rest of PART B is checked against, so they
+ * must not come from the thing being checked.
+ */
+async function readService(env: OgEnv): Promise<OnChainService | null> {
   const provider = (env.OG_PROVIDER_ADDRESS ?? "0x4870CbC4D07d6Ac2EE5aA865588e5985FE77a4E9")
     .trim()
     .toLowerCase()
     .replace(/^0x/u, "");
 
-  let result: string;
+  let hex: string;
   try {
     const response = await fetch(OG_RPC, {
       method: "POST",
@@ -349,39 +344,99 @@ async function preflightSigner(env: OgEnv): Promise<void> {
       signal: AbortSignal.timeout(20_000),
     });
     const json = (await response.json()) as { result?: string };
-    if (!json.result) {
-      check("pinned key matches teeSignerAddress on-chain", false, "RPC returned no result");
-      return;
-    }
-    result = json.result.slice(2);
-  } catch (error) {
-    check(
-      "pinned key matches teeSignerAddress on-chain",
-      false,
-      error instanceof Error ? error.message : String(error),
-    );
-    return;
+    if (!json.result) return null;
+    hex = json.result.slice(2);
+  } catch {
+    return null;
   }
 
   // Single struct return: a 32-byte offset to the tuple, then the tuple's head.
-  const tupleStart = Number.parseInt(result.slice(0, 64), 16) * 2;
-  const wordAt = (i: number) => result.slice(tupleStart + i * 64, tupleStart + (i + 1) * 64);
-  const onChain = `0x${wordAt(WORD_TEE_SIGNER).slice(24)}`;
-  const acknowledged = BigInt(`0x${wordAt(WORD_ACKNOWLEDGED)}`) === 1n;
+  // Dynamic members (here: `url`) store an offset relative to the tuple start.
+  const tupleStart = Number.parseInt(hex.slice(0, 64), 16) * 2;
+  const wordAt = (i: number) => hex.slice(tupleStart + i * 64, tupleStart + (i + 1) * 64);
 
-  const matches = onChain === pinned;
-  check("pinned key matches teeSignerAddress on-chain", matches, matches ? onChain : undefined);
+  const urlAt = tupleStart + Number.parseInt(wordAt(WORD_URL), 16) * 2;
+  const urlLength = Number.parseInt(hex.slice(urlAt, urlAt + 64), 16);
+  const brokerUrl = Buffer.from(hex.slice(urlAt + 64, urlAt + 64 + urlLength * 2), "hex").toString("utf8");
+
+  return {
+    teeSigner: `0x${wordAt(WORD_TEE_SIGNER).slice(24)}`,
+    acknowledged: BigInt(`0x${wordAt(WORD_ACKNOWLEDGED)}`) === 1n,
+    brokerUrl,
+  };
+}
+
+/**
+ * Is the address we pinned the one that actually signs?
+ *
+ * We got this wrong once, and it is worth understanding why the mistake was
+ * invisible: `/v1/providers` and the `x-provider` header both hand you the
+ * PROVIDER address — the provider's billing identity — while responses are
+ * signed by `teeSignerAddress`, a different field of the same on-chain struct.
+ * Pinning the wrong one fails every verification with `signer_mismatch`, and
+ * because we fail closed, the demo publishes nothing and says nothing about why.
+ *
+ * `teeSignerAddress` also MOVES when the enclave is redeployed, which is the
+ * other reason this is a check and not a comment in `.env.example`.
+ */
+function preflightSigner(env: OgEnv, svc: OnChainService | null): void {
+  const pinned = (env.OG_ENCLAVE_PUBKEY ?? "").trim().toLowerCase();
+  if (!pinned) {
+    skip("pinned key matches teeSignerAddress on-chain", "OG_ENCLAVE_PUBKEY is empty");
+    return;
+  }
+  if (!svc) {
+    check("pinned key matches teeSignerAddress on-chain", false, `no answer from ${OG_RPC}`);
+    return;
+  }
+
+  const matches = svc.teeSigner === pinned;
+  check("pinned key matches teeSignerAddress on-chain", matches, matches ? svc.teeSigner : undefined);
   if (!matches) {
     console.log(
       `\n  ${c.yellow}OG_ENCLAVE_PUBKEY is not the signing key.${c.reset}\n` +
         `  ${c.dim}pinned   ${pinned}\n` +
-        `  on-chain ${onChain}   <- put THIS in .env.local\n\n` +
+        `  on-chain ${svc.teeSigner}   <- put THIS in .env.local\n\n` +
         `  If the pinned value is the provider address, that is the classic mix-up:\n` +
         `  the provider address is who gets PAID; teeSignerAddress is who SIGNS.\n` +
         `  If it is simply different, the enclave was redeployed and the key moved.${c.reset}\n`,
     );
   }
-  check("TEE signer is acknowledged on-chain", acknowledged, `teeSignerAcknowledged=${acknowledged}`);
+  check("TEE signer is acknowledged on-chain", svc.acknowledged, `teeSignerAcknowledged=${svc.acknowledged}`);
+}
+
+type BrokerSignature = { text?: string; signature?: string; error?: string; status: number };
+
+/**
+ * Fetch the response signature from the provider's broker.
+ *
+ * The signature is NOT in the chat response — it is served separately, keyed by
+ * chatID. Route and shape were read out of `@0gfoundation/0g-compute-ts-sdk`
+ * (`inference/broker/verifier.js`), which we inspected but do not depend on:
+ *
+ *   GET {brokerURL}/v1/proxy/signature/{chatID}?model={model} -> { text, signature }
+ *
+ * The SDK verifies it with `ethers.hashMessage`, i.e. EIP-191 — our
+ * `secp256k1-eth`. We take the bytes from here and judge them ourselves
+ * (RNF-M7-001); nothing in the trust path comes from 0G.
+ */
+async function fetchBrokerSignature(
+  brokerUrl: string,
+  chatId: string,
+  model: string,
+): Promise<BrokerSignature> {
+  const url = `${brokerUrl}/v1/proxy/signature/${chatId}?model=${encodeURIComponent(model)}`;
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+    const raw = await response.text();
+    if (!response.ok) {
+      return { status: response.status, error: raw.slice(0, 300) };
+    }
+    const parsed = JSON.parse(raw) as { text?: string; signature?: string };
+    return { status: response.status, text: parsed.text, signature: parsed.signature };
+  } catch (error) {
+    return { status: 0, error: error instanceof Error ? error.message : String(error) };
+  }
 }
 
 async function partBLive(env: OgEnv): Promise<void> {
@@ -389,7 +444,11 @@ async function partBLive(env: OgEnv): Promise<void> {
 
   // Runs first and needs no credentials: pinning the wrong key makes every
   // later check fail for a reason that looks like 0G's fault and isn't.
-  await preflightSigner(env);
+  const svc = await readService(env);
+  preflightSigner(env, svc);
+  if (svc) {
+    console.log(`  ${c.dim}broker (on-chain) ${svc.brokerUrl}${c.reset}`);
+  }
 
   if (!env.OG_KEY || !env.OG_MODEL) {
     skip("live sealed call", "set OG_KEY and OG_MODEL in .env.local");
@@ -406,6 +465,7 @@ async function partBLive(env: OgEnv): Promise<void> {
   if (!(await preflightModel(env))) return;
 
   let body: unknown;
+  let chatId: string | undefined;
   try {
     const response = await fetch(`${env.OG_ROUTER_URL}/chat/completions`, {
       method: "POST",
@@ -445,15 +505,9 @@ async function partBLive(env: OgEnv): Promise<void> {
     // what we actually got rather than guess.
     const headers = Object.fromEntries(response.headers.entries());
     console.log(`  ${c.dim}response headers: ${Object.keys(headers).join(", ")}${c.reset}`);
-    const resKey = headers["zg-res-key"];
-    if (resKey) {
-      console.log(`  ${c.green}ZG-Res-Key present${c.reset} ${c.dim}= ${resKey.slice(0, 32)}…${c.reset}`);
-      console.log(
-        `  ${c.dim}This is the chatID. Per 0G docs the SDK verifies it via\n` +
-          `  broker.inference.processResponse(providerAddress, chatID) — we must NOT\n` +
-          `  use that (it is the SDK trust path). Ask the booth which endpoint serves\n` +
-          `  the raw signature + attestation for a chatID so we can verify it ourselves.${c.reset}`,
-      );
+    chatId = headers["zg-res-key"];
+    if (chatId) {
+      console.log(`  ${c.green}ZG-Res-Key present${c.reset} ${c.dim}= ${chatId} (the chatID)${c.reset}`);
     } else {
       console.log(`  ${c.yellow}no ZG-Res-Key header${c.reset} ${c.dim}— check data.id in the body${c.reset}`);
     }
@@ -484,20 +538,68 @@ async function partBLive(env: OgEnv): Promise<void> {
   console.log(`  ${c.dim}top-level keys: ${Object.keys(record).join(", ")}${c.reset}`);
 
   const candidates = probe(body);
-  if (candidates.length === 0) {
-    check("response carries a signature", false, "no hex-shaped field — ASK AT THE BOOTH");
-    console.log(`\n${c.dim}${JSON.stringify(body, null, 2).slice(0, 1500)}${c.reset}`);
+  if (candidates.length > 0) {
+    console.log(`  ${c.dim}hex-shaped fields in the body: ${candidates.map((p) => p.path).join(", ")}${c.reset}`);
+  }
+
+  // The signature is NOT in the chat body — confirmed 25 Jul, and expected: 0G
+  // serves it separately, keyed by chatID. Anything hex-shaped in the body is
+  // the provider address, which is not a signature and must not be mistaken for
+  // one. So we go and fetch the real thing.
+  let signature: { path: string; value: string } | undefined;
+  let signedText: string | undefined;
+
+  if (!svc) {
+    skip("signature fetched from the provider broker", "could not read the broker URL on-chain");
+    return;
+  }
+  if (!chatId) {
+    check("signature fetched from the provider broker", false, "no chatID (ZG-Res-Key) to ask for");
     return;
   }
 
-  console.log(`  ${c.dim}hex-shaped fields found:${c.reset}`);
-  for (const { path, value } of candidates) {
-    console.log(`    ${c.dim}${path} = ${value.slice(0, 24)}… (${value.length} chars)${c.reset}`);
+  const fetched = await fetchBrokerSignature(svc.brokerUrl, chatId, env.OG_MODEL);
+  if (!fetched.signature) {
+    check(
+      "signature fetched from the provider broker",
+      false,
+      `HTTP ${fetched.status}: ${fetched.error ?? "no signature field"}`,
+    );
+    if (/chat_id_not_found/u.test(fetched.error ?? "")) {
+      console.log(
+        `\n  ${c.yellow}The route is right; the chatID is not one this broker knows.${c.reset}\n` +
+          `  ${c.dim}A wrong path returns 404 — this returned a business error, so\n` +
+          `  ${svc.brokerUrl}/v1/proxy/signature/… exists.\n\n` +
+          `  Leading hypothesis: router-api.0g.ai is an intermediary that opens its\n` +
+          `  OWN session with the broker, so the chatID we see is the router's, not\n` +
+          `  one the broker can sign for. Only calls made DIRECTLY to the broker\n` +
+          `  would produce a chatID it recognises — and going direct means the SDK's\n` +
+          `  on-chain payment flow (wallet + ledger contract + per-request signed\n` +
+          `  headers), which is a much heavier path than a Bearer key.\n\n` +
+          `  BOOTH QUESTION, one sentence: "how do we get the response signature\n` +
+          `  for a call made through the Router?" See handoff §1.${c.reset}\n`,
+      );
+    }
+    return;
   }
 
-  const signature = candidates.find((p) => [128, 130].includes(p.value.replace(/^0x/u, "").length));
-  check("response carries a signature", signature !== undefined, signature?.path);
-  if (!signature) return;
+  check("signature fetched from the provider broker", true, `${fetched.signature.slice(0, 20)}…`);
+  signature = { path: "broker /v1/proxy/signature", value: fetched.signature };
+  signedText = fetched.text;
+
+  // What the broker signs is its `text` field. Whether `text` includes the
+  // PROMPT is the highest-stakes open question (spec-03 §8.1): our pitch is
+  // "this model saw THESE inputs and returned this verdict". Print it so the
+  // answer is read off a real response instead of argued about.
+  if (signedText !== undefined) {
+    console.log(`  ${c.dim}signed text (${signedText.length} chars): ${JSON.stringify(signedText.slice(0, 400))}${c.reset}`);
+    const coversInput = signedText.includes("Side A") || signedText.includes("Side B");
+    check(
+      "signed text covers the INPUT, not just the output",
+      coversInput,
+      coversInput ? "the prompt is inside the signed bytes" : "output only — reword the pitch (spec-03 §8.1)",
+    );
+  }
 
   if (!env.OG_ENCLAVE_PUBKEY) {
     skip("independent verification", "set OG_ENCLAVE_PUBKEY from the attestation endpoint");

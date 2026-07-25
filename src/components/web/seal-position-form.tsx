@@ -129,6 +129,7 @@ export function SealPositionForm({
   return (
     <form
       onSubmit={handleSubmit}
+      autoComplete="off"
       aria-label={`Write and seal your position as ${preset.sideLabels[side]}`}
       className={cn(
         "flex w-full max-w-md flex-col gap-5 rounded-xl border bg-card p-6 text-card-foreground shadow-sm",
@@ -147,15 +148,29 @@ export function SealPositionForm({
 
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         Position
+        {/* S3.7 (P0): the BROWSER can leak this field — form history saves it to disk
+            keyed by `name` (and suggests it to the next person on the machine), and
+            Chrome's Enhanced spell check / Edge's Microsoft Editor SEND the text to
+            Google/Microsoft. Every attribute below closes one of those doors; the
+            field deliberately has no `name` so nothing keys a history entry. */}
         <textarea
-          name="position"
           rows={5}
           value={position}
           placeholder={preset.placeholder}
           onChange={(event) => setPosition(event.target.value)}
           aria-invalid={error != null}
+          aria-label="Position"
+          autoComplete="off"
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
+          data-1p-ignore
+          data-lpignore="true"
           className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
+        <span className="text-xs font-normal text-muted-foreground">
+          Spellcheck is off on purpose — your text never leaves this browser.
+        </span>
       </label>
 
       <PositionChecklist items={preset.checklist} />

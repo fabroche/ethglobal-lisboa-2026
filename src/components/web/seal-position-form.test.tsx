@@ -57,6 +57,21 @@ function renderForm(over: Partial<Parameters<typeof SealPositionForm>[0]> = {}) 
 }
 
 describe("SealPositionForm", () => {
+  it("closes the browser-side leak doors on the position field (S3.7, P0)", () => {
+    renderForm();
+    const field = screen.getByRole("textbox", { name: /^position$/i });
+    // Form history saves by `name` — the field must not have one.
+    expect(field).not.toHaveAttribute("name");
+    expect(field).toHaveAttribute("autocomplete", "off");
+    expect(field).toHaveAttribute("spellcheck", "false");
+    expect(field).toHaveAttribute("autocorrect", "off");
+    expect(field).toHaveAttribute("autocapitalize", "off");
+    expect(field).toHaveAttribute("data-1p-ignore");
+    expect(field).toHaveAttribute("data-lpignore", "true");
+    // And the limitation is explained as the privacy feature it is.
+    expect(screen.getByText(/spellcheck is off on purpose/i)).toBeInTheDocument();
+  });
+
   it("shows the preset placeholder and checklist — guidance never blocks (D16/DA8)", () => {
     renderForm();
     expect(screen.getByPlaceholderText(/sell below/i)).toBeInTheDocument();

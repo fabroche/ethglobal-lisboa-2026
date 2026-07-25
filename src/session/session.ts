@@ -31,7 +31,7 @@ export interface RegistryPort {
 /** Injected collaborators — real ones in production, fakes in tests. */
 export interface CreateRoomDeps {
   registry: RegistryPort;
-  /** Absolute base URL for join links, e.g. `https://seam.app` (from `env.APP_URL`). */
+  /** Absolute base URL for join links, e.g. `https://overlap.app` (from `env.APP_URL`). */
   baseUrl: string;
   /** Current time; injected so tests are deterministic. Defaults to wall clock. */
   now?: () => Date;

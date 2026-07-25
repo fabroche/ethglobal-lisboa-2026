@@ -27,7 +27,7 @@ WORLD_APP_ID=
 WORLD_ACTION=          # scoped per room at runtime
 ```
 
-- **App-wide scope** would mean a person can use Seam **exactly once, ever** — useless.
+- **App-wide scope** would mean a person can use Overlap **exactly once, ever** — useless.
 - **Per-room scope** means a person can negotiate **many rooms** but submit **once per side per room**.
 - We scope `WORLD_ACTION` to the room at runtime so the derived nullifier is unique to
   `(room, side)`. A second submission from the same nullifier in the same room+side is **rejected**.

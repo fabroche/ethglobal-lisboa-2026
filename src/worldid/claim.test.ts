@@ -35,7 +35,7 @@ describe("claimSeat", () => {
 
     expect(res.nullifierRef).toBe("0xnull_a");
     expect(isSeatTaken(res.seats, "r_1", "A")).toBe(true);
-    expect(v.calls[0]).toEqual({ action: "seam-r_1-A", appId: APP });
+    expect(v.calls[0]).toEqual({ action: "overlap-r_1-A", appId: APP });
   });
 
   it("fails closed: a failed proof throws and reserves no seat", async () => {

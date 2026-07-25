@@ -3,7 +3,7 @@
 Status: 🟧 draft · Last updated: 2026-07-24
 
 0G is the **referee**: the model that reads both positions runs inside a TEE (TeeML enclave)
-that neither party nor the operator can look into. This is the whole reason Seam is trustable,
+that neither party nor the operator can look into. This is the whole reason Overlap is trustable,
 not a feature bolted on (D5). Underpins modules **M2** (`seal`), **M6** (`evaluator`) and
 **M7** (`attest`).
 
@@ -60,7 +60,7 @@ How 0G makes this possible:
 
 ```mermaid
 flowchart LR
-  OG[0G enclave] -- signed result + attestation --> APP[Seam server]
+  OG[0G enclave] -- signed result + attestation --> APP[Overlap server]
   APP -- verifyEnvelope(sig, OG_ENCLAVE_PUBKEY) --> CHK{signature valid?}
   CHK -- yes --> PUB[publish verdict to HCS]
   CHK -- no --> STOP[/no verdict published/]
@@ -79,7 +79,7 @@ The attestation proves: **this pinned model saw these committed inputs and retur
 It does **not** prove that *any* future run reproduces the same verdict. A model is a judgement, not
 a comparison; pinning the model hash and setting temperature 0 mitigate non-determinism but do not
 guarantee reproducibility. **Overstating this is what loses the Q&A.** Honest framing for the demo:
-Seam tells you whether a deal is *worth a conversation*, not what the deal is — nobody signs anything
+Overlap tells you whether a deal is *worth a conversation*, not what the deal is — nobody signs anything
 on this output, and the model can be wrong.
 
 ## 5. Workshop questions to confirm (0G — Friday 14:30)

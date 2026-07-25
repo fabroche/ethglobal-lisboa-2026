@@ -33,7 +33,7 @@ The verdict entry carries the pinned model hash + attestation ref.
 **5. "Is temp-0 output reproducible? Could you re-run and get a different verdict?"**
 Honest answer: temp 0 + pinned model hash is NOT a run-to-run reproducibility guarantee
 (RNF-M6-002). What we prove is narrower and sufficient: *this* model saw *these* committed
-inputs and returned *this* verdict, attested. Nobody signs on the output — Seam says whether a
+inputs and returned *this* verdict, attested. Nobody signs on the output — Overlap says whether a
 conversation is worth having.
 
 **6. "Where's your database?"**
@@ -60,6 +60,6 @@ verbatim.
 **10. "How much of this did the AI build?"**
 Disclosed in full — `docs/ai-usage.md` (mandatory attribution): AI drafts under human direction,
 every line human-reviewed, granular commit history all weekend. The decisions that shaped the
-system were human — the Seam pivot, the D16 preset choice, and the D9 amendment (a human caught
+system were human — the Overlap pivot, the D16 preset choice, and the D9 amendment (a human caught
 the AI's flawed design and replaced it). Ask us anything about the architecture; that's what the
 review discipline was for.

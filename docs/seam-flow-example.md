@@ -1,4 +1,4 @@
-# Seam — worked example (selling a house)
+# Overlap — worked example (selling a house)
 
 > Case: the **Seller** won't sell for less than **400k**. The **Buyer** won't buy for more than **400k**.
 > They overlap exactly at 400k → the verdict is `workable`, but **neither discovers the other's number**.

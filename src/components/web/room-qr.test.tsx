@@ -4,8 +4,8 @@ import "@testing-library/jest-dom";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { RoomQr, isLoopbackUrl } from "./room-qr";
 
-const URL_ = "https://seam.app/room/r_9f3a?side=B";
-const OWN_ = "https://seam.app/room/r_9f3a?side=A";
+const URL_ = "https://overlap.app/room/r_9f3a?side=B";
+const OWN_ = "https://overlap.app/room/r_9f3a?side=A";
 
 /** Remove the Clipboard API, reproducing any non-secure context (a LAN IP). */
 function withoutClipboard(): void {
@@ -217,13 +217,13 @@ describe("RoomQr · role-framed layout", () => {
 
   it("names whose door the QR is", () => {
     render(<RoomQr {...roleProps} />);
-    expect(screen.getByText(/for the seller — have them scan this/i)).toBeInTheDocument();
+    expect(screen.getByText(/for the seller: have them scan this/i)).toBeInTheDocument();
     expect(screen.getByText(/the qr and the link below are the same door/i)).toBeInTheDocument();
   });
 
   it("names the creator's role and offers the direct write CTA", () => {
     render(<RoomQr {...roleProps} />);
-    expect(screen.getByText(/you — the buyer/i)).toBeInTheDocument();
+    expect(screen.getByText(/you \(the buyer\)/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /write your position/i })).toHaveAttribute(
       "href",
       "/room/r_9f3a/write?side=B",
@@ -284,7 +284,7 @@ describe("isLoopbackUrl", () => {
     // `localhost.example.com` and `mylocalhost.dev` are real, reachable hosts.
     expect(isLoopbackUrl("https://localhost.example.com/x")).toBe(false);
     expect(isLoopbackUrl("https://mylocalhost.dev/x")).toBe(false);
-    expect(isLoopbackUrl("https://seam.app/x")).toBe(false);
+    expect(isLoopbackUrl("https://overlap.app/x")).toBe(false);
   });
 
   it("treats an unparseable URL as reachable rather than crashing the screen", () => {

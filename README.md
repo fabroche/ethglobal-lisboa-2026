@@ -1,4 +1,4 @@
-# Seam
+# Overlap
 
 **Sealed two-party negotiation.** Two sides write their terms in plain language into a sealed session.
 A model running inside sealed hardware (a TEE) reads both and returns **one line to both** — whether a

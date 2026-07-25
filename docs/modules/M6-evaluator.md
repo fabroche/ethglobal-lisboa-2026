@@ -124,7 +124,7 @@ unit-testable), plus the `og-client.ts` adapter. **56 unit tests** against a fak
   `-sia` sibling still fails the prefix, which matters: it has its own provider and therefore its own
   signing key.
 
-- **The model can be wrong** — it is a judgement. Framing: Seam says whether it is *worth a
+- **The model can be wrong** — it is a judgement. Framing: Overlap says whether it is *worth a
   conversation*, nobody signs on the output (see `transversal/security-and-privacy.md`). This includes
   the single-vs-multiple attribution: the semantics define the right answer (count of blocking internal
   dimensions), the model can still misjudge the count on entangled positions.

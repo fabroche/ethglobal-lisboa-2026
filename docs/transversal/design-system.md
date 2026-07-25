@@ -20,7 +20,7 @@ app that must read calmly under demo pressure). Defined entirely in `src/app/glo
 
 ## Colour
 - **Brand: violet / indigo** (crypto / ETHGlobal palette) as `--primary` / `--brand`; lightened in dark.
-- Semantic **verdict tokens** — the domain of Seam is a verdict, not P&L:
+- Semantic **verdict tokens** — the domain of Overlap is a verdict, not P&L:
   - `--workable` (green, positive — a deal is possible),
   - `--not-workable` (**muted / neutral, NOT alarming red** — it is just "no deal", not an error),
   - `--pending` (amber — sealed, awaiting the scheduled reveal).

@@ -32,7 +32,7 @@ export function PositionChecklist({ items, className }: PositionChecklistProps) 
         ))}
       </ul>
       <p className="mt-2 text-xs">
-        Guidance only — you can seal whatever you write. Nothing here is required.
+        Guidance only. You can seal whatever you write. Nothing here is required.
       </p>
     </aside>
   );

@@ -9,7 +9,7 @@ import type { WorldProof, WorldVerifier } from "./verify";
  * verification died with `invalid_action` ("Action not found"), even for actions created by
  * hand in the portal. The `/api/v4/verify/{app_id}` endpoint sees them, accepts legacy v3.0
  * proofs (what our v2 widget produces), and **auto-creates unknown actions** — so per-room
- * actions (`seam-<roomId>-<side>`) need no pre-registration anywhere.
+ * actions (`overlap-<roomId>-<side>`) need no pre-registration anywhere.
  *
  * Probe trail: garbage proof → v2 says "Action not found"; same action on v4 says
  * "proof improperly formatted" — i.e. v4 reached cryptographic validation. That error

@@ -49,7 +49,7 @@ evidence about it.
 
 ```ts
 type Envelope = {
-  payload: unknown;        // what the enclave signed over (for Seam: the verdict record)
+  payload: unknown;        // what the enclave signed over (for Overlap: the verdict record)
   signature: string;       // hex, 0x-prefixed. 65 bytes (r||s||v) for secp256k1, 64 for ed25519
   signer: string;          // hex. 20-byte address (secp256k1) or 32-byte pubkey (ed25519)
   scheme: SignatureScheme; // see §4 — explicit, never inferred from length
@@ -171,7 +171,7 @@ Contract, binding on every caller:
 
 **S0.3 (the spike)** — `npm run spike`:
 
-- [ ] **Self-test (offline, no credentials).** Generate a keypair, sign a Seam-shaped verdict, verify
+- [ ] **Self-test (offline, no credentials).** Generate a keypair, sign a Overlap-shaped verdict, verify
       it → `verified: true`. Proves our verifier is correct independently of 0G being reachable.
 - [ ] **Tamper test.** Flip **one byte** of the payload → `verified: false`, `reason: "signer_mismatch"`.
       Flip one byte of the signature → `verified: false`. This is demo Act 4.

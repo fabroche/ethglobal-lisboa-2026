@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "react-qr-code";
 import { cn } from "@/lib/utils";
+import { ShareButton } from "./share-button";
 
 export interface RoomQrProps {
   roomId: string;
@@ -190,7 +191,7 @@ export function RoomQr({
         ) : null}
         <p className="text-sm text-muted-foreground">
           {roleMode
-            ? `For the ${theirLabel} — have them scan this.`
+            ? `For the ${theirLabel}: have them scan this.`
             : "Share this link so the other side can join."}
         </p>
       </div>
@@ -205,7 +206,7 @@ export function RoomQr({
 
       {roleMode ? (
         <p className="text-xs text-muted-foreground">
-          The QR and the link below are the same door — the {theirLabel}&apos;s.
+          The QR and the link below are the same door: the {theirLabel}&apos;s.
         </p>
       ) : null}
 
@@ -222,10 +223,12 @@ export function RoomQr({
 
       <CopyRow url={joinUrl} label="Room join link" />
 
+      {roleMode && theirLabel ? <ShareButton url={joinUrl} roleLabel={theirLabel} /> : null}
+
       {ownUrl ? (
         <div className="flex w-full flex-col gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
           {roleMode ? (
-            <p className="text-xs font-semibold">You — the {yourLabel}</p>
+            <p className="text-xs font-semibold">You (the {yourLabel})</p>
           ) : null}
           {roleMode && writeUrl ? (
             <Link

@@ -78,7 +78,7 @@ It does **not** prove that any future run reproduces the same verdict — a mode
 comparison. Pinning the model hash and temperature 0 reduce variance; they do not guarantee
 reproducibility. Overstating this loses the Q&A. Honest framing:
 
-- Seam tells you whether a deal is **worth a conversation**, not what the deal is.
+- Overlap tells you whether a deal is **worth a conversation**, not what the deal is.
 - **Nobody signs anything** on this output.
 - **The model can be wrong** — it is making a judgement.
 
@@ -100,7 +100,7 @@ flowchart TB
   subgraph BROWSER_B[Browser B - trusted to B only]
     PB[plaintext B] --> SB[seal to enclave key]
   end
-  subgraph SERVER[Seam server / operator - sees ciphertext only]
+  subgraph SERVER[Overlap server / operator - sees ciphertext only]
     CT[ciphertext A, ciphertext B] --> HCS[(HCS topic: commitments)]
   end
   subgraph ENCLAVE[0G TEE - sealed, no one looks in]

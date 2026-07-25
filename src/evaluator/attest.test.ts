@@ -13,7 +13,7 @@ import { mayPublish, verifyEnvelope, type SignatureScheme } from "./attest";
 
 /** A Overlap-shaped verdict record — what the enclave actually signs. */
 const VERDICT = {
-  sessionId: "seam-0xdeadbeef",
+  sessionId: "overlap-0xdeadbeef",
   verdict: "workable",
   model: "pinned-model-v1",
   commitments: {

@@ -79,7 +79,7 @@ flowchart TD
 
 ### Implementation notes (S1.5 — verify + seat logic)
 Landed in `src/worldid/` with co-located Vitest tests:
-- `action.ts` — `roomActionId(roomId, side)` = `seam-<roomId>-<side>`: the action scoped **per room
+- `action.ts` — `roomActionId(roomId, side)` = `overlap-<roomId>-<side>`: the action scoped **per room
   per side** (RF-M3-001, RNF-M3-001) so the nullifier isn't app-wide.
 - `verify.ts` — `WorldProof` (+ Zod) and the `WorldVerifier` port. Only the opaque
   `nullifier_hash` is handled — never identity (RNF-M3-002).

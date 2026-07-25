@@ -1,4 +1,4 @@
-# Branching Strategy — Seam
+# Branching Strategy — Overlap
 
 > How we use Git during ETHGlobal Lisbon 2026. Two AI-assisted workstreams, one
 > integrator, a public repo that will be judged. Optimised for **clean history**,

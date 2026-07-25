@@ -36,7 +36,7 @@ is a toy copy with free tokens for development. In the hackathon: testnets.
 
 ## B. The domain: DeFi lending (this is where the accountant partner rules)
 
-> *Kept for reference from the earlier idea; Seam itself does not use DeFi lending.*
+> *Kept for reference from the earlier idea; Overlap itself does not use DeFi lending.*
 
 **DeFi lending.** Credit banks without a bank. You deposit crypto as **collateral** and borrow against
 it (Aave, Morpho, Compound…). Risk metrics:
@@ -54,7 +54,7 @@ it (Aave, Morpho, Compound…). Risk metrics:
 
 ## C. Reading the chain: The Graph
 
-> *Also kept for reference; Seam reads from Hedera's Mirror Node, not The Graph.*
+> *Also kept for reference; Overlap reads from Hedera's Mirror Node, not The Graph.*
 
 **The Graph** = the "Google + SQL layer" of the blockchain. Someone writes a **subgraph** (a definition
 of how to index a contract's events into a queryable API) and you fire normal **GraphQL queries**. It is
@@ -78,7 +78,7 @@ number, the hash gives it away.
 **Canonical serialisation** (flagged as hard). For two machines to derive the **same** hash from the
 "same" data, you must serialise **byte-for-byte identically**: sort keys recursively, numbers as
 fixed-precision **strings**, no nulls, no clock timestamps. Typical traps: JSON key order, decimal
-formatting, floating point. Not web3 — pure deterministic engineering. **In Seam this is the `seal`
+formatting, floating point. Not web3 — pure deterministic engineering. **In Overlap this is the `seal`
 commitment (M2): the verifier must recompute the identical `sha256(ciphertext)`.**
 
 **Digital signature.** With your private key you sign a piece of data; anyone with your public key
@@ -91,23 +91,23 @@ can't hide anything.
 
 ---
 
-## E. Infrastructures seen in Almanac (and used in Seam)
+## E. Infrastructures seen in Almanac (and used in Overlap)
 
 **Hedera (registry + clock).** A network with turnkey services via SDK, no contracts:
 - **HCS (Hedera Consensus Service) = registry.** A public append-only log with consensus ordering
   (like an **immutable Kafka topic**): each message gets a sequence number and timestamp, and is never
-  edited/deleted. A gap in the sequence reveals you hid something. **In Seam, HCS is the storage — there
+  edited/deleted. A gap in the sequence reveals you hid something. **In Overlap, HCS is the storage — there
   is no database.**
-- **Schedule Service = clock.** A trusted on-chain cron that fires periodic execution. **In Seam, this is
+- **Schedule Service = clock.** A trusted on-chain cron that fires periodic execution. **In Overlap, this is
   the deadline: armed before anyone writes, fired regardless of who wants what.**
-- **Mirror node = read path.** An API/replica to read without writing. **In Seam, both sides read the
+- **Mirror node = read path.** An API/replica to read without writing. **In Overlap, both sides read the
   verdict here.**
 
 **0G (confidential compute — the hard piece).**
 - **TEE (Trusted Execution Environment) / enclave**: a hardware-isolated region of the processor where
   code runs that **not even the machine's owner can see or modify**. Analogy: a safe with a one-way window.
 - **Sealed inference**: running the model **inside** the enclave, with the config encrypted and decrypted
-  only in there. So not even you can tamper with the result. **This is Seam's referee.**
+  only in there. So not even you can tamper with the result. **This is Overlap's referee.**
 - **Attestation**: the "notarised receipt" signed by the chip: "I ran exactly this model on this input,
   no cheating." Verifying it = checking that signature against the enclave's public key.
 - **Why it's the risk**: independently verifying TEE attestations is advanced and 0G is a new platform.
@@ -115,7 +115,7 @@ can't hide anything.
 
 **x402 (billing).** The HTTP code **402 "Payment Required"** used for real: the API responds 402, the
 client automatically pays a crypto micropayment and retries. "Agent-native Stripe": a bot pays per call
-with no card and no human. *(Not used in Seam — Seam moves no money.)*
+with no card and no human. *(Not used in Overlap — Overlap moves no money.)*
 
 ---
 
@@ -129,20 +129,20 @@ already use it in home-os. It is the public surface of these projects.
 
 **"No database".** You don't need your own DB if the source of truth is reproducible public data +
 a public registry (Hedera). Less to maintain **and** a better trust argument (there's no DB of yours you
-could rig). **Seam takes this to the limit: storage IS the HCS topic.**
+could rig). **Overlap takes this to the limit: storage IS the HCS topic.**
 
 **Verifier (the trust anchor).** A script that **ignores your service** and goes straight to the public
 sources to recompute hashes and re-verify signatures on its own. It is what a judge runs to check you're
-not lying. Running it live over one of your inputs = the demo that wins. **In Seam: `inspect.ts` (our
+not lying. Running it live over one of your inputs = the demo that wins. **In Overlap: `inspect.ts` (our
 store holds only ciphertext) and the independent `attest` check.**
 
 ---
 
-## G. Extra concepts specific to Seam (sealed negotiation)
+## G. Extra concepts specific to Overlap (sealed negotiation)
 
 **Commitment scheme.** You publish the **hash** of your data (not the data) to become "committed" to it
 without revealing it. Later, on reveal, anyone checks it matches the hash → you couldn't change it after
-the fact. In Seam: `sha256(ciphertext)` goes to Hedera before the verdict, so nobody can later say "I'd
+the fact. In Overlap: `sha256(ciphertext)` goes to Hedera before the verdict, so nobody can later say "I'd
 have said something different."
 
 **Hybrid encryption to the enclave key.** The browser encrypts your position **with the 0G enclave's
@@ -172,4 +172,4 @@ path to verify the enclave's signature is already published and supported.
 ## Golden rule (web3 difficulty, for scoping)
 Reading data (subgraphs/APIs, Mirror Node) = **easy 🟢** · using an SDK that abstracts contracts
 (Hedera, 0G, World) = **medium 🟡** · writing/deploying contracts (Solidity, Move, opcodes) =
-**expensive 🔴, avoid**. Seam lives entirely in the green/yellow band (D3).
+**expensive 🔴, avoid**. Overlap lives entirely in the green/yellow band (D3).

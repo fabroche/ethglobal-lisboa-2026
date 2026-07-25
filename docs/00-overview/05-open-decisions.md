@@ -18,7 +18,7 @@ answered.
 | DA8 | 0G **network**: testnet or mainnet | testnet (free) vs mainnet (real 0G) | **Mainnet** — testnet has no TeeML chat model, so sealed evaluation cannot run there | 🟩 **decided** | resolved via `/v1/models` |
 | DA9 | Write-screen **checklist depth** (D16 presets) | static guidance text only vs in-browser presence heuristics (has a number / a date) | **Static-only** for the deadline; heuristics are a stretch goal — never blocking, plaintext never leaves the browser either way | 🟧 leaning | Sat PM, time permitting |
 | DA10 | 0G **signature retrieval path** | Router (Bearer key) vs direct-to-broker (on-chain payment) | **Direct to broker** — the Router pays the broker with its own wallet, so it is the broker's customer and we can never obtain a signature for our own call. Being the paying customer is the price of being able to verify | 🟩 **decided 25 Jul** | `handoff-open-threads.md` §1 |
-| DA11 | **Product name** | keep **Seam** vs rename → **Overlap** (alts raised: Venn, BlindMatch, SealedBid) | **Lean Overlap** — Dylan's pick; converging-chevrons mark + tokens designed (design-system §Brand — Overlap; exploration artifact). **Confirm with Frank, then apply via S4.8.** Rename touchpoints: README/docs, UI copy, `roomActionId` prefix (`seam-`→`overlap-` — changes derived nullifiers, fine pre-launch), World app display name (app_id unaffected), video script | 🟧 leaning | **before S5.1 video / S4.4 README — Sat night, hard stop** |
+| DA11 | **Product name** | keep **Overlap** vs rename → **Overlap** (alts raised: Venn, BlindMatch, SealedBid) | **Lean Overlap** — Dylan's pick; converging-chevrons mark + tokens designed (design-system §Brand — Overlap; exploration artifact). **Confirm with Frank, then apply via S4.8.** Rename touchpoints: README/docs, UI copy, `roomActionId` prefix (`seam-`→`overlap-` — changes derived nullifiers, fine pre-launch), World app display name (app_id unaffected), video script | 🟧 leaning | **before S5.1 video / S4.4 README — Sat night, hard stop** |
 
 ## Notes
 
@@ -33,13 +33,13 @@ answered.
 > renumbering; nothing else moved. ⚠ **dylan:** `9bf26bb` and backlog `S4.8` both call the product
 > name "DA9" — it is **DA11** here. The content of your row was carried over intact; only the id moved.
 
-- **DA3 is the one that can change the architecture.** If a contract address is mandatory, Seam is no
+- **DA3 is the one that can change the architecture.** If a contract address is mandatory, Overlap is no
   longer strictly "no contract deployed" and we need a minimal presence on 0G Chain — decide this Friday,
   not Sunday.
 - **DA6/DA7/DA8 are resolved.** The spike proved independent verification offline (PART A GO), and the
   catalog at `GET /v1/models` (no auth needed) answered the rest:
 
-  | Network | Models | Usable for Seam? |
+  | Network | Models | Usable for Overlap? |
   |---|---|---|
   | testnet | `qwen-image-edit` (TeeML, **image editing**) · `qwen2.5-omni` (chatbot, **TeeTLS**) | **No** — TeeML *or* chat, never both |
   | mainnet | 23 models, of which 3 are TeeML chatbots | **Yes** |

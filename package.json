@@ -1,5 +1,5 @@
 {
-  "name": "seam",
+  "name": "overlap",
   "version": "0.1.0",
   "private": true,
   "description": "Seam — sealed two-party negotiation. A model inside a TEE reads both sides and returns one line: workable or not. ETHGlobal Lisbon 2026.",

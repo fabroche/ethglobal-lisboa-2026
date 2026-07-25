@@ -1,4 +1,4 @@
-# Seam
+# Overlap
 
 Sealed two-party negotiation. Two sides write their terms in plain language; a
 model inside sealed hardware reads both and returns one line — whether a deal is
@@ -67,7 +67,7 @@ Nine modules, no database, no smart contract. Four are reused, five are ours.
 
 | Module | Does | Owner |
 |---|---|---|
-| `graph` — n/a | not used in Seam | — |
+| `graph` — n/a | not used in Overlap | — |
 | `session` | create room, publish deadline, issue link | us |
 | `seal` (client) | encrypt position in-browser to enclave key | us |
 | `worldid` | Selfie Check, one nullifier per room per side | reuse + us |

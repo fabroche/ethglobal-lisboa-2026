@@ -27,7 +27,7 @@ middle step is the mistake this layout exists to make awkward.
 - `attest.ts` — `verifyEnvelope`, independent of any vendor SDK (`@noble/*` only). **Fail closed:** a
   bad or absent signature ⇒ no verdict published.
 - `attest-testkit.ts` — ephemeral-key signing for the spike and tests. **Not a production path** —
-  Seam never signs anything; the enclave does.
+  Overlap never signs anything; the enclave does.
 
 ## Three things worth knowing before you edit this
 

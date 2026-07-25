@@ -36,3 +36,6 @@ It passes the load-bearing test — remove any one sponsor and it breaks:
 - **No 0G:** the comparison isn't private, so no counterparty would use it.
 - **No Hedera:** either side can stall past the deadline or deny their terms.
 - **No World:** repeated submissions reconstruct the other side's position.
+> **Naming note (25 Jul, late):** the product described here as "Seam" was renamed **Overlap**
+> (DA11) once the team saw the verdict working: the deal zone literally is the overlap of two
+> positions. This document keeps the original name as part of the honest record of how we got here.

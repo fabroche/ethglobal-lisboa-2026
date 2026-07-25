@@ -3,8 +3,8 @@ import { roomActionId } from "./action";
 
 describe("roomActionId", () => {
   it("scopes the action to room AND side (not app-wide)", () => {
-    expect(roomActionId("r_9f3a", "A")).toBe("seam-r_9f3a-A");
-    expect(roomActionId("r_9f3a", "B")).toBe("seam-r_9f3a-B");
+    expect(roomActionId("r_9f3a", "A")).toBe("overlap-r_9f3a-A");
+    expect(roomActionId("r_9f3a", "B")).toBe("overlap-r_9f3a-B");
   });
 
   it("differs across rooms and across sides", () => {

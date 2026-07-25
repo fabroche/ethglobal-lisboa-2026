@@ -34,10 +34,10 @@ export function SiteHeader() {
       <div className="mx-auto flex h-14 max-w-2xl items-center justify-between gap-4 px-6">
         <Link
           href="/"
-          aria-label="Seam — go to the start"
+          aria-label="Overlap, go to the start"
           className="text-base font-semibold tracking-tight underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
         >
-          Seam
+          Overlap
         </Link>
 
         <nav aria-label="Main" className="flex items-center gap-1">

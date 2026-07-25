@@ -3,7 +3,7 @@
 Status: 🟧 draft · **transversal and mandatory** rule for every screen. Complements the design system
 (`transversal/design-system.md`): this document is *how* each screen must feel on a phone.
 
-> **Principle.** Seam is demoed and consumed on both desktop and phone (**a judge may scan the QR and
+> **Principle.** Overlap is demoed and consumed on both desktop and phone (**a judge may scan the QR and
 > open a room on their own phone**). We design **mobile-first**: the base of every class is the mobile
 > view and it *scales up* with breakpoints (`sm:`, `md:`, `lg:`). Never the other way round. No screen
 > is done if on a phone it feels like a compressed desktop.
@@ -21,7 +21,7 @@ Rule of thumb: write the mobile version first with no prefix, then add `sm:`/`md
 
 ## Mandatory patterns
 ### 1. Navigation
-- Seam is a **short three-screen flow** (create · write+seal · verdict), not a dashboard, so navigation
+- Overlap is a **short three-screen flow** (create · write+seal · verdict), not a dashboard, so navigation
   is mostly linear. Any persistent controls (theme toggle, "new room") stay within thumb reach.
 - **Single source** of any nav items (`nav-items.tsx`) if a header/bottom bar is used; never duplicate the list.
 - The layout reserves bottom padding on mobile = bar height + `safe-area-inset-bottom` when a fixed bar exists.
@@ -34,7 +34,7 @@ it reflows to **stacked cards**, one per row, each cell labelled by its `data-la
   …
   <td data-label="Side">…</td>   <!-- the label appears on the left on mobile -->
 ```
-In Seam this applies to the **room-status list** (side A committed? side B committed? deadline) rather
+In Overlap this applies to the **room-status list** (side A committed? side B committed? deadline) rather
 than a data table — but the pattern is the same.
 
 ### 3. Fluid typography

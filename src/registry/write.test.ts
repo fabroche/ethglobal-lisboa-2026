@@ -88,7 +88,7 @@ describe("registry closes the session loop", () => {
       { deadlineIso: "2026-07-26T09:00:00Z" },
       {
         registry,
-        baseUrl: "https://seam.app",
+        baseUrl: "https://overlap.app",
         now: () => new Date("2026-07-26T06:00:00Z"),
         newRoomId: () => "9f3a",
       },

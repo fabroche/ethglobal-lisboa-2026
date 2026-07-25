@@ -1,7 +1,7 @@
 /**
  * Remembering which rooms you are in (S3.9).
  *
- * Seam has no accounts, so a room is reachable only by URL. Close the tab without
+ * Overlap has no accounts, so a room is reachable only by URL. Close the tab without
  * saving it and it is gone — the room still exists on the topic, but you have no
  * way to name it. This module is the smallest thing that fixes that.
  *

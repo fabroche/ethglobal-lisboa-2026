@@ -1,7 +1,7 @@
 /**
  * S2.9 · the reveal runner — the one place the modules meet.
  *
- * Until this existed, Seam had six good modules and no product: `armReveal` had tests
+ * Until this existed, Overlap had six good modules and no product: `armReveal` had tests
  * and no caller, and **nothing ever called `evaluate()`**. The demo ended in a countdown
  * that never resolved. This is the chain that closes it:
  *

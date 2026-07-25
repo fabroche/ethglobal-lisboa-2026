@@ -57,7 +57,7 @@ export type PayloadEncoding = (typeof PAYLOAD_ENCODINGS)[number];
 /** Envelope shape, spec-03 §2. Validated here (D11) — a malformed response is a
  *  verification failure, never a crash. */
 export const envelopeSchema = z.object({
-  /** Exactly what the enclave signed over. For Seam: the verdict record. */
+  /** Exactly what the enclave signed over. For Overlap: the verdict record. */
   payload: z.unknown(),
   /** Defaults to `canonical` so existing callers and fixtures are unaffected. */
   encoding: z.enum(PAYLOAD_ENCODINGS).default("canonical"),

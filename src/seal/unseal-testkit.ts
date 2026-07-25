@@ -1,7 +1,7 @@
 /**
  * Test-only decryption, standing in for the 0G enclave.
  *
- * NOT A PRODUCTION PATH (spec-04 §9). Seam never decrypts — that happens once,
+ * NOT A PRODUCTION PATH (spec-04 §9). Overlap never decrypts — that happens once,
  * inside the TEE, in enclave memory, and the plaintext is never persisted
  * ("the papers burn", `security-and-privacy.md` §f). This exists so the
  * round-trip is actually verified rather than assumed, and so the tamper tests

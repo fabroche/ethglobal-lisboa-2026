@@ -32,8 +32,8 @@ beforeEach(() => {
 describe("ShareView — resolving whose screen this is", () => {
   it("uses the declared side from the redirect and persists it", async () => {
     render(<ShareView {...URLS} queryMe="B" bookmarkLabel="property" />);
-    expect(await screen.findByText(/you — the buyer/i)).toBeInTheDocument();
-    expect(screen.getByText(/for the seller — have them scan this/i)).toBeInTheDocument();
+    expect(await screen.findByText(/you \(the buyer\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/for the seller: have them scan this/i)).toBeInTheDocument();
     await waitFor(() => expect(remember).toHaveBeenCalledWith("r_1", "B", { label: "property" }));
   });
 
@@ -42,14 +42,14 @@ describe("ShareView — resolving whose screen this is", () => {
       { roomId: "r_1", side: "B", savedAt: new Date().toISOString() } as RoomBookmark,
     ];
     render(<ShareView {...URLS} />);
-    expect(await screen.findByText(/you — the buyer/i)).toBeInTheDocument();
+    expect(await screen.findByText(/you \(the buyer\)/i)).toBeInTheDocument();
     // Resolved, not declared — must NOT overwrite the stored bookmark.
     expect(remember).not.toHaveBeenCalled();
   });
 
   it("defaults to side A with no query and no bookmark (a stranger with the link)", async () => {
     render(<ShareView {...URLS} />);
-    expect(await screen.findByText(/you — the seller/i)).toBeInTheDocument();
+    expect(await screen.findByText(/you \(the seller\)/i)).toBeInTheDocument();
   });
 
   it("maps the QR to the counterpart's link for a side-B viewer", async () => {
@@ -57,7 +57,7 @@ describe("ShareView — resolving whose screen this is", () => {
       { roomId: "r_1", side: "B", savedAt: new Date().toISOString() } as RoomBookmark,
     ];
     render(<ShareView {...URLS} />);
-    await screen.findByText(/you — the buyer/i);
+    await screen.findByText(/you \(the buyer\)/i);
     expect(screen.getByRole("textbox", { name: /^room join link$/i })).toHaveValue(URLS.urlA);
     expect(screen.getByRole("textbox", { name: /^your own link$/i })).toHaveValue(URLS.urlB);
   });

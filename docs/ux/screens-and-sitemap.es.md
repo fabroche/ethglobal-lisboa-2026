@@ -14,7 +14,7 @@ Estado: 🟧 borrador · Última actualización: 2026-07-24 · Implementa `modul
 
 ## 1. El producto en un párrafo
 
-Dos partes tienen que acordar unos términos y ninguna quiere decir los suyos primero. Seam abre una
+Dos partes tienen que acordar unos términos y ninguna quiere decir los suyos primero. Overlap abre una
 **sala sellada**: Hedera publica el deadline *antes de que nadie escriba*, cada parte escribe su
 posición en lenguaje natural y **la cifra en su propio navegador** contra la clave pública de un
 enclave de 0G, World concede **un asiento por lado** para que nadie pueda correr la sala veinte veces
@@ -123,7 +123,7 @@ como *tres necesidades*, no como tres logos.
 ```
 MÓVIL 390                                 ESCRITORIO ≥1024
 ┌────────────────────────────┐   ┌──────────────────────────────────────────┐
-│ ◐ Seam                 [☾] │   │ ◐ Seam            How it works · Proof [☾]│
+│ ◐ Overlap                 [☾] │   │ ◐ Overlap            How it works · Proof [☾]│
 ├────────────────────────────┤   ├──────────────────────────────────────────┤
 │                            │   │                                          │
 │  Both sides name their     │   │   Both sides name their terms.           │
@@ -168,7 +168,7 @@ ellos** — la sala se crea in situ, así quien abre nunca pierde el QR al pulsa
 
 ```
 ┌────────────────────────────┐
-│ ← Seam                 [☾] │
+│ ← Overlap                 [☾] │
 ├────────────────────────────┤
 │  Open a room               │
 │  The deadline is published │
@@ -516,7 +516,7 @@ Variantes:
 
 ### S4 · Prueba — `/r/:roomId/proof`
 
-**La pantalla del jurado.** Todo lo que Seam guarda sobre esta sala, renderizado desde el topic de
+**La pantalla del jurado.** Todo lo que Overlap guarda sobre esta sala, renderizado desde el topic de
 HCS, con los hashes recalculados en el navegador.
 
 ```
@@ -661,7 +661,7 @@ modo de fallo que podemos demostrar.**
 sequenceDiagram
   actor J1 as Jurado 1 (portátil — la empresa)
   actor J2 as Jurado 2 (móvil — el candidato)
-  participant S as Seam
+  participant S as Overlap
 
   J1->>S: S1 · abrir sala, reveal en 2 min
   S-->>J1: S1-b · QR + "deadline locked, seq #1"

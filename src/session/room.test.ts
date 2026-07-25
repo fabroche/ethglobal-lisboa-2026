@@ -53,7 +53,7 @@ describe("generateRoomId", () => {
 
 describe("buildJoinUrl", () => {
   it("encodes the room id and side, and nothing else", () => {
-    const url = buildJoinUrl("https://seam.app", "r_9f3a", "B");
+    const url = buildJoinUrl("https://overlap.app", "r_9f3a", "B");
     const parsed = new URL(url);
     expect(parsed.pathname).toBe("/room/r_9f3a");
     expect(parsed.searchParams.get("side")).toBe("B");
@@ -62,6 +62,6 @@ describe("buildJoinUrl", () => {
 
   it("rejects an invalid side", () => {
     // @ts-expect-error — "C" is not a valid side
-    expect(() => buildJoinUrl("https://seam.app", "r_9f3a", "C")).toThrow();
+    expect(() => buildJoinUrl("https://overlap.app", "r_9f3a", "C")).toThrow();
   });
 });

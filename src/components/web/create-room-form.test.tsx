@@ -10,8 +10,8 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 const ok = () =>
   vi.fn(async () => ({
     roomId: "r_9f3a",
-    joinUrl: "https://seam.app/room/r_9f3a?side=B",
-    ownUrl: "https://seam.app/room/r_9f3a?side=A",
+    joinUrl: "https://overlap.app/room/r_9f3a?side=B",
+    ownUrl: "https://overlap.app/room/r_9f3a?side=A",
   }));
 
 beforeEach(() => {

@@ -1,6 +1,6 @@
-# CLAUDE.md — Seam
+# CLAUDE.md — Overlap
 
-**Seam** — sealed two-party negotiation, for **ETHGlobal Lisbon 2026**. Two sides write their terms in
+**Overlap** — sealed two-party negotiation, for **ETHGlobal Lisbon 2026**. Two sides write their terms in
 plain language into a sealed session; a model inside a **TEE (0G)** reads both and returns **one line to
 both** — `workable` / `not_workable` — without either side, or the operator, ever seeing the other's
 terms. **No database, no smart contract, no Solidity.**
@@ -104,7 +104,7 @@ npm run demo:naive # demo Act 3: same product without the enclave leaks (S4.2)
 ## Hard rules (see `agente/guardrails.md`)
 - **No Solidity / no smart contracts.** SDKs only.
 - **No user private keys, ever.** The only keys we hold are our own **operating** accounts: the Hedera
-  testnet account and the 0G mainnet wallet (`OG_WALLET_PRIVATE_KEY`). Seam users have no wallet at all.
+  testnet account and the 0G mainnet wallet (`OG_WALLET_PRIVATE_KEY`). Overlap users have no wallet at all.
 - **Enclave emits enum only** (never free text) — leak control. **Fail closed**: no valid attestation ⇒
   no verdict published.
 - Validate every external response (0G / Hedera / World) with **Zod**. Secrets never in the repo.

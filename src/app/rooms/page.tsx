@@ -16,7 +16,7 @@ import { RecentRooms } from "@/components/web/recent-rooms";
  * It earns its keep as of S3.12: the navbar now links here unconditionally, so the
  * first person to click it will be someone who has never opened a room.
  */
-export const metadata = { title: "Your rooms · Seam" };
+export const metadata = { title: "Your rooms · Overlap" };
 
 export default function RoomsPage() {
   return (

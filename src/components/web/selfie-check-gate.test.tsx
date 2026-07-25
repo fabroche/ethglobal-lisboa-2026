@@ -52,7 +52,7 @@ describe("SelfieCheckGate", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /run selfie check/i }));
     expect(onVerified).toHaveBeenCalledWith(
-      expect.objectContaining({ nullifier_hash: "0xnull-seam-r_1-B" }),
+      expect.objectContaining({ nullifier_hash: "0xnull-overlap-r_1-B" }),
     );
   });
 

@@ -125,6 +125,11 @@ load, then the client polls for the verdict until it lands:
 Works end-to-end **now** with a live countdown + pending state; real verdicts render once M6/M7 write
 them to the topic. RF-M8-003 (countdown → verdict via Mirror) satisfied for the read side.
 
+**Navigation:** `/room/[roomId]/share` is a stable QR/share view (reuses `room-qr`, rebuilds the join
+URL from the id) so the QR — which otherwise only lives in the create page's state — has a permanent
+URL. The verdict screen has a **"← Back to QR"** link to it; the share view links on to the verdict
+screen. Round-trip: create → verdict ⇄ share.
+
 ## 10. Module acceptance criteria
 - [ ] The two-browser E2E passes with QR join (S3.4).
 - [ ] Plaintext never leaves the browser (RNF-M8-002).

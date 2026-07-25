@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createReader, hederaMirrorClient } from "@/registry";
 import { requireEnv } from "@/config/env";
 import type { Verdict } from "@/session";
@@ -29,7 +30,15 @@ export default async function VerdictPage({
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-2 px-6">
-      <p className="mb-4 font-mono text-xs text-muted-foreground">{roomId}</p>
+      <nav className="mb-4 flex w-full max-w-md items-center justify-between">
+        <Link
+          href={`/room/${roomId}/share`}
+          className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          ← Back to QR
+        </Link>
+        <span className="font-mono text-xs text-muted-foreground">{roomId}</span>
+      </nav>
       <VerdictView
         deadlineIso={deadlineIso}
         initialVerdict={initialVerdict}

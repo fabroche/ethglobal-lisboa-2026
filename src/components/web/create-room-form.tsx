@@ -121,8 +121,8 @@ export function CreateRoomForm({ createRoom, className }: CreateRoomFormProps) {
           className="mt-0.5 size-4 accent-primary focus-visible:ring-2 focus-visible:ring-ring"
         />
         <span className="text-muted-foreground">
-          If there’s no deal, allow revealing the single blocking dimension (compensation, timing or
-          scope). Both sides must opt in.
+          If there’s no deal, allow revealing whether one issue or several block it — never which.
+          Both sides must opt in.
         </span>
       </label>
 

@@ -55,16 +55,19 @@ export const commitmentMessageSchema = z.object({
 export type CommitmentMessage = z.infer<typeof commitmentMessageSchema>;
 
 /**
- * Verdict enum — the ONLY permitted verdict values (D9). The enclave never emits free text
- * (free text leaks); `gap:*` values are only published if both sides opted in. This is the
- * canonical list; the evaluator (M6) produces one of these and the registry writes it.
+ * Verdict enum — the ONLY permitted verdict values (D9 as amended). The enclave never emits
+ * free text (free text leaks); `gap:*` values are only published if both sides opted in, and
+ * reveal HOW MANY dimensions block — never which. The dimensions (compensation/timing/scope)
+ * exist only inside the enclave as the counting basis: `gap:single` = exactly one blocks (a
+ * deal is one issue away), `gap:multiple` = several block or they're too entangled to
+ * attribute to one. This is the canonical list; the evaluator (M6) produces one of these and
+ * the registry writes it.
  */
 export const verdictSchema = z.enum([
   "workable",
   "not_workable",
-  "gap:compensation",
-  "gap:timing",
-  "gap:scope",
+  "gap:single",
+  "gap:multiple",
 ]);
 export type Verdict = z.infer<typeof verdictSchema>;
 

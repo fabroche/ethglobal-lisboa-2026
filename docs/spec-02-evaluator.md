@@ -1,6 +1,6 @@
 # spec-02 · evaluator
 
-Status: 🟧 draft · backlog **S2.1 / S2.2** · sponsor **0G**.
+Status: 🟩 **implemented (S2.2, 25 Jul)** · backlog **S2.1 / S2.2** · sponsor **0G**.
 
 > Spec committed **before** the code (spec-driven-workflow rule). Implemented by module **M6 · evaluator**.
 
@@ -65,13 +65,37 @@ Requirements, all Must:
 - Use `response_format` (in `supported_parameters`, so the router supports constrained output) as the
   first belt, Zod as the second (D11).
 
-## Acceptance criteria
-- [ ] Output is **always** one of the enum values; free text is impossible/rejected.
-- [ ] `gap:*` appears **only** when both sides opted in; otherwise the bare verdict.
-- [ ] Plaintext exists **only** in enclave memory — never returned, logged, or persisted.
-- [ ] The call uses the pinned model and `temperature: 0` **explicitly** (provider default is 1).
-- [ ] **No reasoning/thinking content is returned**; if any is, nothing is published (D-M6-1).
-- [ ] A test asserts the response body contains no field carrying free text.
+## Acceptance criteria — met 25 Jul (S2.2)
+- [x] Output is **always** one of the enum values; free text is impossible/rejected.
+- [x] `gap:*` appears **only** when both sides opted in; otherwise the bare verdict.
+- [~] Plaintext exists **only** in enclave memory — **see D-M6-2 below.** The module never returns,
+      logs or persists a position, and off-enum failure details are truncated precisely because model
+      prose is derived from both positions. But the decryption boundary itself is **unresolved**.
+- [x] The call uses the pinned model and `temperature: 0` **explicitly** (provider default is 1).
+- [x] **No reasoning/thinking content is returned**; if any is, nothing is published (D-M6-1).
+- [x] A test asserts the response body contains no field carrying free text.
+
+Verified live with `npm run eval:live`: bare verdicts correct with no consent, and with two-sided
+consent the model returned `gap:multiple` when price *and* timing blocked and `gap:single` when only
+timing did — the counting semantics work in practice, not only on paper.
+
+## ⚠️ D-M6-2 · the decryption boundary is an open seam
+
+The spec above says the enclave decrypts. It should — but **it cannot, as things stand**, and the demo
+must not imply otherwise.
+
+The 0G router is a chat-completions API. There is no way to hand it a private key and have it run our
+ECIES decryption, and whether the enclave even exposes a separate **encryption** key is still
+unanswered — `OG_ENCLAVE_SEAL_PUBKEY` is empty (handoff §3.1). `teeSignerAddress` is a 20-byte address
+and you cannot encrypt to an address (spec-04 §2).
+
+**Decision.** `evaluate()` takes **plaintext** positions and the caller owns the boundary. The seam is
+explicit in the type documentation rather than hidden behind a `decrypt()` call that does not exist.
+
+**What is still true, and is what we should say:** positions are sealed in the browser, our store holds
+only ciphertext and hashes (demonstrable — `npm run inspect`), and the enclave's judgement is
+independently verifiable (`npm run spike`). **What is not yet true:** that plaintext exists *only*
+inside the TEE. Claiming that would be the kind of overstatement spec-03 §5 warns about.
 
 ## Non-goals
 - No attestation verification here — that is **spec-03** (the verdict is not published until it passes).

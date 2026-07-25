@@ -40,7 +40,7 @@
 | ID | Component | What | Sponsor | Depends on | Owner | Status |
 |----|-----------|------|---------|-----------|-------|:------:|
 | S2.1 | `spec-02-evaluator.md` | spec for sealed evaluation + constrained output (incl. `useCase` prompt hint, D16) | 0G | S0.1 | | ⬜ |
-| S2.2 | `evaluator` | 0G call, pinned model, temp 0, **enum output only**; prepends the use-case hint (RF-M6-007) | 0G | S1.4, S2.1 | **frank** | 🟡 |
+| S2.2 | `evaluator` | 0G call, pinned model, temp 0, **enum output only**; prepends the use-case hint (RF-M6-007) | 0G | S1.4, S2.1 | **frank** | 🟩 **live-verified** (`npm run eval:live` GO) |
 | S2.3 | `attest` (module) | verify TEE signature on every verdict, **fail closed** | 0G | S0.3 | | ⬜ |
 | S2.4 | `scheduler` | arm + listen for the scheduled reveal | Hedera | S1.2 | dylan | 🟩 |
 | S2.5 | `registry.read` | read verdict via Mirror Node REST | Hedera | S1.3 | dylan | 🟩 |

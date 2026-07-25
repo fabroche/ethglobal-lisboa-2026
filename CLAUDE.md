@@ -36,6 +36,21 @@ Intel root. Say it that way in the Q&A; overstating it is how this demo loses (s
 0G's SDK is a dependency now, for **payment and transport only** — it never judges a signature, and we
 deliberately never call `processResponse()`.
 
+## `evaluator` (S2.2) done — and it counts dimensions correctly
+`npm run eval:live` is **GO** against the real enclave. Bare verdicts are right with no consent; with
+two-sided consent the model returned `gap:multiple` when price *and* timing blocked and `gap:single`
+when only timing did, so D9-as-amended works in practice. 225 tests green.
+
+Consent is enforced **twice**: the `gap:*` vocabulary is never offered in the prompt without it, and
+`applyConsent` degrades a gap to `not_workable` on the way out — a prompt is a request, and this is a
+privacy boundary. `parseVerdict` refuses to extract an enum value out of prose, because recovering one
+would make the enum guarantee true in the types and false in reality.
+
+**One honest gap, D-M6-2:** `evaluate()` takes **plaintext**. The router is a chat API, so the enclave
+cannot run our ECIES decryption, and `OG_ENCLAVE_SEAL_PUBKEY` is still unanswered. Sealing in the
+browser and the ciphertext-only store are real and demonstrable; *"plaintext exists only inside the
+TEE"* is **not yet true** — do not say it (spec-02, D-M6-2).
+
 **`seal` (S1.4) done.** ECIES to the enclave key, suite tagged in the payload. One correction worth
 knowing: **sealing is randomized on purpose.** `M2-seal.md` asked for "same plaintext ⇒ identical
 ciphertext", which would leak equality of plaintexts on a public topic and let an attacker confirm a
@@ -67,6 +82,7 @@ npm run typecheck  # tsc --noEmit
 npm run test       # Vitest
 npm run test:e2e   # Playwright (two-browser E2E)
 npm run spike      # scripts/spike-attest.ts — the 0G go/no-go (S0.3). FULL GO, exit 0
+npm run eval:live  # S2.2 evaluator against the real enclave. GO
 npm run og:status  # 0G wallet + compute-ledger balance. READ-ONLY, spends nothing
 npm run og:setup   # one-time: ledger deposit + acknowledge. DRY RUN unless -- --confirm
 npm run inspect    # demo: our store holds only ciphertext (S4.1)

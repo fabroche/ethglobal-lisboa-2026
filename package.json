@@ -15,6 +15,7 @@
     "spike": "tsx scripts/spike-attest.ts",
     "og:status": "tsx scripts/og-wallet-status.ts",
     "og:setup": "tsx scripts/og-setup.ts",
+    "eval:live": "tsx scripts/eval-live.ts",
     "inspect": "tsx scripts/inspect.ts",
     "demo:naive": "tsx scripts/demo-naive.ts",
     "format": "prettier --write .",

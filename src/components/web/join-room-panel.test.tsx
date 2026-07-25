@@ -23,4 +23,17 @@ describe("JoinRoomPanel", () => {
       "/room/r_9f3a/verdict",
     );
   });
+
+  it("links to the write+seal screen carrying the side (S3.2)", () => {
+    render(<JoinRoomPanel roomId="r_9f3a" side="B" />);
+    expect(screen.getByRole("link", { name: /write and seal/i })).toHaveAttribute(
+      "href",
+      "/room/r_9f3a/write?side=B",
+    );
+  });
+
+  it("offers no write link without a valid side (the link encodes the side)", () => {
+    render(<JoinRoomPanel roomId="r_9f3a" side={null} />);
+    expect(screen.queryByRole("link", { name: /write and seal/i })).not.toBeInTheDocument();
+  });
 });

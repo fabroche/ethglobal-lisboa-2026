@@ -104,7 +104,7 @@ mount in the web write+seal screen (M8 / S3.2); the **World testing doc** is its
 ## 9. UI components (Definition of Done)
 | Component | Story | RTL test | Status |
 |-----------|:-----:|:--------:|--------|
-| `selfie-check-gate` | ⬜ | ⬜ | 🟧 |
+| `selfie-check-gate` | ✅ | ✅ | 🟢 (S3.2 — `src/components/web/selfie-check-gate.tsx`; widget mocked in RTL, live path E2E/manual) |
 
 ## 10. Module acceptance criteria
 - [ ] A single side can submit only once per room (RF-M3-003).

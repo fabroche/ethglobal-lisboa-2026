@@ -32,7 +32,7 @@ disclosure.
 | `src/evaluator/attest.ts` (+ test) | ✅ | M7/S0.3. Independent `verifyEnvelope` — signature recovery + fail-closed gate. Drafted with Claude Code; the design decision to drop the unresolvable vendor package and verify with general-purpose crypto was made explicitly (spec-03 §1). 24 unit tests. |
 | `src/evaluator/attest-testkit.ts` | ✅ | M7/S0.3. Ephemeral-key signing helpers for the spike + tests. **Not a production path** — Seam never signs anything. |
 | `scripts/spike-attest.ts` | ✅ | M7/S0.3, the Friday-night spike. PART A (offline) passes; PART B (live 0G) pending credentials + booth answers. Human-verified against the 0G booth answers. |
-| `src/components/web/**` · `src/app/create/**` · `src/app/room/**` | ✅ | M8 web screens: create (S3.1: `create-room-form`, `room-qr`; S3.5: `use-case-picker`), join landing, and verdict (S3.3: `countdown`, `verdict-panel`, `verdict-view`) + stories + RTL, and the routes/Server Actions wiring M1/M4. Drafted with Claude Code under human direction; human-reviewed. |
+| `src/components/web/**` · `src/app/create/**` · `src/app/room/**` | ✅ | M8 web screens: create (S3.1: `create-room-form`, `room-qr`; S3.5: `use-case-picker`), join landing, write+seal (S3.2: `seal-position-form`, `position-checklist`, `selfie-check-gate` + `submitCommitmentAction`), and verdict (S3.3: `countdown`, `verdict-panel`, `verdict-view`) + stories + RTL, and the routes/Server Actions wiring M1–M4. Drafted with Claude Code under human direction; human-reviewed. |
 | Submission video | ❌ | Human narration only (no AI voiceover — track rule). |
 
 Legend: ✅ AI-assisted · ⬜ pending (fill when built) · ❌ not AI-assisted.

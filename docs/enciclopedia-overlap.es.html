@@ -1,0 +1,1775 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overlap — la enciclopedia</title>
+<style>
+  :root {
+    --bg: #fbfaf9; --surface: #ffffff; --surface-2: #f4f2ef; --ink: #1c1a21;
+    --ink-soft: #5c5763; --ink-faint: #8b8593; --line: #e2ded8;
+    --side-a: #0f9e8f; --side-b: #5a52e0; --seam: #3f7fc4;
+    --ok: #0e8a60; --warn: #b45309; --danger: #a33d2e;
+    --code-bg: #f7f5f2; --plain-bg: #eef6f5; --plain-line: #0f9e8f;
+    --tech-bg: #f0efff; --tech-line: #5a52e0;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131218; --surface: #1b1a22; --surface-2: #232230; --ink: #e9e6ef;
+      --ink-soft: #a8a2b4; --ink-faint: #7d7789; --line: #322f3d;
+      --side-a: #2dd4bf; --side-b: #8b85ff; --seam: #8fbdf0;
+      --ok: #2fd39a; --warn: #f5b841; --danger: #f08a78;
+      --code-bg: #17161d; --plain-bg: #12262a; --plain-line: #2dd4bf;
+      --tech-bg: #1e1c33; --tech-line: #8b85ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #131218; --surface: #1b1a22; --surface-2: #232230; --ink: #e9e6ef;
+    --ink-soft: #a8a2b4; --ink-faint: #7d7789; --line: #322f3d;
+    --side-a: #2dd4bf; --side-b: #8b85ff; --seam: #8fbdf0;
+    --ok: #2fd39a; --warn: #f5b841; --danger: #f08a78;
+    --code-bg: #17161d; --plain-bg: #12262a; --plain-line: #2dd4bf;
+    --tech-bg: #1e1c33; --tech-line: #8b85ff;
+  }
+  :root[data-theme="light"] {
+    --bg: #fbfaf9; --surface: #ffffff; --surface-2: #f4f2ef; --ink: #1c1a21;
+    --ink-soft: #5c5763; --ink-faint: #8b8593; --line: #e2ded8;
+    --side-a: #0f9e8f; --side-b: #5a52e0; --seam: #3f7fc4;
+    --ok: #0e8a60; --warn: #b45309; --danger: #a33d2e;
+    --code-bg: #f7f5f2; --plain-bg: #eef6f5; --plain-line: #0f9e8f;
+    --tech-bg: #f0efff; --tech-line: #5a52e0;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .shell { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 0; }
+  /* `1fr` es `minmax(auto, 1fr)` y se niega a encoger por debajo del ancho mínimo
+     del contenido — un solo bloque de código ancho empujaría la página entera de
+     lado. `minmax(0, 1fr)` deja encoger la columna para que `pre`/`table` hagan
+     scroll dentro de sí mismos. */
+  @media (max-width: 940px) { .shell { grid-template-columns: minmax(0, 1fr); } }
+  nav, main { min-width: 0; }
+
+  nav {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--line); background: var(--surface); padding: 1.5rem 1rem 3rem;
+  }
+  @media (max-width: 940px) {
+    nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+  }
+  nav .brand { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.25rem; }
+  nav .brand strong { font-size: 1.05rem; letter-spacing: -.02em; }
+  nav ol { list-style: none; margin: 0; padding: 0; counter-reset: sec; }
+  /* El `>` importa: con un selector de descendencia los sub-ítems también
+     incrementarían el contador y la numeración saltaría 1, 2, 3, 9, 20… */
+  nav > ol > li { counter-increment: sec; }
+  nav ol > li > a {
+    display: block; padding: .38rem .5rem; border-radius: 7px; text-decoration: none;
+    color: var(--ink-soft); font-size: .875rem;
+  }
+  nav ol > li > a::before { content: counter(sec) ". "; color: var(--ink-faint); }
+  nav ol > li > a:hover { background: var(--surface-2); color: var(--ink); }
+  nav .sub { list-style: none; margin: 0 0 .3rem .9rem; padding: 0; border-left: 1px solid var(--line); }
+  nav .sub a { display: block; padding: .2rem .6rem; font-size: .8rem; color: var(--ink-faint); text-decoration: none; }
+  nav .sub a:hover { color: var(--ink); }
+
+  main { padding: 2.5rem clamp(1rem, 4vw, 3.5rem) 6rem; max-width: 62rem; }
+  section { scroll-margin-top: 1.5rem; margin-bottom: 4.5rem; }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); line-height: 1.15; letter-spacing: -.03em; margin: 0 0 .6rem; }
+  h2 { font-size: clamp(1.4rem, 3.5vw, 1.85rem); letter-spacing: -.02em; margin: 0 0 1rem; padding-bottom: .5rem; border-bottom: 2px solid var(--line); }
+  h3 { font-size: 1.2rem; letter-spacing: -.01em; margin: 2.25rem 0 .6rem; }
+  h4 { font-size: .95rem; margin: 1.5rem 0 .4rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .05em; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--seam); }
+  .lede { font-size: 1.1rem; color: var(--ink-soft); }
+
+  .plain, .tech { border-left: 4px solid; border-radius: 0 10px 10px 0; padding: 1rem 1.15rem; margin: 1rem 0; }
+  .plain { background: var(--plain-bg); border-color: var(--plain-line); }
+  .tech { background: var(--tech-bg); border-color: var(--tech-line); }
+  .plain::before, .tech::before {
+    display: block; font-size: .68rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; margin-bottom: .45rem;
+  }
+  .plain::before { content: "En cristiano"; color: var(--plain-line); }
+  .tech::before { content: "Técnicamente"; color: var(--tech-line); }
+  .plain > :last-child, .tech > :last-child { margin-bottom: 0; }
+
+  .file {
+    font-family: var(--mono); font-size: .74rem; color: var(--ink-faint);
+    background: var(--surface-2); border: 1px solid var(--line); border-bottom: 0;
+    border-radius: 8px 8px 0 0; padding: .4rem .75rem; display: block;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .file b { color: var(--seam); font-weight: 600; }
+  pre {
+    margin: 0 0 1.15rem; background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 0 0 8px 8px; padding: .9rem 1rem; overflow-x: auto;
+    font-family: var(--mono); font-size: .8rem; line-height: 1.6;
+  }
+  pre.solo { border-radius: 8px; }
+  code { font-family: var(--mono); font-size: .86em; background: var(--surface-2); padding: .1em .35em; border-radius: 4px; }
+  pre code { background: none; padding: 0; font-size: 1em; }
+
+  .note { border-left: 4px solid var(--seam); background: var(--surface); padding: .85rem 1.1rem; border-radius: 0 10px 10px 0; margin: 1.15rem 0; }
+  .warn { border-left: 4px solid var(--warn); background: var(--surface); padding: .85rem 1.1rem; border-radius: 0 10px 10px 0; margin: 1.15rem 0; }
+  .danger { border-left: 4px solid var(--danger); background: var(--surface); padding: .85rem 1.1rem; border-radius: 0 10px 10px 0; margin: 1.15rem 0; }
+  .note > :last-child, .warn > :last-child, .danger > :last-child { margin-bottom: 0; }
+
+  .scroll { overflow-x: auto; margin: 0 0 1.25rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .875rem; min-width: 34rem; }
+  th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); }
+  tbody tr:hover { background: var(--surface-2); }
+
+  .pill { display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .18rem .5rem; border-radius: 999px; }
+  .pill.og { background: color-mix(in srgb, var(--side-b) 18%, transparent); color: var(--side-b); }
+  .pill.hedera { background: color-mix(in srgb, var(--side-a) 18%, transparent); color: var(--side-a); }
+  .pill.world { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+  .pill.ours { background: var(--surface-2); color: var(--ink-soft); }
+  .step-head { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; }
+  .step-n { font-family: var(--mono); font-size: .8rem; font-weight: 700; color: var(--bg); background: var(--ink); border-radius: 6px; padding: .1rem .45rem; flex: none; }
+  figure { margin: 1.5rem 0; }
+  figure svg { max-width: 100%; height: auto; display: block; }
+  figcaption { font-size: .8rem; color: var(--ink-faint); margin-top: .5rem; }
+  dl.kw { margin: 0; }
+  dl.kw dt { font-weight: 600; margin-top: 1rem; font-family: var(--mono); font-size: .85rem; color: var(--ink); }
+  dl.kw dd { margin: .25rem 0 0; color: var(--ink-soft); font-size: .93rem; }
+  .toggle {
+    position: fixed; right: 1rem; bottom: 1rem; z-index: 20; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink-soft); border-radius: 999px; width: 2.75rem; height: 2.75rem;
+    font-size: 1.1rem; cursor: pointer;
+  }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
+</style>
+</head>
+<body>
+
+<button class="toggle" id="t" title="Claro / oscuro">◐</button>
+
+<div class="shell">
+<nav>
+  <div class="brand">
+    <svg width="34" height="27" viewBox="0 0 56 44" fill="none" role="img" aria-label="Overlap">
+      <path d="M9 8 L23 22 L9 36" stroke="var(--side-a)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M47 8 L33 22 L47 36" stroke="var(--side-b)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="25" y="13.5" width="6" height="17" rx="3" fill="var(--seam)"/>
+    </svg>
+    <strong>Overlap</strong>
+  </div>
+  <ol>
+    <li><a href="#uso">Cómo usar esto</a></li>
+    <li><a href="#mapa">El mapa mental</a></li>
+    <li><a href="#claves">Palabras clave</a>
+      <ul class="sub">
+        <li><a href="#kw-idea">La idea</a></li>
+        <li><a href="#kw-og">0G</a></li>
+        <li><a href="#kw-hedera">Hedera</a></li>
+        <li><a href="#kw-world">World</a></li>
+        <li><a href="#kw-ours">Nuestro stack</a></li>
+      </ul>
+    </li>
+    <li><a href="#recorrido">El recorrido, paso a paso</a>
+      <ul class="sub">
+        <li><a href="#s1">1 · Abrir la sala</a></li>
+        <li><a href="#s2">2 · Repartir los enlaces</a></li>
+        <li><a href="#s3">3 · Escribir la posición</a></li>
+        <li><a href="#s4">4 · Un asiento por lado</a></li>
+        <li><a href="#s5">5 · Sellar en el navegador</a></li>
+        <li><a href="#s6">6 · Comprometer</a></li>
+        <li><a href="#s7">7 · Se dispara el reveal</a></li>
+        <li><a href="#s8">8 · Evaluación sellada</a></li>
+        <li><a href="#s9">9 · Atestación</a></li>
+        <li><a href="#s10">10 · Publicar y leer</a></li>
+      </ul>
+    </li>
+    <li><a href="#datos">Los datos, de verdad</a></li>
+    <li><a href="#sponsors">Qué aporta cada sponsor</a></li>
+    <li><a href="#cripto">Criptografía en detalle</a></li>
+    <li><a href="#archivos">Mapa de archivos</a></li>
+    <li><a href="#honesto">Qué probamos y qué no</a></li>
+    <li><a href="#qa">Preguntas difíciles</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<h1>Overlap — la enciclopedia</h1>
+<p class="lede">Todo lo que hace el producto, en el orden en que lo hace: primero en cristiano, luego
+en código, con la ruta del archivo en cada fragmento. Escrito para estudiarlo antes del jurado.</p>
+
+<!-- ==================================================================== -->
+<section id="uso">
+<h2>1 · Cómo usar esto</h2>
+
+<p>Cada parte del documento tiene la misma forma en dos pasos:</p>
+
+<div class="plain">
+  <p>Una caja como ésta explica qué pasa sin una sola palabra técnica. Si sabes decir esto en voz
+  alta, contestas el 80% de lo que te van a preguntar.</p>
+</div>
+
+<div class="tech">
+  <p>Una caja como ésta da el mecanismo: el algoritmo, la forma del dato, la función exacta. Es lo que
+  necesitas cuando repreguntan <em>«¿pero cómo?»</em></p>
+</div>
+
+<p>Los bloques de código siempre llevan su archivo, para que puedas abrirlo mientras lees:</p>
+
+<span class="file">src/seal/<b>seal.ts</b> · línea 166</span>
+<pre><code>const commitment = toHex(sha256(ciphertext));</code></pre>
+
+<div class="note">
+  <p><strong>Una regla para todo el documento:</strong> aquí nada es aspiracional. Si dice que el
+  código hace algo, el código lo hace hoy. Donde una garantía <em>todavía no</em> es cierta, está en el
+  §9 — <a href="#honesto">Qué probamos y qué no</a>. Lee esa sección dos veces; es la que os
+  protege.</p>
+</div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="mapa">
+<h2>2 · El mapa mental</h2>
+
+<div class="plain">
+  <p>Dos personas quieren cerrar un trato pero ninguna dice su número primero, porque quien habla
+  primero pierde terreno. Overlap es una sala sellada: ambos escriben sus condiciones, nadie puede
+  leer las del otro, y un árbitro encerrado en una máquina que ni su propio dueño puede abrir lee las
+  dos y dice una palabra — <em>hay trato</em> o <em>no hay trato</em>.</p>
+  <p>Tres servicios externos lo hacen posible. <strong>0G</strong> es la sala sellada donde se sienta
+  el árbitro. <strong>Hedera</strong> es el tablón público: guarda la fecha límite y las huellas de lo
+  que se escribió, para que nadie pueda cambiar de idea después. <strong>World</strong> asegura que
+  cada lado es una persona con un asiento, para que nadie abra diez salas y adivine tu número.</p>
+</div>
+
+<figure>
+<svg viewBox="0 0 880 470" role="img" aria-label="El flujo de Overlap, de principio a fin">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="var(--ink-faint)"/>
+    </marker>
+    <style>
+      .bx { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+      .lbl { font: 600 13px system-ui, sans-serif; fill: var(--ink); }
+      .sub { font: 11px system-ui, sans-serif; fill: var(--ink-soft); }
+      .tag { font: 700 9px ui-monospace, monospace; letter-spacing: .08em; }
+      .ln { stroke: var(--ink-faint); stroke-width: 1.5; fill: none; marker-end: url(#ar); }
+      .zone { fill: none; stroke-dasharray: 5 4; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <rect class="zone" x="10" y="10" width="330" height="240" rx="12" stroke="var(--side-a)"/>
+  <text x="24" y="32" class="tag" fill="var(--side-a)">LOS DOS NAVEGADORES</text>
+
+  <rect class="bx" x="30" y="46" width="140" height="52" rx="9"/>
+  <text x="44" y="70" class="lbl">Lado A escribe</text>
+  <text x="44" y="86" class="sub">lenguaje natural</text>
+
+  <rect class="bx" x="186" y="46" width="140" height="52" rx="9"/>
+  <text x="200" y="70" class="lbl">Lado B escribe</text>
+  <text x="200" y="86" class="sub">lenguaje natural</text>
+
+  <rect class="bx" x="30" y="122" width="296" height="52" rx="9" stroke="var(--warn)"/>
+  <text x="44" y="146" class="lbl">World Selfie Check</text>
+  <text x="44" y="162" class="sub">un asiento por (sala, lado) — sólo nullifier</text>
+
+  <rect class="bx" x="30" y="188" width="296" height="48" rx="9" stroke="var(--side-a)"/>
+  <text x="44" y="211" class="lbl">seal() — ECIES en el navegador</text>
+  <text x="44" y="227" class="sub">el texto nunca sale sin cifrar</text>
+
+  <rect class="zone" x="366" y="10" width="240" height="240" rx="12" stroke="var(--seam)"/>
+  <text x="380" y="32" class="tag" fill="var(--seam)">HEDERA · TOPIC HCS</text>
+
+  <rect class="bx" x="386" y="46" width="200" height="46" rx="9"/>
+  <text x="400" y="68" class="lbl">1 · expiry</text>
+  <text x="400" y="83" class="sub">publicado ANTES de que nadie escriba</text>
+
+  <rect class="bx" x="386" y="104" width="200" height="46" rx="9"/>
+  <text x="400" y="126" class="lbl">2 · commitments ×2</text>
+  <text x="400" y="141" class="sub">sha256(ciphertext) + consentimiento</text>
+
+  <rect class="bx" x="386" y="162" width="200" height="46" rx="9"/>
+  <text x="400" y="184" class="lbl">3 · veredicto</text>
+  <text x="400" y="199" class="sub">sólo si la atestación verifica</text>
+
+  <text x="386" y="232" class="sub">El almacenamiento ES el topic. Sin base de datos.</text>
+
+  <rect class="zone" x="632" y="10" width="238" height="240" rx="12" stroke="var(--side-b)"/>
+  <text x="646" y="32" class="tag" fill="var(--side-b)">0G · TEE (Intel TDX)</text>
+
+  <rect class="bx" x="652" y="60" width="198" height="72" rx="9" stroke="var(--side-b)"/>
+  <text x="666" y="84" class="lbl">Modelo fijado</text>
+  <text x="666" y="100" class="sub">0gm-1.0-35b-a3b · temp 0</text>
+  <text x="666" y="116" class="sub">lee AMBAS · responde 1 palabra</text>
+
+  <rect class="bx" x="652" y="146" width="198" height="62" rx="9"/>
+  <text x="666" y="169" class="lbl">Firma el intercambio</text>
+  <text x="666" y="185" class="sub">sha256(input):sha256(output)</text>
+  <text x="666" y="200" class="sub">clave: teeSignerAddress</text>
+
+  <rect class="zone" x="10" y="284" width="596" height="106" rx="12" stroke="var(--danger)"/>
+  <text x="24" y="306" class="tag" fill="var(--danger)">NUESTRO SERVIDOR — LA COSTURA HONESTA (§9)</text>
+
+  <rect class="bx" x="30" y="318" width="170" height="56" rx="9"/>
+  <text x="44" y="341" class="lbl">guarda el ciphertext</text>
+  <text x="44" y="357" class="sub">en memoria, entre commits</text>
+
+  <rect class="bx" x="216" y="318" width="170" height="56" rx="9" stroke="var(--danger)"/>
+  <text x="230" y="341" class="lbl">des-sella ⚠</text>
+  <text x="230" y="357" class="sub">el texto plano existe aquí</text>
+
+  <rect class="bx" x="402" y="318" width="184" height="56" rx="9" stroke="var(--ok)"/>
+  <text x="416" y="341" class="lbl">verifyEnvelope()</text>
+  <text x="416" y="357" class="sub">fail closed · sólo @noble</text>
+
+  <rect class="bx" x="632" y="300" width="238" height="90" rx="9" stroke="var(--ok)"/>
+  <text x="646" y="324" class="lbl">Ambos leen el veredicto</text>
+  <text x="646" y="342" class="sub">Mirror Node REST · público</text>
+  <text x="646" y="360" class="sub">sin operador en el camino</text>
+  <text x="646" y="378" class="sub">palabra idéntica para A y B</text>
+
+  <path class="ln" d="M100 98 L100 118"/>
+  <path class="ln" d="M256 98 L256 118"/>
+  <path class="ln" d="M178 174 L178 184"/>
+  <path class="ln" d="M326 212 L382 130"/>
+  <path class="ln" d="M326 216 L326 316"/>
+  <path class="ln" d="M386 346 L398 346"/>
+  <path class="ln" d="M300 316 L640 132" stroke-dasharray="4 3"/>
+  <path class="ln" d="M750 208 L600 310"/>
+  <path class="ln" d="M586 190 L640 320" stroke-dasharray="4 3"/>
+  <path class="ln" d="M490 316 L500 214"/>
+
+  <text x="24" y="424" class="sub">Continua = se mueven datos. Discontinua = el salto del texto plano y la lectura de vuelta.</text>
+  <text x="24" y="446" class="sub">Color = qué frontera cruza: verde los navegadores · azul Hedera · índigo 0G · rojo nosotros.</text>
+</svg>
+<figcaption>Todo el producto en una pantalla. Cada caja corresponde a un paso del §4.</figcaption>
+</figure>
+
+<div class="tech">
+  <p>Nueve librerías de módulo bajo <code>src/</code>, cada una detrás de un puerto para que los SDK
+  se queden en los bordes: <code>session</code>, <code>seal</code>, <code>worldid</code>,
+  <code>registry</code>, <code>scheduler</code>, <code>evaluator</code>, <code>reveal</code>, más
+  <code>lib</code> y <code>config</code>. La UI en <code>src/app/</code> los compone; nada en
+  <code>src/components/</code> importa jamás un SDK. Las variables de entorno se leen en un único
+  sitio, <code>src/config/env.ts</code>, validadas con Zod y con fallo temprano.</p>
+</div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="claves">
+<h2>3 · Palabras clave</h2>
+
+<p>Agrupadas por quién es dueño del término. Si alguien te suelta una de éstas, ésta es la frase que
+conviene tener lista.</p>
+
+<h3 id="kw-idea"><span class="pill ours">La idea</span></h3>
+<dl class="kw">
+  <dt>El problema de hablar primero</dt>
+  <dd>Quien dice un número primero pierde terreno negociando. Es por lo que los tratos mueren antes de
+  la primera llamada, y es el problema que Overlap existe para eliminar.</dd>
+
+  <dt>Commitment (compromiso)</dt>
+  <dd>Una huella de lo que escribiste, publicada antes de que nadie pueda ver nada. Ya no puedes
+  cambiar tu posición, porque la huella dejaría de coincidir. Integridad, no secreto.</dd>
+
+  <dt>Sellado</dt>
+  <dd>Cifrar tu posición para que nadie pueda leerla mientras espera. Secreto, no integridad.
+  Compromiso y sellado son dos garantías distintas y hacen falta las dos — una impide que cambies de
+  idea, la otra impide que nadie espíe.</dd>
+
+  <dt>Ataque de sondeo (probing)</dt>
+  <dd>Abrir diez salas y hacer búsqueda binaria del número del otro: «¿hay trato a 400k? ¿a 420k?».
+  Con seis salas ya sabes su límite. El asiento único por lado de World es el control que lo mata.</dd>
+
+  <dt>Presupuesto de fuga</dt>
+  <dd>Cada cosa distinta que el árbitro puede decir te informa de algo. Dos respuestas posibles
+  filtran casi nada; una respuesta por cada motivo posible filtraría media negociación. El tamaño del
+  vocabulario de salida <em>es</em> el dial de privacidad.</dd>
+
+  <dt>Fail closed (fallo cerrado)</dt>
+  <dd>Cuando algo no se puede verificar, no producir nada en vez de producir algo sin verificar. Sin
+  atestación válida ⇒ sin veredicto, nunca. Lo contrario convertiría la garantía en decorado.</dd>
+</dl>
+
+<h3 id="kw-og"><span class="pill og">0G</span></h3>
+<dl class="kw">
+  <dt>TEE — Trusted Execution Environment</dt>
+  <dd>Una región de una CPU aislada por hardware. La CPU cifra esa memoria, así que el sistema
+  operativo, el hipervisor y el dueño de la máquina no pueden leerla. No es una promesa de no mirar,
+  es una imposibilidad.</dd>
+
+  <dt>Intel TDX · dstack</dt>
+  <dd>La tecnología TEE concreta que corre el proveedor de 0G (<code>verifier-v0.5.5</code>, leído del
+  registro on-chain del servicio). TDX es la tecnología de VM confidencial de Intel; dstack es el
+  framework alrededor.</dd>
+
+  <dt>Atestación</dt>
+  <dd>Evidencia de que un cálculo ocurrió realmente dentro de un enclave genuino. La atestación
+  completa implica parsear un quote de hardware y recorrer una cadena de certificados hasta Intel.
+  <strong>Nosotros hacemos sólo el último eslabón</strong> — ver §9.</dd>
+
+  <dt><code>teeSignerAddress</code></dt>
+  <dd>La dirección de la clave que vive <em>dentro</em> del enclave y firma sus respuestas. Es lo que
+  guarda <code>OG_ENCLAVE_PUBKEY</code>: <code>0x0038f716958a90b753da6937787395e2365db2e8</code>.
+  <strong>No</strong> es la dirección del proveedor (<code>0x4870CbC4…</code>), que sólo es quién
+  cobra. Son dos campos del mismo struct on-chain, con un índice de diferencia, y confundirlos hace
+  fallar toda verificación con <code>signer_mismatch</code>.</dd>
+
+  <dt>Broker · Router</dt>
+  <dd>El broker es el endpoint propio del proveedor, pagado por petición desde nuestra wallet. El
+  Router (<code>router-api.0g.ai</code>) es una pasarela de conveniencia que paga al broker con
+  <em>su</em> wallet — por eso una llamada por el Router nunca nos da una firma: el cliente del broker
+  es el Router, no Overlap. Vamos directos.</dd>
+
+  <dt>chatID</dt>
+  <dd>El identificador por el que se indexa una llamada completada. Con él se pide la firma:
+  <code>GET {base}/v1/proxy/signature/{chatID}?model=…</code></dd>
+
+  <dt>Ledger de cómputo</dt>
+  <dd>Una cuenta on-chain que pre-financia la inferencia. Mínimo <strong>3 0G</strong> para abrirla —
+  un suelo de cuenta, no un coste de uso. Una llamada cuesta unos 0,0005 0G.</dd>
+
+  <dt>TeeML vs TeeTLS</dt>
+  <dd>Dos modos de servicio. TeeML ejecuta el modelo dentro del enclave (lo que necesitamos). TeeTLS
+  termina la sesión TLS dentro. La testnet de 0G no tiene ningún modelo que sea a la vez chatbot y
+  TeeML — por eso estamos en mainnet.</dd>
+
+  <dt>EIP-191 / <code>personal_sign</code></dt>
+  <dd>El encuadre de firma de mensajes de Ethereum: los bytes se prefijan con
+  <code>\x19Ethereum Signed Message:\n&lt;len&gt;</code> antes de hashear. 0G firma así; nuestro
+  nombre para ese esquema es <code>secp256k1-eth</code>.</dd>
+</dl>
+
+<h3 id="kw-hedera"><span class="pill hedera">Hedera</span></h3>
+<dl class="kw">
+  <dt>HCS — Hedera Consensus Service</dt>
+  <dd>Un log de mensajes de sólo-añadir, ordenado por consenso. Envías un mensaje, la red acuerda su
+  orden y su marca de tiempo, y ya no se puede editar ni borrar.</dd>
+
+  <dt>Topic</dt>
+  <dd>Un log HCS. Overlap usa un único topic para todo; los mensajes llevan <code>roomId</code> para
+  que un lector pueda filtrar. Esto <em>es</em> nuestra base de datos.</dd>
+
+  <dt>Consensus timestamp · sequence number</dt>
+  <dd>Los asigna la red, no nosotros. El número de secuencia es lo que hace detectable un mensaje que
+  falta: un hueco significa que alguien quitó algo.</dd>
+
+  <dt>Mirror Node</dt>
+  <dd>El camino de lectura público, vía REST. Cualquiera puede reproducir nuestro topic sin
+  preguntarle a nuestro servidor — que es lo que hace creíble «aquí está el recibo» en vez de una
+  captura de pantalla.</dd>
+
+  <dt>Schedule Service</dt>
+  <dd>Transacciones programadas nativas de Hedera. Nuestro reloj de la fecha límite. Ver §9 sobre qué
+  está y qué no está cableado.</dd>
+
+  <dt>Sin Solidity</dt>
+  <dd>Tres servicios nativos, cero contratos desplegados. Es el requisito del track y es literalmente
+  cierto en este repositorio.</dd>
+</dl>
+
+<h3 id="kw-world"><span class="pill world">World</span></h3>
+<dl class="kw">
+  <dt>World ID</dt>
+  <dd>Una prueba de que eres una persona. No es un login — nunca sabemos quién eres.</dd>
+
+  <dt>Selfie Check</dt>
+  <dd>La credencial que queremos: una comprobación facial, más débil que un Orb pero mucho más fuerte
+  que nada. Se pide a través de IDKit <strong>sólo 4.x</strong>, como
+  <code>selfieCheckLegacy</code>.</dd>
+
+  <dt>Nullifier</dt>
+  <dd>Un valor opaco de un solo sentido derivado de <code>(app_id, action, persona)</code>. La misma
+  persona verificándose dos veces para la misma acción produce el mismo nullifier — que es cómo
+  detectas una repetición sin llegar a conocer ninguna identidad. No guardamos nada más.</dd>
+
+  <dt>Action (acción)</dt>
+  <dd>La cadena de ámbito bajo la que se deriva el nullifier. La nuestra es por sala y lado:
+  <code>seam-&lt;roomId&gt;-&lt;side&gt;</code>. Si la pusieras por app, una persona podría usar
+  Overlap exactamente una vez en su vida.</dd>
+
+  <dt>IDKit</dt>
+  <dd>El widget cliente de World. v2 expone <em>niveles</em> de verificación (<code>orb</code>,
+  <code>device</code>); 4.x expone <em>credenciales</em> y exige un <code>rp_context</code> firmado en
+  servidor.</dd>
+
+  <dt>Cloud verify</dt>
+  <dd>Verificación de la prueba en el servidor. Hacerlo en el cliente sería teatro — el cliente es
+  justo lo que no te puedes creer.</dd>
+</dl>
+
+<h3 id="kw-ours"><span class="pill ours">Nuestro stack</span></h3>
+<dl class="kw">
+  <dt>Next.js App Router · Server Components · Server Actions</dt>
+  <dd>Las páginas se renderizan en el servidor por defecto; una Server Action es una función que el
+  navegador puede llamar pero que sólo corre en el servidor. Es cómo la pantalla de escritura envía un
+  commitment sin que tengamos que montar una capa de API.</dd>
+
+  <dt>Zod</dt>
+  <dd>Validación de esquema en tiempo de ejecución. Toda respuesta externa — 0G, Hedera, World — se
+  parsea con ella en la frontera. Los tipos de TypeScript desaparecen en runtime; Zod no.</dd>
+
+  <dt>Puertos y adaptadores</dt>
+  <dd>Cada módulo declara una interfaz estrecha (<code>RegistryPort</code>, <code>SealedModel</code>,
+  <code>WorldVerifier</code>, <code>ScheduleService</code>) y el SDK vive detrás. Es por eso que la
+  lógica se puede testear sin wallet, sin red y sin gastar un euro.</dd>
+
+  <dt>ECIES</dt>
+  <dd>«Cifrar hacia una clave pública» bien hecho: generas un par de claves de usar y tirar, haces
+  ECDH con la clave pública del destinatario, derivas una clave simétrica del secreto compartido y
+  ciframos con ella. Detalle en el §7.</dd>
+
+  <dt>AES-256-GCM · AEAD</dt>
+  <dd>El cifrado simétrico que usamos. AEAD significa que además autentica: cambia un byte del
+  ciphertext y el descifrado falla ruidosamente en vez de devolver basura.</dd>
+
+  <dt>HKDF</dt>
+  <dd>Convierte un secreto compartido ECDH en material de clave decente. Los secretos compartidos en
+  bruto tienen estructura; las claves de cifrado no deben tenerla.</dd>
+
+  <dt>Serialización canónica</dt>
+  <dd>Exactamente una función «payload → bytes», para que un firmante y un verificador en máquinas
+  distintas coincidan byte a byte. Claves ordenadas, sin espacios, cadenas en NFC, sin flotantes.
+  <code>src/lib/canonical.ts</code> es la única implementación, a propósito.</dd>
+
+  <dt><code>@noble/*</code></dt>
+  <dd>Librerías de criptografía auditadas y sin dependencias. La comprobación de firma usa éstas y
+  nada del SDK de 0G — eso es lo que la hace independiente.</dd>
+</dl>
+</section>
+
+<!-- ==================================================================== -->
+<section id="recorrido">
+<h2>4 · El recorrido, paso a paso</h2>
+
+<h3 id="s1"><span class="step-head"><span class="step-n">01</span> Abrir la sala <span class="pill hedera">Hedera</span></span></h3>
+
+<div class="plain">
+  <p>Quien inicia el trato elige de qué tipo es (inmueble, oferta de trabajo, operación OTC), pone una
+  fecha límite y recibe dos enlaces. Antes de que ninguno de los dos funcione, la fecha se escribe en
+  el log público de Hedera.</p>
+  <p>Ese orden importa más de lo que parece. Como el reloj se publica <em>antes de que nadie pueda
+  escribir una palabra</em>, ninguna parte puede moverlo después, y ninguna puede esperar a ver qué
+  hizo la otra. Es el silbato de un árbitro que no es de nadie.</p>
+</div>
+
+<div class="tech">
+  <p><code>createRoom</code> valida la entrada, comprueba que la fecha está en el futuro, genera un id
+  de sala, publica el expiry y sólo entonces devuelve los enlaces. Si la validación falla,
+  <code>publishExpiry</code> no llega a llamarse — no se escribe nada.</p>
+</div>
+
+<span class="file">src/session/<b>session.ts</b> · createRoom()</span>
+<pre><code>const input = createRoomInputSchema.parse(rawInput);
+const now = (deps.now ?? (() =&gt; new Date()))();
+assertFutureDeadline(input.deadlineIso, now);
+
+const roomId = generateRoomId(deps.newRoomId ?? (() =&gt; crypto.randomUUID()));
+
+// Publish the clock BEFORE anyone can write a position (D4/D6, RNF-M1-001).
+const expiry = buildExpiryMessage({
+  roomId,
+  useCase: input.useCase,
+  deadline: input.deadlineIso,
+  createdAt: now.toISOString(),
+});
+const { topicId, sequenceNumber } = await deps.registry.publishExpiry(expiry);</code></pre>
+
+<p>Fíjate en lo que <code>session</code> <em>no</em> hace: nunca importa el SDK de Hedera. Depende de
+una interfaz de dos métodos, y la implementación real se le inyecta.</p>
+
+<span class="file">src/session/<b>session.ts</b> · el puerto</span>
+<pre><code>export interface RegistryPort {
+  publishExpiry(
+    message: ExpiryMessage,
+  ): Promise&lt;{ topicId: string; sequenceNumber: number }&gt;;
+}</code></pre>
+
+<span class="file">src/app/create/<b>actions.ts</b> · la Server Action que lo compone</span>
+<pre><code>const registry = createRegistry(hederaTopicClient());
+const room = await createRoom(
+  { deadlineIso, gapOptIn, useCase: useCaseIdSchema.parse(useCase) },
+  { registry, baseUrl: env.APP_URL },
+);
+return { roomId: room.roomId, joinUrl: room.joinUrls.B, ownUrl: room.joinUrls.A };</code></pre>
+
+<h4>Los tres presets de caso de uso (D16)</h4>
+<p>Los presets son sólo guía — las posiciones siguen siendo texto libre. El id del preset es metadato
+público que nombra el <em>tipo</em> de trato, jamás las condiciones.</p>
+
+<span class="file">src/session/<b>usecases.ts</b></span>
+<pre><code>export const useCaseIdSchema = z.enum(["property", "job", "otc"]);
+
+property: {
+  sideLabels: { A: "Seller", B: "Buyer" },
+  checklist: ["Price", "Amount at CPCV (% or €)", "CPCV date",
+              "CPCV → deed duration (the deed date follows)"],
+  evaluatorHint:
+    "This is a property sale negotiation. Judge workability on: price, the amount " +
+    "paid at CPCV, the CPCV date, and the CPCV-to-deed timing.",
+}</code></pre>
+
+<h3 id="s2"><span class="step-head"><span class="step-n">02</span> Repartir los enlaces <span class="pill ours">web</span></span></h3>
+
+<div class="plain">
+  <p>Salen dos enlaces: el tuyo y el del otro. Cada uno lleva sólo un id de sala y qué lado eres.
+  Mándale el suyo por el canal que ya uséis; o que escanee el QR si estáis en la misma habitación.</p>
+</div>
+
+<div class="tech">
+  <p><code>buildJoinUrl</code> produce <code>{APP_URL}/room/{roomId}?side=A|B</code>. El QR codifica la
+  misma URL como SVG autocontenido (<code>react-qr-code</code>) — ningún servicio externo de imágenes
+  llega a ver un id de sala. Dos fallos encontrados ensayando la demo están tratados explícitamente:
+  el botón de copiar no hace nada en silencio fuera de HTTPS porque <code>navigator.clipboard</code>
+  no existe en contexto no seguro, y un QR que codifica <code>localhost</code> es inescaneable desde
+  un móvil, así que la UI avisa.</p>
+</div>
+
+<div class="scroll"><table>
+  <thead><tr><th>Componente</th><th>Ubicación</th><th>Función</th></tr></thead>
+  <tbody>
+    <tr><td><code>room-qr</code></td><td><code>src/components/web/room-qr.tsx</code></td><td>QR + copiar, con el fallback de contexto no seguro</td></tr>
+    <tr><td>página de compartir</td><td><code>src/app/room/[roomId]/share/page.tsx</code></td><td>Muestra ambos enlaces con roles distintos</td></tr>
+    <tr><td><code>join-room-panel</code></td><td><code>src/components/web/join-room-panel.tsx</code></td><td>Lo que ve quien recibe la invitación</td></tr>
+  </tbody>
+</table></div>
+
+<h3 id="s3"><span class="step-head"><span class="step-n">03</span> Escribir la posición <span class="pill ours">web</span></span></h3>
+
+<div class="plain">
+  <p>Escribes tus condiciones en lenguaje corriente — «no vendo por debajo de 400.000 €, escritura en
+  90 días». Sin formularios, sin desplegables, sin campos estructurados. Al lado hay una lista que te
+  recuerda qué cosas suelen importar en este tipo de trato, pero nunca te bloquea.</p>
+  <p>El texto libre es una decisión deliberada. En el momento en que obligas a la gente a rellenar
+  campos, has decidido de antemano de qué puede tratar un acuerdo — y en las negociaciones reales
+  siempre hay una cláusula que no anticipaste.</p>
+</div>
+
+<div class="tech">
+  <p>La página es un Server Component que lee el expiry de la sala desde Mirror para resolver el
+  preset, y luego renderiza un formulario cliente. Una sala sin expiry en el topic no se puede
+  escribir en absoluto (RNF-M1-001) — el reloj debe ser público antes de que exista ninguna
+  posición.</p>
+</div>
+
+<span class="file">src/app/room/[roomId]/<b>write/page.tsx</b></span>
+<pre><code>const topicId = requireEnv("HEDERA_TOPIC_ID");
+const view = await createReader(hederaMirrorClient()).readSession(topicId, { roomId });
+roomFound = Boolean(view.expiry);
+useCase = view.expiry?.useCase ?? "property";</code></pre>
+
+<div class="warn">
+  <p><strong>Un agujero de privacidad que vivió en este formulario y se corrigió:</strong> un
+  <code>&lt;textarea name="position"&gt;</code> con los valores por defecto deja que el navegador
+  guarde en disco lo que escribes (el historial de formularios se indexa por el nombre del campo y se
+  ofrece después como sugerencia — incluso a la siguiente persona que use esa máquina), y el
+  <em>corrector ortográfico mejorado</em> de Chrome o el <em>Microsoft Editor</em> de Edge transmiten
+  el texto a Google o Microsoft. Tres líneas más arriba, la UI promete que las palabras nunca salen
+  del navegador. La corrección es <code>autoComplete="off"</code>, <code>spellCheck={false}</code>,
+  <code>autoCorrect</code>, <code>autoCapitalize</code>, <code>data-1p-ignore</code>,
+  <code>data-lpignore</code>. <em>Esto se cuenta bien:</em> demuestra que la promesa de privacidad
+  está auditada hasta los valores por defecto del navegador, no sólo la criptografía.</p>
+</div>
+
+<h3 id="s4"><span class="step-head"><span class="step-n">04</span> Un asiento por lado <span class="pill world">World</span></span></h3>
+
+<div class="plain">
+  <p>Antes de poder sellar, demuestras que eres una persona — y que no has ocupado ya este asiento. No
+  es un login: nunca sabemos tu nombre, tu wallet ni tu cara. Lo que vuelve es un número opaco que es
+  el mismo si vuelves <em>tú</em>, y distinto para cualquier otra persona.</p>
+  <p>Por qué importa: sin esto, alguien abre diez salas y juega a las veinte preguntas con tu número.
+  «¿Hay trato a 400k? ¿A 420k?». Seis salas y te tiene. Un asiento por lado acaba con eso.</p>
+</div>
+
+<div class="tech">
+  <p>El nullifier se deriva de <code>(app_id, action, persona)</code>. Acertar el ámbito es todo el
+  diseño: por app significaría que una persona puede usar Overlap una vez <em>en su vida</em>; por
+  sala y lado significa que puede negociar libremente pero enviar una sola vez por lado y sala.</p>
+</div>
+
+<span class="file">src/worldid/<b>action.ts</b></span>
+<pre><code>export function roomActionId(roomId: string, side: Side): string {
+  const s = sideSchema.parse(side);
+  if (!roomId) throw new Error("roomId is required to scope the World action");
+  return `seam-${roomId}-${s}`;
+}</code></pre>
+
+<span class="file">src/worldid/<b>claim.ts</b> · fail closed</span>
+<pre><code>const result = await deps.verifier.verify(proof,
+  { appId: input.appId, action, signal: input.signal });
+
+// Fail closed: no valid proof ⇒ no seat.
+if (!result.success || !result.nullifierHash) {
+  throw new Error(`World Selfie Check failed${result.code ? ` (${result.code})` : ""}`);
+}
+
+const seats = reserveSeat(deps.seats, {
+  roomId: input.roomId, side, nullifierHash: result.nullifierHash,
+});</code></pre>
+
+<span class="file">src/worldid/<b>verify.ts</b> · todo lo que llegamos a manejar</span>
+<pre><code>export const worldProofSchema = z.object({
+  merkle_root: z.string().min(1),
+  nullifier_hash: z.string().min(1),
+  proof: z.string().min(1),
+  verification_level: z.string().min(1),
+});</code></pre>
+
+<div class="note">
+  <p>La verificación corre <strong>en el servidor</strong>, detrás del puerto
+  <code>WorldVerifier</code>, para que la lógica de asientos sea testeable con un doble y
+  <code>@worldcoin/idkit</code> no entre nunca en esos tests. Verificar en el cliente sería teatro: el
+  cliente es exactamente lo que no te puedes creer.</p>
+</div>
+
+<h3 id="s5"><span class="step-head"><span class="step-n">05</span> Sellar en el navegador <span class="pill og">clave 0G</span></span></h3>
+
+<div class="plain">
+  <p>Tus palabras se cifran <em>en tu propia máquina</em>, antes de enviar nada. Lo que viaja por la
+  red es un bloque ilegible. Aunque alguien grabase cada byte entre tu portátil y nosotros, no tendría
+  nada que leer.</p>
+  <p>Esto es lo que protege la espera — y la espera es la parte peligrosa. El lado A puede escribir hoy
+  y el B mañana. Durante todas esas horas, las condiciones de A están guardadas en algún sitio. Si
+  estuvieran en claro, podríamos leerlas <em>antes de que B haya escrito nada</em>, que es exactamente
+  la ventaja que el producto dice abolir.</p>
+</div>
+
+<div class="tech">
+  <p>Cifrado híbrido (ECIES): un par de claves efímero por sellado → ECDH contra la clave pública del
+  enclave → HKDF-SHA256 para derivar una clave AES de 32 bytes y un IV de 12 → AES-256-GCM sobre el
+  texto en UTF-8, con la cabecera del payload ligada como datos adicionales autenticados. Recorrido
+  completo en el <a href="#cripto">§7</a>.</p>
+</div>
+
+<span class="file">src/seal/<b>seal.ts</b> · el núcleo</span>
+<pre><code>const ephemeralSecret = opts.ephemeralSecret ?? kem.randomSecret();
+const epk    = toHex(kem.publicKey(ephemeralSecret));
+const shared = kem.sharedSecret(ephemeralSecret, recipient);
+const { key, iv } = deriveKeyAndIv(shared, suite, epk);
+
+const header = { v: SEAL_VERSION, suite, epk } as const;
+const cryptoKey = await subtle().importKey("raw", buf(key), "AES-GCM", false, ["encrypt"]);
+const ciphertext = new Uint8Array(
+  await subtle().encrypt(
+    { name: "AES-GCM", iv: buf(iv),
+      additionalData: buf(headerAad(header)), tagLength: GCM_TAG_BITS },
+    cryptoKey,
+    buf(new TextEncoder().encode(plaintext)),
+  ),
+);</code></pre>
+
+<div class="note">
+  <p><strong>El sellado es aleatorio a propósito,</strong> y eso fue una reversión deliberada de lo que
+  decía literalmente la especificación del módulo. «Mismo texto ⇒ mismo ciphertext» filtraría la
+  igualdad de textos en un log público, y permitiría a un atacante confirmar una posición adivinada
+  offline comparando commitments. Un test unitario afirma que dos sellados del mismo texto difieren,
+  para que nadie lo «arregle» de vuelta.</p>
+</div>
+
+<h3 id="s6"><span class="step-head"><span class="step-n">06</span> Comprometer <span class="pill hedera">Hedera</span></span></h3>
+
+<div class="plain">
+  <p>Una huella de tu bloque sellado — no el bloque — va al log público de Hedera, junto con tu prueba
+  de asiento y si aceptas el detalle extra en la respuesta. Desde ese momento no puedes cambiar lo que
+  escribiste: cualquier texto distinto produciría una huella distinta, y la vieja está en un log que
+  nadie puede editar.</p>
+</div>
+
+<div class="tech">
+  <p>El commitment es <code>sha256</code> de los <em>bytes</em> del ciphertext, 64 caracteres hex en
+  minúscula. Hashear la cadena hex en su lugar sería coherente consigo mismo pero discreparía en
+  silencio de cualquier verificador externo que haga lo obvio.</p>
+</div>
+
+<span class="file">src/seal/<b>seal.ts</b> · línea 166</span>
+<pre><code>// Hash the ciphertext BYTES, not the hex string.
+const commitment = toHex(sha256(ciphertext));</code></pre>
+
+<span class="file">src/session/<b>messages.ts</b> · el esquema que va por el cable</span>
+<pre><code>export const commitmentMessageSchema = z.object({
+  v: z.literal(TOPIC_MESSAGE_VERSION),
+  type: z.literal("commitment"),
+  roomId: z.string().min(1),
+  side: sideSchema,
+  commitment: sha256Hex,
+  worldNullifier: z.string().min(1),
+  gapOptIn: z.boolean().default(false),
+  submittedAt: isoInstant,
+});</code></pre>
+
+<p>El servidor no se fía del commitment del cliente: <code>submitCommitmentAction</code> lo recalcula
+a partir del ciphertext recibido, reclama el asiento de World (fail closed) <em>antes</em> de
+cualquier escritura, y sólo entonces publica.</p>
+
+<span class="file">src/registry/<b>write.ts</b></span>
+<pre><code>async publishCommitment(message: CommitmentMessage) {
+  const valid = commitmentMessageSchema.parse(message);
+  return client.submit(canonicalize(valid));
+},</code></pre>
+
+<div class="note">
+  <p><code>gapOptIn</code> es <strong>obligatorio</strong> en el builder pero <strong>tiene valor por
+  defecto</strong> en el esquema. Esa asimetría es intencionada: quien escribe debe pasar una elección
+  explícita, mientras que un mensaje antiguo sin el campo se lee como <code>false</code>. La ausencia
+  de consentimiento falla hacia el veredicto escueto, nunca hacia la divulgación.</p>
+</div>
+
+<h3 id="s7"><span class="step-head"><span class="step-n">07</span> Se dispara el reveal <span class="pill ours">orquestación</span></span></h3>
+
+<div class="plain">
+  <p>Cuando vence el plazo y ambos lados han comprometido, se abren los sobres sellados y se le
+  entregan al árbitro. Éste es el paso que convierte una cuenta atrás en una respuesta — y hasta hace
+  muy poco no existía, lo que significaba que el producto tenía seis buenas piezas y ningún
+  resultado.</p>
+</div>
+
+<div class="tech">
+  <p><code>runReveal</code> es un orquestador puro: todos los colaboradores se inyectan, así que todas
+  las ramas de fallo cerrado son testeables sin Hedera, sin 0G y sin wallet. Lee el topic, rechaza si
+  ya hay veredicto, deriva el consentimiento, obtiene los ciphertexts, des-sella, evalúa, verifica la
+  atestación, y sólo entonces publica.</p>
+</div>
+
+<span class="file">src/reveal/<b>run-reveal.ts</b> · la cadena</span>
+<pre><code>if (room.hasVerdict) return fail("already_published");
+if (!room.hasExpiry)  return fail("no_expiry");
+
+const hasA = room.commitments.some((c) =&gt; c.side === "A");
+const hasB = room.commitments.some((c) =&gt; c.side === "B");
+if (!hasA || !hasB) return fail("incomplete_commitments", `A=${hasA} B=${hasB}`);
+
+// Consent from the TWO COMMITMENTS on the topic — never from the create form.
+const consent = consentFromCommitments(room.commitments);
+
+const sealed = await deps.sealedPayloads(input.roomId);
+if (!sealed.a || !sealed.b) return fail("missing_sealed_payload", …);
+
+[positionA, positionB] = await Promise.all([
+  deps.unseal(sealed.a), deps.unseal(sealed.b),
+]);
+
+const evaluation = await deps.evaluate({ positionA, positionB,
+  useCase: room.useCase ?? DEFAULT_USE_CASE, consent });
+if (!evaluation.ok) return fail("evaluation_failed", …);</code></pre>
+
+<span class="file">src/session/<b>consent.ts</b> · a dos bandas, seguro en todas las direcciones</span>
+<pre><code>function sideConsented(commitments: CommitmentMessage[], side: Side): boolean {
+  const own = commitments.filter((c) =&gt; c.side === side);
+  // No commitment ⇒ not consented. Multiple ⇒ ALL must say true, so a stale or
+  // forged duplicate can only downgrade to the bare verdict, never upgrade.
+  return own.length &gt; 0 &amp;&amp; own.every((c) =&gt; c.gapOptIn === true);
+}</code></pre>
+
+<div class="danger">
+  <p><strong>Un fallo al des-sellar reporta el <em>tipo</em> de error y nada más.</strong> El mensaje
+  de un fallo AEAD puede arrastrar fragmentos de lo que se estaba descifrando, así que meterlo en un
+  log o en un objeto de resultado filtraría una posición por la vía del error. Un test unitario afirma
+  que una posición nunca llega al resultado.</p>
+</div>
+
+<span class="file">src/reveal/<b>run-reveal.ts</b></span>
+<pre><code>} catch (error) {
+  return fail("unseal_failed", error instanceof Error ? error.name : "unknown");
+}</code></pre>
+
+<h3 id="s8"><span class="step-head"><span class="step-n">08</span> Evaluación sellada <span class="pill og">0G</span></span></h3>
+
+<div class="plain">
+  <p>Las dos posiciones van a un modelo que corre dentro del hardware sellado. Se le dice: lee estas
+  dos y responde con exactamente una palabra de esta lista. Nada más. Sin explicación, sin
+  razonamiento, sin números.</p>
+  <p>La razón de que la respuesta sea una palabra no es estética. El árbitro es lo único que ha visto
+  ambos lados, así que <em>todo</em> lo que diga fluye hacia los dos. Una frase de explicación le
+  entregaría a cada lado un pedazo de las condiciones del otro.</p>
+</div>
+
+<div class="tech">
+  <p>En cada petición se fijan tres interruptores de forma explícita, y cada uno es un defecto si se
+  deja por defecto: <code>temperature: 0</code> (el valor por defecto del proveedor es 1),
+  <code>chat_template_kwargs.enable_thinking: false</code> y <code>reasoning_effort: "none"</code>
+  (este modelo devuelve cadena de pensamiento por defecto — confirmado en vivo, 724 caracteres de ella
+  junto a una respuesta de una palabra), y <code>max_tokens: 16</code>.</p>
+</div>
+
+<span class="file">src/evaluator/<b>og-request.ts</b></span>
+<pre><code>export function buildChatRequest(input: ChatRequestInput): Record&lt;string, unknown&gt; {
+  return {
+    model: input.model,
+    temperature: 0,
+    max_tokens: input.maxTokens ?? DEFAULT_MAX_TOKENS,   // 16
+    chat_template_kwargs: { enable_thinking: false },
+    reasoning_effort: "none",
+    response_format: input.responseFormat,
+    messages: [
+      { role: "system", content: input.system },
+      { role: "user",   content: input.user },
+    ],
+  };
+}</code></pre>
+
+<div class="danger">
+  <p><strong>Recibir el razonamiento ya es la brecha (D-M6-1).</strong> No publicarlo no basta — una
+  cadena de pensamiento comenta ambas posiciones en detalle, así que en el momento en que llega, al
+  operador se le ha entregado lo que la política de privacidad dice que no puede tener. Por eso la
+  comprobación corre <em>antes</em> de leer el veredicto: un veredicto correcto junto a un rastro de
+  razonamiento sigue siendo un fallo.</p>
+</div>
+
+<span class="file">src/evaluator/<b>evaluate.ts</b></span>
+<pre><code>// Checked BEFORE the verdict is read.
+if (response.reasoningContent !== undefined &amp;&amp; response.reasoningContent.trim().length &gt; 0) {
+  return fail("reasoning_returned",
+    `${response.reasoningContent.length} chars of reasoning — thinking is not disabled`);
+}</code></pre>
+
+<h4>El prompt, y por qué el vocabulario depende del consentimiento</h4>
+<p>Cuando los dos lados no han dado su consentimiento, <code>gap:*</code> no se rechaza a la salida —
+sencillamente <em>nunca se ofrece</em>. No se le pide al modelo que calcule algo que no debe
+reportar.</p>
+
+<span class="file">src/evaluator/<b>prompt.ts</b></span>
+<pre><code>export function allowedVerdicts(consent: GapConsent): readonly string[] {
+  return bothConsented(consent) ? VERDICTS : VERDICTS.filter((v) =&gt; !v.startsWith("gap:"));
+}</code></pre>
+
+<span class="file">src/evaluator/<b>prompt.ts</b> · el mensaje de sistema</span>
+<pre><code>"You are a sealed evaluator in a confidential two-party negotiation.",
+"Two sides have each written their own position. Neither can see the other's.",
+"",
+hint,                                    // el hint del caso de uso (D16)
+"",
+"Decide whether a deal is possible: does at least one set of terms exist that satisfies both positions?",
+"Judge only what the positions state. Do not invent terms, and do not assume flexibility that is not written.",
+"",
+`Answer with EXACTLY ONE of these values and nothing else: ${allowed.join(", ")}.`,
+…
+"Assess the dimensions internally to reach the count. NEVER name a dimension, quote a term, or reveal any number.",
+"If you cannot cleanly attribute the failure to exactly one dimension, answer gap:multiple.",
+…
+"Output no explanation, no reasoning, no punctuation, and no other words. One value only."</code></pre>
+
+<p>Las posiciones van en el mensaje de <strong>usuario</strong>, nunca en el de sistema. Una posición
+que contenga texto con pinta de instrucción debe ser dato que el modelo juzga, no política que el
+modelo sigue. Ésa es la mitad barata de la defensa contra inyección de prompt; la cara es que la
+salida es un enum cerrado, así que una inyección exitosa sigue sin poder producir prosa.</p>
+
+<span class="file">src/evaluator/<b>prompt.ts</b> · el mensaje de usuario</span>
+<pre><code>"&lt;position_a&gt;", input.positionA.trim(), "&lt;/position_a&gt;",
+"",
+"&lt;position_b&gt;", input.positionB.trim(), "&lt;/position_b&gt;"</code></pre>
+
+<h4>Los cinturones sobre la salida</h4>
+<div class="scroll"><table>
+  <thead><tr><th>Cinturón</th><th>Dónde</th><th>Qué hace</th></tr></thead>
+  <tbody>
+    <tr><td>#1 — <code>response_format</code></td><td><code>src/evaluator/prompt.ts</code></td><td>Un JSON schema con <code>enum</code> y <code>strict: true</code>, restringido en el router</td></tr>
+    <tr><td>#2 — Zod</td><td><code>src/evaluator/verdict.ts</code></td><td>Revalida lo que realmente volvió</td></tr>
+    <tr><td>#3 — <code>applyConsent</code></td><td><code>src/evaluator/verdict.ts</code></td><td>Degrada un <code>gap:*</code> a <code>not_workable</code> si falta consentimiento</td></tr>
+  </tbody>
+</table></div>
+
+<span class="file">src/evaluator/<b>verdict.ts</b></span>
+<pre><code>export const VERDICTS = ["workable", "not_workable", "gap:single", "gap:multiple"] as const;
+
+export function applyConsent(verdict: Verdict, consent: GapConsent): Verdict {
+  if (!isGapVerdict(verdict)) return verdict;
+  return bothConsented(consent) ? verdict : "not_workable";
+}</code></pre>
+
+<div class="note">
+  <p><strong>¿Por qué imponer el consentimiento dos veces?</strong> El prompt ya pide un veredicto
+  escueto cuando falta el consentimiento — pero un prompt es una <em>petición</em>, y esto es una
+  frontera de privacidad. Los modelos no siempre obedecen. Así que la regla también se aplica a la
+  salida, donde no hace falta que nadie obedezca.</p>
+  <p><strong>¿Y por qué degradar en vez de fallar?</strong> <code>gap:*</code> significa «no hay trato,
+  y así de concentrado está el problema». Quitar el matiz deja un veredicto que sigue siendo cierto,
+  sólo que menos informativo. Fallar la evaluación entera castigaría a los dos lados porque uno de
+  ellos decidió no compartir más — justo la elección que prometimos respetar.</p>
+</div>
+
+<p>Hay un rechazo más que conviene conocer: <code>parseVerdict</code> no va a sacar un valor del enum
+de dentro de una frase. Si el modelo escribió un párrafo que contiene la palabra «workable», eso es un
+fallo de cumplimiento y debe aflorar como tal. Recuperar un veredicto de la prosa haría que la
+garantía del enum fuese cierta en el sistema de tipos y falsa en la realidad.</p>
+
+<h3 id="s9"><span class="step-head"><span class="step-n">09</span> Atestación <span class="pill og">0G</span> <span class="pill ours">cripto nuestra</span></span></h3>
+
+<div class="plain">
+  <p>El árbitro firma lo que hizo con una clave que vive dentro del hardware sellado. Esa firma la
+  comprobamos nosotros, con librerías de criptografía corrientes — no con el código de 0G. Si no
+  coincide con la clave que fijamos de antemano, <strong>no se publica ningún veredicto</strong>. La
+  sala termina sin nada, en vez de con algo por lo que no podemos responder.</p>
+  <p>Ésta es la afirmación que sostiene todo el producto, así que la comprobación es deliberadamente
+  aburrida y deliberadamente nuestra.</p>
+</div>
+
+<div class="tech">
+  <p>La firma no está en la respuesta del chat. Se pide aparte, indexada por chatID, y lo que se firma
+  es la cadena <code>sha256(input):sha256(response)</code> — así que la firma cubre las
+  <em>entradas</em> además de la salida. Eso es lo que sostiene la afirmación «este modelo vio estas
+  entradas y devolvió este veredicto».</p>
+</div>
+
+<span class="file">src/evaluator/<b>og-signature.ts</b></span>
+<pre><code>export function signatureUrl(baseUrl: string, chatId: string, model: string): string {
+  const base = baseUrl.replace(/\/v1\/proxy\/?$/u, "").replace(/\/$/u, "");
+  return `${base}/v1/proxy/signature/${encodeURIComponent(chatId)}?model=${encodeURIComponent(model)}`;
+}</code></pre>
+
+<div class="warn">
+  <p><strong>Dos trampas codificadas en esa única función,</strong> y las dos nos costaron tiempo
+  real:</p>
+  <p>① <code>getServiceMetadata()</code> devuelve un endpoint que <em>ya termina en</em>
+  <code>/v1/proxy</code>. Si le añades la ruta de la firma obtienes
+  <code>/v1/proxy/v1/proxy/…</code> y un error <code>"unsupported endpoint"</code> que parece una ruta
+  equivocada en vez de un prefijo duplicado.</p>
+  <p>② Una <em>ruta</em> incorrecta devuelve <code>404 page not found</code>; un <em>chatID</em>
+  incorrecto devuelve un error de negocio. Misma familia de códigos, arreglo completamente distinto —
+  por eso el código conserva el cuerpo cuando falla.</p>
+</div>
+
+<span class="file">src/evaluator/<b>og-signature.ts</b> · construir el envelope</span>
+<pre><code>envelope: {
+  payload: parsed.text,
+  // LOAD-BEARING: 0G signs the text as a RAW STRING. Canonicalising it wraps it
+  // in JSON quotes, the bytes stop matching, and it fails as `signer_mismatch` —
+  // which is indistinguishable at a glance from a wrongly pinned key.
+  encoding: "utf8",
+  signature: parsed.signature,
+  scheme: DEFAULT_SCHEME,             // secp256k1-eth  (EIP-191)
+  model: input.model,
+  attestationRef: url,
+}</code></pre>
+
+<span class="file">src/evaluator/<b>attest.ts</b> · la comprobación</span>
+<pre><code>// The response CLAIMS a signer. Evidence, not authority — we recover it ourselves.
+if (envelope.signer !== undefined) {
+  const claimed = stripHex(envelope.signer).toLowerCase();
+  if (claimed.length &gt; 0 &amp;&amp; claimed !== pinned) {
+    return fail("signer_mismatch", `envelope claims 0x${claimed}, pinned 0x${pinned}`);
+  }
+}
+
+switch (envelope.scheme) {
+  case "secp256k1-eth":
+  case "secp256k1-raw":
+    if (pinned.length !== 40) {
+      return fail("malformed_signer", `expected a 20-byte address, got ${pinned.length / 2} bytes`);
+    }
+    return verifySecp256k1(envelope.scheme, signature, message, pinned);
+  case "ed25519":
+    return verifyEd25519(signature, message, pinned);
+}</code></pre>
+
+<p>El resultado es una unión discriminada, no un booleano, y es a propósito: un booleano pelado invita
+a que se olvide un <code>if (!res)</code>. Fíjate en que <code>{ verified: false }</code> es en sí
+mismo <em>truthy</em>.</p>
+
+<span class="file">src/evaluator/<b>attest.ts</b> · la puerta</span>
+<pre><code>export type AttestResult =
+  | { verified: true;  scheme: SignatureScheme; signer: string }
+  | { verified: false; reason: AttestFailure; detail?: string };
+
+export function mayPublish(result: AttestResult): result is Extract&lt;AttestResult, { verified: true }&gt; {
+  return result.verified === true;
+}</code></pre>
+
+<div class="note">
+  <p><strong>El fallo cerrado está impuesto por el sistema de tipos, no por disciplina.</strong>
+  <code>buildVerdictMessage</code> <em>exige</em> un <code>attestationRef</code>, y sólo un envelope
+  verificado produce uno. No hay camino desde una atestación fallida hasta un veredicto publicado — ni
+  siquiera puedes construir el mensaje.</p>
+</div>
+
+<span class="file">src/reveal/<b>run-reveal.ts</b></span>
+<pre><code>const fetched = await deps.attestation();
+if (!fetched.ok) return fail("attestation_unavailable", fetched.detail);
+
+const attested = verifyEnvelope(fetched.envelope, deps.pinnedKey);
+if (!mayPublish(attested)) return fail("attestation_invalid", …);</code></pre>
+
+<h3 id="s10"><span class="step-head"><span class="step-n">10</span> Publicar y leer <span class="pill hedera">Hedera</span></span></h3>
+
+<div class="plain">
+  <p>El veredicto va al mismo log público, junto con qué modelo lo produjo y un puntero a la firma.
+  Los dos lados lo leen desde el servicio público de lectura de Hedera — no desde nuestro servidor.
+  Podríamos apagar nuestros servidores y la respuesta seguiría ahí, idéntica para ambos.</p>
+</div>
+
+<div class="tech">
+  <p>Mirror Node es el camino de lectura independiente del operador. El mensaje de veredicto lleva
+  <code>modelHash</code> (el snapshot exacto que sirvió el proveedor) y <code>attestationRef</code> (la
+  URL de la firma), para que un tercero pueda atar el veredicto a una ejecución verificada del
+  enclave.</p>
+</div>
+
+<span class="file">src/session/<b>messages.ts</b></span>
+<pre><code>export const verdictMessageSchema = z.object({
+  v: z.literal(TOPIC_MESSAGE_VERSION),
+  type: z.literal("verdict"),
+  roomId: z.string().min(1),
+  verdict: verdictSchema,
+  modelHash: z.string().min(1),
+  attestationRef: z.string().min(1),
+  publishedAt: isoInstant,
+});</code></pre>
+
+<span class="file">src/registry/<b>read.ts</b> · cómo se reconstruye una sala</span>
+<pre><code>const decoded = raw.slice()
+  .sort((a, b) =&gt; a.sequence_number - b.sequence_number)
+  .map(decodeMirrorMessage);
+assertContiguous(decoded);                     // a gap betrays tampering
+
+const scoped = roomId ? decoded.filter((d) =&gt; d.message.roomId === roomId) : decoded;
+
+for (const { message } of scoped) {
+  if (message.type === "expiry") view.expiry = message;
+  else if (message.type === "commitment") view.commitments.push(message);
+  else view.verdict = message;
+}</code></pre>
+
+<div class="note">
+  <p><strong>¿Quién dispara el reveal en la práctica?</strong> No hay worker ni base de datos. La
+  transacción programada de Hedera es el <em>reloj público</em>, pero alguien tiene que ejecutar la
+  evaluación, y en Vercel no hay ningún proceso permanente. Así que lo dispara el primer lector que
+  abra la pantalla de veredicto pasada la fecha. Es seguro porque el topic es la verdad duradera:
+  <code>runReveal</code> se niega cuando ya hay veredicto, así que N lectores simultáneos producen un
+  veredicto y N−1 <code>already_published</code>.</p>
+</div>
+
+<span class="file">src/app/room/[roomId]/<b>verdict/actions.ts</b></span>
+<pre><code>const deadline = view.expiry?.deadline;
+// Gated on the PUBLICLY COMMITTED deadline, never on a client-supplied one.
+if (!deadline || !isDeadlineReached(deadline, new Date())) return null;
+
+const result = await revealRoom(roomId);
+return result.ok ? result.message.verdict : null;</code></pre>
+</section>
+
+<!-- ==================================================================== -->
+<section id="datos">
+<h2>5 · Los datos, de verdad</h2>
+
+<p>El mismo recorrido otra vez, pero siguiendo los bytes. Cada bloque muestra qué recibimos, luego
+exactamente qué hacemos con ello, y luego qué sale.</p>
+
+<h3>A · Se abre la sala → el mensaje de expiry</h3>
+<p><em>Lo produce</em> <code>buildExpiryMessage()</code> en <code>src/session/messages.ts</code>,
+<em>lo escribe</em> <code>registry.publishExpiry()</code>.</p>
+<pre class="solo"><code>{
+  "v": 1,
+  "type": "expiry",
+  "roomId": "r_9f3a1c02-…",
+  "useCase": "property",
+  "deadline": "2026-07-26T09:00:00.000Z",
+  "createdAt": "2026-07-25T18:00:00.000Z"
+}</code></pre>
+<p><strong>Qué hacemos con esto →</strong> canonicalizarlo (claves ordenadas, sin espacios) y enviar la
+cadena resultante al topic HCS. La forma canónica es lo que realmente va por el cable:</p>
+<pre class="solo"><code>{"createdAt":"2026-07-25T18:00:00.000Z","deadline":"2026-07-26T09:00:00.000Z","roomId":"r_9f3a1c02-…","type":"expiry","useCase":"property","v":1}</code></pre>
+
+<h3>B · Se sella la posición → el payload sellado</h3>
+<p><em>Lo produce</em> <code>seal()</code> en <code>src/seal/seal.ts</code>, <strong>en el
+navegador</strong>.</p>
+<pre class="solo"><code>{
+  "v": 1,
+  "suite": "x25519-hkdf-sha256-aes256gcm",
+  "epk": "3a7f…c2",          // clave pública efímera de 32 bytes, en hex
+  "ciphertext": "9e01…7b"    // salida AES-GCM INCLUYENDO el tag de 16 bytes
+}</code></pre>
+<p><strong>Qué hacemos con esto →</strong> dos cosas distintas, y van a dos sitios distintos:</p>
+<div class="scroll"><table>
+  <thead><tr><th>Valor derivado</th><th>Va a</th><th>Por qué</th></tr></thead>
+  <tbody>
+    <tr><td><code>sha256(bytes del ciphertext)</code></td><td>El topic público de Hedera</td><td>Vinculante: no puedes cambiar tu posición después</td></tr>
+    <tr><td>El payload en sí</td><td>El almacén en memoria de nuestro servidor</td><td>El árbitro lo necesita en el momento del reveal</td></tr>
+  </tbody>
+</table></div>
+
+<h3>C · El mensaje de commitment</h3>
+<p><em>Lo produce</em> <code>buildCommitmentMessage()</code>, <em>lo escribe</em>
+<code>registry.publishCommitment()</code>.</p>
+<pre class="solo"><code>{
+  "v": 1,
+  "type": "commitment",
+  "roomId": "r_9f3a1c02-…",
+  "side": "A",
+  "commitment": "6d6febf8fd8f…",   // 64 hex en minúscula
+  "worldNullifier": "0x2b8f…",     // opaco; nunca una identidad
+  "gapOptIn": false,
+  "submittedAt": "2026-07-25T18:04:11.000Z"
+}</code></pre>
+
+<h3>D · Leer la sala de vuelta → la respuesta de Mirror Node</h3>
+<p><em>Lo consume</em> <code>hederaMirrorClient()</code> en
+<code>src/registry/mirror-client.ts</code>. Ojo: <code>message</code> viene en <strong>base64</strong>.</p>
+<pre class="solo"><code>{
+  "messages": [
+    {
+      "consensus_timestamp": "1785052800.123456789",
+      "message": "eyJjcmVhdGVkQXQiOiIyMDI2LTA3…",   // base64 del JSON canónico
+      "sequence_number": 41,
+      "topic_id": "0.0.6512345"
+    }
+  ],
+  "links": { "next": null }
+}</code></pre>
+<p><strong>Qué hacemos con esto →</strong> decodificar base64, <code>JSON.parse</code>, validar con Zod
+contra la unión de tres tipos, ordenar por <code>sequence_number</code>, comprobar que la secuencia es
+contigua, filtrar por <code>roomId</code>, y plegar todo en un <code>SessionView</code> de
+<code>{ expiry, commitments[], verdict }</code>. Cualquier paso malformado lanza — un mensaje corrupto
+es señal de manipulación, no algo que saltarse.</p>
+
+<h3>E · Preguntarle al enclave → el cuerpo de la petición</h3>
+<p><em>Lo produce</em> <code>buildChatRequest()</code> en
+<code>src/evaluator/og-request.ts</code>. Se envía a <code>{endpoint}/chat/completions</code> con
+cabeceras de pago por petición generadas por el SDK de 0G.</p>
+<pre class="solo"><code>{
+  "model": "0gm-1.0-35b-a3b",
+  "temperature": 0,
+  "max_tokens": 16,
+  "chat_template_kwargs": { "enable_thinking": false },
+  "reasoning_effort": "none",
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "seam_verdict",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": { "verdict": { "type": "string",
+                                     "enum": ["workable", "not_workable"] } },
+        "required": ["verdict"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "messages": [
+    { "role": "system", "content": "You are a sealed evaluator…" },
+    { "role": "user",   "content": "&lt;position_a&gt;…&lt;/position_a&gt;\n\n&lt;position_b&gt;…&lt;/position_b&gt;" }
+  ]
+}</code></pre>
+<div class="note"><p>El <code>enum</code> de arriba tiene sólo dos valores porque en este ejemplo no
+hay consentimiento de ambas partes. Con consentimiento llevaría también <code>gap:single</code> y
+<code>gap:multiple</code> — el vocabulario que se le ofrece al modelo <em>es</em> la puerta del
+consentimiento.</p></div>
+
+<h3>F · Lo que devuelve 0G → la respuesta del chat</h3>
+<p><em>Lo consume</em> <code>readChatCompletion()</code> en <code>src/evaluator/og-request.ts</code>.
+También trae una cabecera de respuesta <code>zg-res-key</code>, que es el chatID.</p>
+<pre class="solo"><code>{
+  "id": "chatcmpl-…",
+  "object": "chat.completion",
+  "created": 1785052900,
+  "model": "0GM-1.0-35B-A3B-0427",
+  "choices": [
+    { "message": { "content": "{\"verdict\":\"not_workable\"}",
+                   "reasoning_content": null } }
+  ],
+  "usage": { … },
+  "x_0g_trace": { "request_id": "…" }
+}</code></pre>
+<p><strong>Qué hacemos con esto →</strong> en este orden exacto:</p>
+<ol>
+  <li><strong>Comprobar <code>reasoning_content</code> primero.</strong> Si no está vacío ⇒ rechazar la
+  respuesta entera como <code>reasoning_returned</code>. Antes de leer el veredicto, porque un
+  veredicto correcto junto a un rastro de razonamiento sigue siendo una brecha.</li>
+  <li><strong>Comprobar el modelo.</strong> Coincidencia por prefijo, sin distinguir mayúsculas:
+  <code>0GM-1.0-35B-A3B-0427</code> debe empezar por el <code>0gm-1.0-35b-a3b</code> que fijamos. La
+  igualdad exacta rechazaría el propio modelo que fijamos — el catálogo anuncia la familia, el
+  proveedor sirve un snapshot con fecha que no aparece en ninguna API pública.</li>
+  <li><strong>Parsear el veredicto.</strong> Objeto JSON o token pelado; cualquier otra cosa es
+  <code>off_enum_output</code>.</li>
+  <li><strong>Aplicar el consentimiento</strong> a la salida.</li>
+  <li><strong>Guardar <code>model</code>.</strong> El snapshot exacto se registra con el veredicto.</li>
+</ol>
+
+<h3>G · Pedir la prueba → la respuesta de la firma</h3>
+<p><code>GET {base}/v1/proxy/signature/{chatID}?model=…</code>, lo consume
+<code>fetchSignatureEnvelope()</code> en <code>src/evaluator/og-signature.ts</code>.</p>
+<pre class="solo"><code>{
+  "text": "8f14e45fceea…:3c59dc048e88…",   // sha256(input) : sha256(response)
+  "signature": "0xab67a562d37c7fe7…1c",     // 65 bytes: r || s || v
+  "signing_address": "0x0038f716958a90b753da6937787395e2365db2e8",
+  "signing_algo": "ecdsa"
+}</code></pre>
+<p><strong>Qué hacemos con esto →</strong> envolverlo con <code>encoding: "utf8"</code> y pasárselo a
+<code>verifyEnvelope()</code>, que:</p>
+<ol>
+  <li>rechaza de inmediato si <code>signing_address</code> no es la clave fijada (evidencia,
+  comprobada pronto — pero nunca <em>confiada</em>);</li>
+  <li>toma los bytes UTF-8 crudos de <code>text</code>;</li>
+  <li>aplica el encuadre EIP-191 y keccak256;</li>
+  <li>recupera la clave pública de la firma con <code>@noble/curves</code>;</li>
+  <li>deriva la dirección (últimos 20 bytes del keccak256 de la clave sin comprimir) y la compara, sin
+  distinguir mayúsculas, con <code>OG_ENCLAVE_PUBKEY</code>.</li>
+</ol>
+<p>Nada del SDK de 0G participa en los pasos 2–5. Ése es el objetivo.</p>
+
+<h3>H · El mensaje de veredicto</h3>
+<p><em>Lo produce</em> <code>buildVerdictMessage()</code> — que no se puede construir sin un
+<code>attestationRef</code>.</p>
+<pre class="solo"><code>{
+  "v": 1,
+  "type": "verdict",
+  "roomId": "r_9f3a1c02-…",
+  "verdict": "not_workable",
+  "modelHash": "0GM-1.0-35B-A3B-0427",
+  "attestationRef": "https://compute-network-20.integratenetwork.work/v1/proxy/signature/…",
+  "publishedAt": "2026-07-26T09:00:04.000Z"
+}</code></pre>
+<p><strong>Qué le pasa →</strong> se canonicaliza, se envía al topic, y desde ese momento ambos lados
+leen el valor idéntico por Mirror Node sin ningún operador en el camino.</p>
+
+<div class="note">
+  <p><strong>Una real que puedes comprobar:</strong> la sala <code>r_live_ms0v9ctq</code> de nuestro
+  topic la produjo de principio a fin <code>npm run reveal:live</code> — firma verificada, modelo
+  registrado, legible por cualquiera.</p>
+</div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="sponsors">
+<h2>6 · Qué aporta cada sponsor</h2>
+
+<p>La prueba que aplicamos a cada sponsor: <em>si lo quitas, ¿el producto se rompe o simplemente
+empeora?</em> Los tres lo rompen.</p>
+
+<h3><span class="pill og">0G</span> — inferencia sellada</h3>
+<div class="plain"><p>El árbitro, y la sala donde se sienta. Sin esto, el servidor de alguna empresa
+lee las condiciones de ambas partes — y vuelves a confiar en un operador, que es justo lo que
+eliminamos.</p></div>
+<div class="scroll"><table>
+  <thead><tr><th>Qué usamos</th><th>Dónde</th></tr></thead>
+  <tbody>
+    <tr><td>Inferencia en TEE (TeeML) en mainnet, modelo fijado</td><td><code>src/evaluator/og-client.ts</code></td></tr>
+    <tr><td>Pago directo al broker vía el ledger de cómputo</td><td><code>scripts/lib/sealed-model.ts</code></td></tr>
+    <tr><td>Cabeceras de pago firmadas por petición</td><td><code>broker.inference.getRequestHeaders()</code></td></tr>
+    <tr><td>El endpoint de firma de la respuesta</td><td><code>src/evaluator/og-signature.ts</code></td></tr>
+    <tr><td><code>getService()</code> on-chain, para <code>teeSignerAddress</code></td><td><code>scripts/spike-attest.ts</code></td></tr>
+    <tr><td>Salida restringida con <code>response_format</code></td><td><code>src/evaluator/prompt.ts</code></td></tr>
+  </tbody>
+</table></div>
+<p><strong>Quítalo y:</strong> la afirmación de privacidad muere del todo. No hay producto.</p>
+
+<h3><span class="pill hedera">Hedera</span> — el registro público y el reloj</h3>
+<div class="plain"><p>El tablón que nadie puede borrar. Guarda la fecha límite (para que nadie pueda
+dar largas) y las huellas (para que nadie pueda cambiar de idea), y cualquiera puede leerlo sin
+preguntarnos.</p></div>
+<div class="scroll"><table>
+  <thead><tr><th>Servicio</th><th>Qué hace aquí</th><th>Dónde</th></tr></thead>
+  <tbody>
+    <tr><td>Topic HCS</td><td>Los tres tipos de mensaje; <strong>ésta es nuestra base de datos</strong></td><td><code>src/registry/write.ts</code></td></tr>
+    <tr><td>Mirror Node REST</td><td>Camino de lectura independiente del operador</td><td><code>src/registry/mirror-client.ts</code></td></tr>
+    <tr><td>Schedule Service</td><td>El reloj de la fecha límite (ver §9)</td><td><code>src/scheduler/hedera-schedule.ts</code></td></tr>
+  </tbody>
+</table></div>
+<p><strong>Quítalo y:</strong> muere el reloj. El último en escribir gana esperando, y no hay recibo
+público — tendrías que creerte nuestra captura de pantalla.</p>
+
+<h3><span class="pill world">World</span> — un asiento por lado</h3>
+<div class="plain"><p>Hace que cada lado sea una persona, una vez. Sin esto, todo el invento se derrota
+en diez minutos: alguien abre salas hasta haber hecho búsqueda binaria de tu número.</p></div>
+<div class="scroll"><table>
+  <thead><tr><th>Qué usamos</th><th>Dónde</th></tr></thead>
+  <tbody>
+    <tr><td>Selfie Check como señal de abuso (no como login)</td><td><code>src/components/web/selfie-check-gate.tsx</code></td></tr>
+    <tr><td>Ámbito de acción por sala y por lado</td><td><code>src/worldid/action.ts</code></td></tr>
+    <tr><td>Verificación en la nube, desde el servidor</td><td><code>src/worldid/cloud-verifier.ts</code></td></tr>
+    <tr><td>El nullifier como único artefacto guardado</td><td><code>src/worldid/seats.ts</code></td></tr>
+  </tbody>
+</table></div>
+<p><strong>Quítalo y:</strong> el ataque de sondeo funciona, y todas las demás garantías pasan a ser
+decorado — la respuesta filtra el número bit a bit.</p>
+</section>
+
+<!-- ==================================================================== -->
+<section id="cripto">
+<h2>7 · Criptografía en detalle</h2>
+
+<p>Aquí es donde caen las preguntas más duras, así que tiene sección propia.</p>
+
+<h3>Sellado — ECIES, paso a paso</h3>
+
+<div class="plain">
+  <p>Quieres escribir un mensaje que sólo un destinatario concreto pueda leer, y nunca os habéis visto
+  — sólo conoces su clave pública. No puedes usar una contraseña compartida, porque no existe.</p>
+  <p>El truco: generas un par de claves nuevo y desechable sólo para este mensaje. Tu clave privada
+  desechable más la pública de él producen un número secreto. La clave privada <em>de él</em> más tu
+  pública desechable producen el <strong>mismo</strong> número secreto. Así que cifras con él, mandas
+  tu clave pública desechable en claro, y sólo él puede reproducir el secreto y descifrar.</p>
+</div>
+
+<figure>
+<svg viewBox="0 0 800 260" role="img" aria-label="ECIES: ECDH efímero, HKDF, AES-GCM">
+  <defs>
+    <marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="var(--ink-faint)"/>
+    </marker>
+    <style>
+      .b2 { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+      .t2 { font: 600 12px system-ui, sans-serif; fill: var(--ink); }
+      .s2 { font: 10.5px ui-monospace, monospace; fill: var(--ink-soft); }
+      .l2 { stroke: var(--ink-faint); stroke-width: 1.5; fill: none; marker-end: url(#ar2); }
+    </style>
+  </defs>
+
+  <rect class="b2" x="14" y="20" width="150" height="54" rx="8" stroke="var(--side-a)"/>
+  <text x="26" y="42" class="t2">Par efímero</text>
+  <text x="26" y="60" class="s2">nuevo en CADA sellado</text>
+
+  <rect class="b2" x="14" y="106" width="150" height="54" rx="8"/>
+  <text x="26" y="128" class="t2">Pubkey del enclave</text>
+  <text x="26" y="146" class="s2">OG_ENCLAVE_SEAL_PUBKEY</text>
+
+  <rect class="b2" x="210" y="63" width="140" height="54" rx="8"/>
+  <text x="222" y="85" class="t2">ECDH X25519</text>
+  <text x="222" y="103" class="s2">→ secreto compartido</text>
+
+  <rect class="b2" x="396" y="63" width="150" height="54" rx="8"/>
+  <text x="408" y="85" class="t2">HKDF-SHA256</text>
+  <text x="408" y="103" class="s2">→ clave 32B + IV 12B</text>
+
+  <rect class="b2" x="592" y="50" width="190" height="80" rx="8" stroke="var(--side-b)"/>
+  <text x="604" y="72" class="t2">AES-256-GCM</text>
+  <text x="604" y="90" class="s2">texto → ciphertext</text>
+  <text x="604" y="106" class="s2">+ tag de 16 bytes</text>
+  <text x="604" y="122" class="s2">AAD = {v, suite, epk}</text>
+
+  <path class="l2" d="M164 47 L206 78"/>
+  <path class="l2" d="M164 133 L206 102"/>
+  <path class="l2" d="M350 90 L392 90"/>
+  <path class="l2" d="M546 90 L588 90"/>
+
+  <rect class="b2" x="210" y="176" width="336" height="52" rx="8" stroke="var(--seam)"/>
+  <text x="222" y="198" class="t2">sha256(bytes del ciphertext) → el commitment</text>
+  <text x="222" y="216" class="s2">esto — y sólo esto — va al topic público</text>
+  <path class="l2" d="M660 130 L470 174"/>
+</svg>
+<figcaption>Todas las flechas ocurren dentro de la pestaña del navegador del usuario.</figcaption>
+</figure>
+
+<h4>Las cuatro decisiones dentro de ese diagrama</h4>
+
+<p><strong>① El IV es derivado, ni aleatorio ni cero.</strong> La clave AES es única por sellado porque
+el par efímero es nuevo, así que la reutilización de nonce — la forma clásica de destruir GCM — es
+imposible por construcción.</p>
+
+<span class="file">src/seal/<b>seal.ts</b> · deriveKeyAndIv()</span>
+<pre><code>const info = new TextEncoder().encode(`seam/seal/v${SEAL_VERSION}|${suite}|${epkHex}`);
+const okm  = hkdf(sha256, sharedSecret, undefined, info, AES_KEY_BYTES + IV_BYTES);
+return { key: okm.slice(0, AES_KEY_BYTES), iv: okm.slice(AES_KEY_BYTES) };</code></pre>
+
+<p><strong>② La clave pública efímera entra en el <code>info</code> del HKDF.</strong> Sustituye el
+<code>epk</code> y se deriva una clave distinta, así que el descifrado falla en vez de tener éxito
+calladamente sobre material elegido por el atacante.</p>
+
+<p><strong>③ La cabecera va ligada como datos adicionales AEAD,</strong> y cubre la etiqueta de suite —
+así que la suite no se puede degradar sin que falle la comprobación del tag de GCM.</p>
+
+<span class="file">src/seal/<b>seal.ts</b> · headerAad()</span>
+<pre><code>export function headerAad(header: Omit&lt;SealedPayload, "ciphertext"&gt;): Uint8Array {
+  return new TextEncoder().encode(canonicalize(header));
+}</code></pre>
+
+<p><strong>④ La suite va etiquetada en el payload, nunca inferida.</strong> Con qué clave descifraría
+el enclave sigue siendo una pregunta abierta, así que etiquetarla convierte la respuesta en un cambio
+de dato en vez de una reescritura.</p>
+
+<span class="file">src/seal/<b>suites.ts</b></span>
+<pre><code>export const SEAL_SUITES = [
+  "x25519-hkdf-sha256-aes256gcm",
+  "secp256k1-hkdf-sha256-aes256gcm",
+] as const;
+
+export const DEFAULT_SUITE: SealSuite = "x25519-hkdf-sha256-aes256gcm";</code></pre>
+
+<div class="note">
+  <p>El validador de secp256k1 lleva una pista que existe por una confusión real — y merece citarse en
+  el Q&amp;A, porque explica por qué la clave de atestación no puede hacer también de clave de
+  sellado:</p>
+</div>
+
+<span class="file">src/seal/<b>suites.ts</b></span>
+<pre><code>if (key.length !== 33 &amp;&amp; key.length !== 65) {
+  throw new Error(
+    `secp256k1 public key must be 33 or 65 bytes, got ${key.length}` +
+      (key.length === 20 ? " — that looks like an ADDRESS; you cannot encrypt to an address" : ""),
+  );
+}</code></pre>
+
+<h3>Serialización canónica — por qué una función, en un archivo</h3>
+
+<div class="plain">
+  <p>Una firma es sobre bytes, no sobre «los datos». Si el firmante y el comprobador convierten la
+  misma información en bytes aunque sea ligeramente distintos — un espacio, otro orden de claves — la
+  firma no coincidirá, y eso no se distingue de una falsificación genuina.</p>
+</div>
+
+<div class="tech">
+  <p>RFC 8785 (JCS) en espíritu, restringido al subconjunto que Overlap usa realmente, escrito a mano
+  para que se audite en una pantalla y sin dependencias. Claves ordenadas por unidad de código UTF-16
+  recursivamente · JSON compacto · UTF-8 con cadenas normalizadas en NFC · orden de arrays preservado ·
+  <code>undefined</code> se descarta, <code>null</code> se conserva · sólo enteros.</p>
+</div>
+
+<p>Dos de esas reglas son menos obvias de lo que parecen:</p>
+<ul>
+  <li><strong>Normalización NFC.</strong> «é» como un solo code point y como «e» más un acento
+  combinante son la misma cadena para un humano y deben ser los mismos bytes para un verificador.</li>
+  <li><strong>Nada de flotantes.</strong> Su formato textual no es portable entre runtimes. Nunca
+  necesitamos uno, así que lanzan excepción.</li>
+</ul>
+
+<span class="file">src/lib/<b>canonical.ts</b></span>
+<pre><code>if (!Number.isInteger(value)) {
+  throw new NotCanonicalError(`floats are not canonical: ${value}`);
+}
+// -0 and 0 are the same value; only one spelling may reach the bytes.
+return Object.is(value, -0) ? "0" : String(value);</code></pre>
+
+<div class="warn">
+  <p><strong>Y la excepción que confirma la regla.</strong> 0G firma su <code>text</code> como una
+  <em>cadena cruda</em>. Canonicalizarla la envolvería en comillas JSON, cambiando los bytes, y la
+  comprobación falla como <code>signer_mismatch</code> — que se parece exactamente a una clave mal
+  fijada y no lo es. De ahí <code>encoding: "canonical" | "utf8"</code> en el envelope, y un test que
+  afirma que la firma real <em>falla</em> bajo canonical, para que la trampa siga cazada.</p>
+</div>
+
+<h3>Verificar la firma — los cinco pasos</h3>
+<ol>
+  <li>Tomar los bytes crudos del texto firmado.</li>
+  <li>Aplicar el encuadre EIP-191: <code>\x19Ethereum Signed Message:\n&lt;len&gt;</code> + mensaje, y
+  luego keccak256.</li>
+  <li>Recuperar la clave pública desde <code>(r, s, v)</code> con <code>@noble/curves</code>.</li>
+  <li>Dirección = últimos 20 bytes del keccak256 de la clave sin comprimir, sin su etiqueta
+  <code>0x04</code>.</li>
+  <li>Comparar, sin distinguir mayúsculas, con la <code>OG_ENCLAVE_PUBKEY</code> fijada.</li>
+</ol>
+<p>La maleabilidad también se rechaza — una firma con un valor <code>s</code> alto falla como
+<code>malleable_signature</code>, así que el mismo mensaje no puede tener dos firmas válidas.</p>
+</section>
+
+<!-- ==================================================================== -->
+<section id="archivos">
+<h2>8 · Mapa de archivos</h2>
+
+<div class="scroll"><table>
+  <thead><tr><th>Módulo</th><th>Archivos</th><th>De qué es dueño</th></tr></thead>
+  <tbody>
+    <tr><td><strong>session</strong> (M1)</td><td><code>src/session/{session,room,messages,commitments,consent,usecases}.ts</code></td><td>Creación de sala, los tres esquemas de mensaje, presets D16, consentimiento a dos bandas</td></tr>
+    <tr><td><strong>seal</strong> (M2)</td><td><code>src/seal/{seal,suites,unseal-testkit}.ts</code></td><td>ECIES en navegador + el commitment. <code>unseal-testkit</code> se llama así como aviso</td></tr>
+    <tr><td><strong>worldid</strong> (M3)</td><td><code>src/worldid/{action,claim,seats,verify,cloud-verifier}.ts</code></td><td>Ámbito de acción, reserva de asiento, verificación en servidor</td></tr>
+    <tr><td><strong>registry</strong> (M4)</td><td><code>src/registry/{write,read,topic-client,mirror-client,inspect}.ts</code></td><td>Escritura al topic + lectura de Mirror, ambas tras puertos</td></tr>
+    <tr><td><strong>scheduler</strong> (M5)</td><td><code>src/scheduler/{reveal,service,hedera-schedule}.ts</code></td><td>Armar, disparo exactamente-una-vez, fallback de fecha</td></tr>
+    <tr><td><strong>evaluator</strong> (M6)</td><td><code>src/evaluator/{evaluate,prompt,verdict,og-request,og-client}.ts</code></td><td>El juicio sellado y el vocabulario cerrado</td></tr>
+    <tr><td><strong>attest</strong> (M7)</td><td><code>src/evaluator/{attest,og-signature,attest-testkit}.ts</code></td><td>Verificación independiente de la firma, fail closed</td></tr>
+    <tr><td><strong>reveal</strong> (S2.9)</td><td><code>src/reveal/{run-reveal,reveal-service}.ts</code></td><td>El orquestador, y el único sitio donde se juntan los adaptadores reales</td></tr>
+    <tr><td><strong>web</strong> (M8)</td><td><code>src/app/**</code> · <code>src/components/web/**</code></td><td>Cinco pantallas; aquí no se importa jamás un SDK</td></tr>
+    <tr><td><strong>compartido</strong></td><td><code>src/lib/{canonical,hedera-key,room-bookmarks,utils}.ts</code> · <code>src/config/env.ts</code></td><td>Bytes canónicos, entorno (Zod, un solo sitio)</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Pantallas</h3>
+<div class="scroll"><table>
+  <thead><tr><th>Ruta</th><th>Archivo</th><th>Qué pasa</th></tr></thead>
+  <tbody>
+    <tr><td><code>/</code></td><td><code>src/app/page.tsx</code></td><td>Landing + salas recordadas en este dispositivo</td></tr>
+    <tr><td><code>/create</code></td><td><code>src/app/create/{page,actions}.tsx</code></td><td>Selector de preset, fecha, publica el expiry</td></tr>
+    <tr><td><code>/room/[roomId]/share</code></td><td><code>share/page.tsx</code></td><td>Ambos enlaces + QR</td></tr>
+    <tr><td><code>/room/[roomId]/write</code></td><td><code>write/{page,actions}.tsx</code></td><td>Selfie Check → sellar → comprometer</td></tr>
+    <tr><td><code>/room/[roomId]/verdict</code></td><td><code>verdict/{page,actions}.tsx</code></td><td>Cuenta atrás, dispara el reveal, muestra la palabra</td></tr>
+    <tr><td><code>/rooms</code></td><td><code>src/app/rooms/page.tsx</code></td><td>Lista buscable de las salas de este dispositivo</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Comandos</h3>
+<div class="scroll"><table>
+  <thead><tr><th>Comando</th><th>Qué demuestra</th></tr></thead>
+  <tbody>
+    <tr><td><code>npm run spike</code></td><td>Una firma real del enclave verifica contra la clave fijada; un carácter cambiado se rechaza</td></tr>
+    <tr><td><code>npm run reveal:live</code></td><td>El bucle completo contra Hedera y 0G reales</td></tr>
+    <tr><td><code>npm run eval:live</code></td><td>El prompt funciona en el modelo real</td></tr>
+    <tr><td><code>npm run inspect</code></td><td>El topic sólo guarda hashes</td></tr>
+    <tr><td><code>npm run demo:naive</code></td><td>El mismo producto sin enclave filtra ambas posiciones</td></tr>
+    <tr><td><code>npm run og:status</code></td><td>Wallet + saldo del ledger. Sólo lectura, no gasta nada</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="honesto">
+<h2>9 · Qué probamos y qué no</h2>
+
+<div class="danger">
+  <p><strong>Lee esta sección dos veces.</strong> Una demo que exagera sus garantías cae con una sola
+  pregunta. Todas las limitaciones de abajo las encontramos nosotros y elegimos decirlas — que es una
+  posición mucho más fuerte que que te las enseñen.</p>
+</div>
+
+<h3>① Verificamos el último eslabón, no la cadena entera</h3>
+<div class="plain"><p>Comprobamos que la respuesta la firmó la clave que esperábamos. No comprobamos el
+certificado del propio hardware hasta llegar a Intel.</p></div>
+<p><strong>Dilo así:</strong> «Fijamos la dirección de firma del enclave y verificamos la firma de la
+respuesta nosotros mismos, con criptografía de propósito general y sin código de 0G en el camino de
+confianza. No parseamos el quote TDX ni recorremos la cadena de certificados hasta una raíz de Intel —
+eso quedó fuera de alcance para el fin de semana.»</p>
+<p><strong>No digas:</strong> «totalmente atestiguado» ni «verificado por hardware de extremo a
+extremo».</p>
+
+<h3>② El des-sellado ocurre en nuestro servidor</h3>
+<div class="plain"><p>El navegador cifra, pero nuestro servidor abre el sobre justo antes de entregar
+el texto al modelo — porque la API de inferencia de 0G es un endpoint de chat sin ningún sitio donde
+poner una clave de descifrado.</p></div>
+<p><strong>Dilo así:</strong> «El sellado es real y ocurre en el navegador. Pero la API de inferencia
+de 0G es un endpoint de chat — no hay forma de entregarle una clave privada y que descifre dentro del
+enclave, y la única clave que expone es una dirección de firma de 20 bytes hacia la que <em>no se
+puede</em> cifrar. Así que hoy nuestro servidor des-sella en memoria justo antes de la llamada. Le
+hemos pedido a 0G una clave de cifrado del enclave; si existe, esto pasa a ser un cambio de
+configuración.»</p>
+<p><strong>Nunca digas:</strong> «el texto plano sólo existe dentro del TEE».</p>
+<p>Verificado en el SDK, así que puedes decirlo con seguridad: el camino de inferencia no tiene ningún
+cifrado del cuerpo de la petición, y el único helper ECIES vive en fine-tuning y va en dirección
+contraria — el modelo entrenado vuelve cifrado hacia la wallet <em>del usuario</em>.</p>
+
+<h3>③ La ventana de ciphertext entre commits está en memoria</h3>
+<div class="plain"><p>El lado A puede comprometer y el B seguirle minutos después. Horas o días no
+sobrevivirían hoy a un reinicio del servidor.</p></div>
+<span class="file">src/app/room/[roomId]/<b>write/actions.ts</b></span>
+<pre><code>const sealedByRoom = new Map&lt;string, SealedPayload&gt;();</code></pre>
+<p><strong>Dilo así:</strong> «No tener base de datos es una restricción de diseño, así que los
+payloads sellados viven en memoria de proceso entre commits. Para una demo va bien; para el producto
+real van en el topic como ciphertext, que es un cambio acotado que decidimos no hacer antes del
+freeze. La contrapartida es que un ciphertext en un ledger público es para siempre, así que un futuro
+compromiso de la clave expondría posiciones pasadas — con sólo los hashes, no puede.»</p>
+
+<h3>④ <code>armReveal</code> no está cableado al crear la sala</h3>
+<p>El módulo existe y está testeado, pero todavía nada lo llama, y fue deliberado:
+<code>hederaScheduleService(buildRevealTx)</code> necesita una transacción para que Hedera la ejecute
+al vencimiento, y la única con sentido es un mensaje al topic marcando que el reloj disparó — un
+<strong>cuarto</strong> tipo de mensaje, que <code>decodeMirrorMessage</code> rechaza lanzando, lo que
+rompería la lectura de todas las salas.</p>
+<p><strong>Dilo así:</strong> «La fecha límite se hace cumplir contra el expiry que publicamos en el
+topic antes de que nadie pudiera escribir, así que ninguna parte puede moverla — que es la propiedad
+que el scheduler aportaba. Cablear la transacción programada en sí necesita un cuarto tipo de mensaje
+y versionado del topic, y lo acotamos en vez de romper el camino de lectura la noche antes.»</p>
+
+<h3>⑤ Selfie Check frente al fallback v2</h3>
+<p>Selfie Check es <strong>sólo 4.x</strong> (<code>selfieCheckLegacy</code>). Si la build que enseñáis
+pide <code>VerificationLevel.Device</code>, está corriendo verificación de dispositivo y
+<em>no</em> Selfie Check.</p>
+<div class="warn"><p><strong>Comprueba cuál estás enseñando antes de decir la palabra.</strong> Si es el
+fallback v2, dilo claramente y señala el registro de fricción — un track beta premia el reporte
+honesto. Afirmar Selfie Check mientras corre verificación de dispositivo es la única versión de esto
+que os hace daño.</p></div>
+
+<h3>⑥ Elegimos un modelo deliberadamente más débil</h3>
+<p><code>0gm-1.0-35b-a3b</code> tiene un solo proveedor, así que la clave de firma del enclave no puede
+rotar por debajo de nuestro pin. <code>glm-5.2</code> es más potente y tiene tres.</p>
+<p><strong>Dilo así:</strong> «Cuando el producto es "podemos demostrar quién firmó esto", un firmante
+estable vale más que un modelo más listo.» Es una buena respuesta — invita la pregunta.</p>
+
+<h3>⑦ El modelo lee el texto plano. Obviamente.</h3>
+<p>Tiene que hacerlo para juzgarlo. Lo que aporta el TEE no es «nadie lo ve» sino «<strong>ningún
+operador puede</strong>», porque el hardware se lo niega al propio dueño de la máquina. Si aciertas
+esta distinción, toda la historia se sostiene; si la fallas, suena a magia, y la magia invita a la
+incredulidad.</p>
+</section>
+
+<!-- ==================================================================== -->
+<section id="qa">
+<h2>10 · Preguntas difíciles</h2>
+
+<p>Ordenadas por probabilidad de que os las hagan. Ver también <code>agente/judging-qa.md</code>.</p>
+
+<h3>«O sea que vosotros podéis leer las dos posiciones, ¿no?»</h3>
+<p>«Desde el topic no — ahí sólo hay hashes, y <code>npm run inspect</code> lo enseña. En la build
+actual hay un momento en que nuestro servidor tiene el texto plano, entre descifrar y llamar al
+enclave, porque la API de inferencia de 0G es un endpoint de chat sin sitio donde poner una clave de
+descifrado. Lo decimos en voz alta en vez de esconderlo. Todo lo demás va sellado desde el
+navegador.»</p>
+
+<h3>«¿Cómo sé que el modelo corrió de verdad en un TEE?»</h3>
+<p>«No hace falta que te fíes de nosotros. El <code>teeSignerAddress</code> del proveedor está en la
+mainnet de 0G — aquí tienes el <code>eth_call</code>. La firma de la respuesta se pide al broker por
+chatID y la verificamos con <code>@noble</code>, no con el SDK de 0G. Ejecuta <code>npm run
+spike</code>: verifica una firma real y después cambia un carácter y enseña que se rechaza. Lo que
+<em>no</em> hacemos es parsear el quote TDX hasta una raíz de Intel.»</p>
+
+<h3>«¿Y si la firma del enclave no es válida?»</h3>
+<p>«No se publica nada. Ni un veredicto de reserva, ni un "seguramente esté bien" — nada. Y no depende
+de la disciplina: <code>buildVerdictMessage</code> exige un <code>attestationRef</code> que sólo
+produce un envelope verificado, así que un mensaje de veredicto con mala atestación no se puede
+construir.»</p>
+
+<h3>«¿Dónde acepta la otra parte la divulgación del gap?»</h3>
+<p>«En su propio mensaje de commitment, en el topic. <code>consentFromCommitments</code> exige los dos.
+El consentimiento nunca viene del formulario de creación — eso es sólo la preferencia del lado A. Y si
+un lado tuviera de algún modo dos commitments, todos tienen que decir que sí, así que un duplicado
+viejo o falsificado sólo puede degradar al veredicto escueto.»</p>
+
+<h3>«¿Por qué no decirles qué dimensión bloquea? Sería más útil.»</h3>
+<p>«Porque "bloquean los plazos" también dice "tu precio era aceptable", y el otro entra en la
+siguiente llamada sabiéndolo. Diseñamos esa versión y la rechazamos: "la única dimensión que bloquea"
+está mal definida cuando bloquean varias o cuando los tradeoffs las enredan, así que una elección
+forzada fabricaría una respuesta <em>y</em> filtraría más que un recuento. Así que reportamos cuántas,
+nunca cuáles.»</p>
+
+<h3>«¿Qué me impide abrir diez salas y adivinar tu número?»</h3>
+<p>«World, un asiento por sala y lado, con ámbito por acción. Ese ataque es exactamente por lo que
+World está en el stack — no es una función de login, es el control que hace seguro dar una respuesta
+de una palabra.»</p>
+
+<h3>«No tenéis base de datos. ¿Dónde vive nada?»</h3>
+<p>«El topic HCS es la base de datos — tres tipos de mensaje versionados, sólo-añadir, ordenados por
+consenso, y legibles por cualquiera vía Mirror Node sin nuestro servidor. La única excepción es el
+ciphertext entre commits, que está en memoria de proceso; es la limitación que ya listamos.»</p>
+
+<h3>«¿Esto no es sólo un envoltorio de una llamada a un LLM?»</h3>
+<p>«La llamada al LLM son cuatro líneas. El producto es todo lo de alrededor: el vocabulario de salida
+es cerrado para que el árbitro no pueda filtrar hablando, el consentimiento es a dos bandas y se lee
+del ledger, la firma de la respuesta se verifica fuera del SDK del proveedor y el camino de
+publicación falla cerrado, y el sellado es aleatorio para que posiciones idénticas no produzcan
+commitments idénticos. Quita cualquiera de esas y la afirmación de privacidad deja de ser cierta.»</p>
+
+<h3>«¿Por qué Hedera y no simplemente una base de datos?»</h3>
+<p>«Porque "os prometemos que no cambiamos la fecha límite" no vale nada. El reloj se publica antes de
+que nadie pueda escribir, en un log que no podemos editar, que ambas partes pueden leer sin nosotros.
+Una base de datos nos devolvería al medio — que es la posición que el producto existe para
+eliminar.»</p>
+
+<h3>«¿Qué haríais con una semana más?»</h3>
+<p>«Tres cosas, en este orden. Conseguir la clave de cifrado del enclave para que el des-sellado se
+mueva dentro del TEE y se cierre la costura del §9②. Poner el ciphertext en el topic para que los dos
+lados puedan estar días separados en vez de minutos. Y luego parsear el quote TDX en condiciones para
+que la atestación sea la cadena completa y no sólo el último eslabón.»</p>
+</section>
+
+<hr>
+<p style="color:var(--ink-faint);font-size:.85rem">
+Construido a partir del código, no de la memoria — cada fragmento se leyó del repositorio en la ruta
+que aparece encima. Si un archivo se ha movido desde entonces, manda el código y este documento está
+equivocado. Versión en inglés: <code>docs/encyclopedia-overlap.html</code>.
+</p>
+
+</main>
+</div>
+
+<script>
+  (function () {
+    var btn = document.getElementById('t');
+    btn.addEventListener('click', function () {
+      var cur = document.documentElement.getAttribute('data-theme');
+      if (!cur) {
+        cur = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>
+</body>
+</html>

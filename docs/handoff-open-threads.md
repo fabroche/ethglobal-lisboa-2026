@@ -1,9 +1,40 @@
 # Open threads — pick up here
 
-Last updated: **2026-07-25, ~19:00 WEST** · written by frank (0G workstream) at end of session.
+Last updated: **2026-07-26, ~00:55 WEST** · frank. Everything below is committed and pushed;
+nothing is only in a chat window.
 
 > **Read this first if you are a Claude resuming work.** Then `CLAUDE.md`, then `docs/backlog.md`.
-> Everything below is committed and pushed; nothing is only in a chat window.
+
+---
+
+## 🔴 START HERE — four defects found in live E2E on the night of 25→26 Jul
+
+All four are written up as **self-contained backlog rows** (`docs/backlog.md`): the evidence, the
+mechanism, the file to change and the fix. You should not need this conversation to implement them.
+
+**Do them in this order — the first is the only one that costs money.**
+
+| # | What | Why this order |
+|---|---|---|
+| **S3.21** | **⛔ P0 · concurrent reveals** — polls overlap AND there is no server-side lock, so one room ran the reveal **three times**: three enclave calls we paid for, three verdict messages on the topic. Proven on-chain, timestamps in the row. | It is a real spend and it pollutes the public record we point judges at |
+| **S3.22** | The verdict screen sits on **"Reveal due · now" forever** after resolving, because `publishedAt` is read off the topic and then thrown away | Visible in every demo take; the fix uses data we already have |
+| **S3.23** | The write screen **offers a form to a side that already committed**, so the user rewrites their whole position and is rejected at the last step with `seat … is already taken` | Wastes the user's work at the worst possible moment |
+| **S3.24** | The **"durable backstop"** against duplicate commitments named in a code comment **does not exist**. Part (a) is two lines and worth doing regardless | Data is currently safe by luck of ordering, not by design |
+
+Two related rows already exist and are **not** duplicates of the above:
+**S3.18** (the verdict copy asserts "several issues block" when `gap:multiple` also means *"can't
+attribute to one"* — dylan's) and **S3.20** (the spinner from S3.19 has no terminal state, so a room
+that can never resolve spins forever).
+
+### Two things measured, so nobody re-derives them
+
+- **The evaluator is NOT the problem.** Four live probes against the real enclave with a single
+  genuine blocker — including asymmetric positions where one side omits a dimension — returned
+  `gap:single` every time. If a room reports `gap:multiple`, the model most likely judged the real
+  text that way, or the S3.18 copy made a correct verdict *read* wrong.
+- **Mirror Node indexes in ~3 s.** That is fast enough for the demo and **too slow to arbitrate a
+  race** — which is why S3.21(b) needs an in-process lock and why S3.24(c) cannot be sold as a full
+  fix.
 
 ---
 

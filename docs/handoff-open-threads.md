@@ -33,6 +33,15 @@ that can never resolve spins forever).
 - **Mirror Node indexes in ~3 s.** That is fast enough for the demo and **too slow to arbitrate a
   race** — which is why S3.21(b) needs an in-process lock and why S3.24(c) cannot be sold as a full
   fix.
+- **The owner's live room that returned `gap:multiple` (26 Jul ~02:45) was re-probed with the exact
+  texts** (buyer: max 200k, 10% CPCV, sign from 15 Aug + 60 days; seller: min 250k, CPCV ≥10%, CPCV
+  ≤27 Nov, deed ≤Dec 2026). Deterministic: `gap:multiple` in both A/B orders; `not_workable` with no
+  consent (the gate works). **It was never going to be `workable` — 200k vs 250k has no overlap.**
+  Control probe: the same texts with 260k → **`workable`**, so neither timing nor CPCV blocks on its
+  own; the model is reading the CPCV amount (a % *of the unagreed price*) as entangled with price —
+  the documented "can't cleanly attribute" case of D9-as-amended, which S3.18's copy now covers
+  honestly. **Not a prompt bug to chase before the freeze; for a `workable` take in the video, use
+  overlapping numbers (e.g. 260k) — proven live.**
 
 ---
 

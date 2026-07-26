@@ -27,3 +27,27 @@ export const Workable: Story = { args: { verdict: "workable" } };
 export const NotWorkable: Story = { args: { verdict: "not_workable" } };
 export const GapSingle: Story = { args: { verdict: "gap:single" } };
 export const GapMultiple: Story = { args: { verdict: "gap:multiple" } };
+
+/**
+ * S3.20 — the loud one. The attestation failed, so nothing was published: this is the
+ * fail-closed guarantee WORKING, and the panel must make that readable as an outcome, not
+ * mistakable for a hang. Terminal: polling has stopped, nothing spins.
+ */
+export const AttestationInvalid: Story = {
+  args: { verdict: null, deadlineReached: true, blocked: { blocked: "attestation_invalid" } },
+};
+
+/** Terminal: the ciphertext store is per-process and a restart lost the sealed texts. */
+export const CannotResolve: Story = {
+  args: { verdict: null, deadlineReached: true, blocked: { blocked: "missing_sealed_payload" } },
+};
+
+/** Recoverable without us: the other side can still commit late. No spinner — nothing runs. */
+export const WaitingForOtherSide: Story = {
+  args: { verdict: null, deadlineReached: true, blocked: { blocked: "incomplete_commitments" } },
+};
+
+/** Transient: the reveal retries on the next poll, so the spinner stays and the reason is named. */
+export const RetryingAfterTransientFailure: Story = {
+  args: { verdict: null, deadlineReached: true, blocked: { blocked: "attestation_unavailable" } },
+};

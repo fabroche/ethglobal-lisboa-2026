@@ -3,7 +3,7 @@ import { createReader, hederaMirrorClient } from "@/registry";
 import { requireEnv } from "@/config/env";
 import type { Verdict } from "@/session";
 import { VerdictView } from "@/components/web/verdict-view";
-import { readVerdictAction } from "./actions";
+import { revealStatusAction } from "./actions";
 
 /**
  * Verdict screen: `/room/<roomId>/verdict`. Reads the room's expiry (for the countdown) and any
@@ -57,7 +57,7 @@ export default async function VerdictPage({
             deadlineIso={deadlineIso}
             initialVerdict={initialVerdict}
             publishedAtIso={publishedAtIso}
-            pollVerdict={readVerdictAction.bind(null, roomId)}
+            pollStatus={revealStatusAction.bind(null, roomId)}
           />
         </>
       ) : (

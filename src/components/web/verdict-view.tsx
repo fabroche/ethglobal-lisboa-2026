@@ -2,14 +2,36 @@
 
 import { useState, useEffect } from "react";
 import { Countdown } from "./countdown";
-import { VerdictPanel } from "./verdict-panel";
+import { VerdictPanel, type BlockedInfo } from "./verdict-panel";
 import type { Verdict } from "@/session";
+import type { RevealFailure } from "@/reveal/run-reveal";
 
 /** A landed verdict and when it was published, as the poll reports it (S3.22). */
 export interface VerdictReading {
   verdict: Verdict;
   publishedAt?: string;
 }
+
+/** One poll's outcome — mirrors `revealStatusAction` (S3.20). */
+export type PollStatus =
+  | { verdict: Verdict; publishedAt?: string }
+  | { pending: true }
+  | { blocked: RevealFailure; detail?: string };
+
+/**
+ * Reasons that end the wait: no amount of further polling changes them, so the poll stops
+ * and the panel says why there is no verdict — loudly, for `attestation_invalid` (S3.20).
+ *
+ * Everything else keeps polling: `already_published` resolves on the next Mirror read,
+ * transient failures (enclave hiccup, broker down, topic write) retry on the next reveal
+ * attempt, and `incomplete_commitments` can still recover if the missing side commits late.
+ */
+const TERMINAL_REASONS: ReadonlySet<RevealFailure> = new Set([
+  "attestation_invalid",
+  "missing_sealed_payload",
+  "unseal_failed",
+  "no_expiry",
+]);
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -35,8 +57,8 @@ export interface VerdictViewProps {
   initialVerdict: Verdict | null;
   /** `publishedAt` of an already-landed verdict, read off the topic (S3.22). */
   publishedAtIso?: string;
-  /** Re-read the verdict from Mirror Node; polled until a verdict appears. Injected for tests. */
-  pollVerdict?: () => Promise<VerdictReading | null>;
+  /** Poll the reveal status (verdict / pending / typed blocked reason). Injected for tests. */
+  pollStatus?: () => Promise<PollStatus>;
   pollMs?: number;
   className?: string;
 }
@@ -52,25 +74,29 @@ export interface VerdictViewProps {
  * Once a verdict is in, the countdown goes away (S3.22): a resolved room has nothing due, and
  * "Reveal due · now" forever was the live-E2E defect. Its place is taken by when the verdict
  * was published — a fact anyone can check against the topic.
+ *
+ * And a room that can NEVER resolve stops spinning (S3.20): a terminal blocked reason ends
+ * the poll and the panel states why there is no verdict, instead of promising one forever.
  */
 export function VerdictView({
   deadlineIso,
   initialVerdict,
   publishedAtIso,
-  pollVerdict,
+  pollStatus,
   pollMs = 5000,
   className,
 }: VerdictViewProps) {
   const [reading, setReading] = useState<VerdictReading | null>(
     initialVerdict ? { verdict: initialVerdict, publishedAt: publishedAtIso } : null,
   );
+  const [blocked, setBlocked] = useState<BlockedInfo | null>(null);
   const verdict = reading?.verdict ?? null;
   // `null` until the client has a clock. The server has no business guessing "now" — and
   // rendering a spinner on the server that the client then removes is a hydration mismatch.
   const [nowMs, setNowMs] = useState<number | null>(null);
 
   useEffect(() => {
-    if (verdict || !pollVerdict) return;
+    if (verdict || !pollStatus) return;
     let active = true;
     // S3.21(a): a self-rescheduling timeout, NOT setInterval. The poll triggers the lazy
     // reveal server-side, which takes far longer than pollMs (enclave call + attestation +
@@ -78,22 +104,32 @@ export function VerdictView({
     // The next poll is armed only after the previous one has fully returned.
     let id: ReturnType<typeof setTimeout>;
     const poll = async () => {
-      let next: VerdictReading | null = null;
+      let status: PollStatus | null = null;
       try {
-        next = await pollVerdict();
+        status = await pollStatus();
       } catch {
         // Transient network failure — keep polling; stopping would strand the screen.
       }
       if (!active) return;
-      if (next) setReading(next);
-      else id = setTimeout(poll, pollMs);
+      if (status && "verdict" in status) {
+        setReading(status);
+        return; // the verdict ends the loop (and the effect re-runs with verdict set)
+      }
+      if (status && "blocked" in status) {
+        setBlocked(status);
+        if (TERMINAL_REASONS.has(status.blocked)) return; // S3.20 — stop promising
+      } else if (status) {
+        // Back to pending (e.g. the reveal's guard raced Mirror) — clear a stale reason.
+        setBlocked(null);
+      }
+      id = setTimeout(poll, pollMs);
     };
     id = setTimeout(poll, pollMs);
     return () => {
       active = false;
       clearTimeout(id);
     };
-  }, [verdict, pollVerdict, pollMs]);
+  }, [verdict, pollStatus, pollMs]);
 
   // Ticks only while it still matters: once a verdict is in, or with no deadline to watch,
   // there is nothing for this timer to change.
@@ -111,6 +147,8 @@ export function VerdictView({
       : nowMs >= new Date(deadlineIso).getTime();
 
   const revealedAt = reading?.publishedAt ? formatRevealedAt(reading.publishedAt) : null;
+  // A room that ended without a verdict has nothing due — "Reveal due · now" would lie.
+  const endedWithoutVerdict = blocked !== null && TERMINAL_REASONS.has(blocked.blocked);
 
   return (
     <div className={className}>
@@ -123,10 +161,10 @@ export function VerdictView({
             <span className="font-mono text-2xl tabular-nums">{revealedAt}</span>
           </div>
         ) : null
-      ) : deadlineIso ? (
+      ) : deadlineIso && !endedWithoutVerdict ? (
         <Countdown deadlineIso={deadlineIso} className="mb-6" />
       ) : null}
-      <VerdictPanel verdict={verdict} deadlineReached={deadlineReached} />
+      <VerdictPanel verdict={verdict} deadlineReached={deadlineReached} blocked={blocked} />
     </div>
   );
 }

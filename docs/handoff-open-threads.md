@@ -45,6 +45,31 @@ that can never resolve spins forever).
 
 ---
 
+## ⚠️ 26 Jul ~03:50 — `trycloudflare.com` quick tunnels are returning edge 404s
+
+`scripts/demo-tunnel.sh` mints a hostname and `cloudflared` reports `Registered tunnel
+connection` with no errors, but **every request to the hostname returns `404` with a 0-byte body
+and only `CF-Ray`/`Server: cloudflare` headers** — i.e. the *edge* answers, the request never
+reaches us. Proven not to be our app: Next's own 404 is ~12 KB of HTML, and the origin returns
+`200` for any `Host` header (`localhost`, the tunnel name, a random one). Reproduced on **three**
+freshly-minted hostnames.
+
+Also on this machine: a `cloudflared` **Windows service** runs as SYSTEM and cannot be stopped
+without elevation (`sc stop cloudflared` → Access denied). It may or may not be related; fresh
+hostnames failed identically either way.
+
+**What to do for the demo/video:**
+- **The World Selfie Check does NOT need the tunnel.** `http://localhost` **is** a secure context,
+  so WebCrypto (IDKit bridge + our `seal()`) works, and the IDKit QR is scanned against **World's
+  bridge**, not against our origin — our app never needs to be publicly reachable for the check
+  itself. Run both sides in two browser profiles/windows on the same machine.
+- The tunnel is only needed to let a **second physical device** open our app. If that is wanted
+  for the video, S3.14 (named Cloudflare tunnel on a domain we control) is the fix; a quick tunnel
+  cannot be relied on right now.
+- ⚠️ `demo-tunnel.sh` **rewrites `APP_URL` in `.env.local`** and does not restore it. After a failed
+  tunnel run it points at a dead hostname and every QR/join link embeds it. Restored to
+  `http://localhost:3000` at 03:55 — check it before recording.
+
 ## Time check — be honest about the window
 
 | | |

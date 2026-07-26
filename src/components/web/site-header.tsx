@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { OverlapMark } from "./overlap-mark";
 
 /**
  * M8 `site-header` (S3.10). The one persistent chrome: a way home from every screen.
@@ -35,8 +36,9 @@ export function SiteHeader() {
         <Link
           href="/"
           aria-label="Overlap, go to the start"
-          className="text-base font-semibold tracking-tight underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex items-center gap-2 text-base font-semibold tracking-tight underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
         >
+          <OverlapMark />
           Overlap
         </Link>
 

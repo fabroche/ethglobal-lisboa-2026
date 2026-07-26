@@ -14,13 +14,17 @@ export interface SelfieCheckGateProps {
   onVerified: (proof: WorldProof) => void;
   /** Set once this side already holds the seat (proof captured). */
   verified: boolean;
+  /** E2E ONLY: server-passed runtime flag (env.E2E_FAKE_WORLD) — swaps the widget for a
+   * fixture-proof button. Never set by the demo/prod server. */
+  e2eBypass?: boolean;
   className?: string;
 }
 
 /**
- * M8 `selfie-check-gate` (S3.2 / M3). Mounts the World Selfie Check widget with the action
- * scoped **per room per side** (`overlap-<roomId>-<side>`, RF-M3-001) — one seat per side. The
- * widget only yields a proof; the fail-closed verification runs server-side in `claimSeat`.
+ * M8 `selfie-check-gate` (S3.2 / M3). Mounts the World widget with the action scoped **per
+ * room** (`overlap-<roomId>`, RF-M3-001, D17) — one seat per *person* per room, so the same
+ * human cannot verify for A and then for B. The widget only yields a proof; the fail-closed
+ * verification runs server-side in `claimSeat`.
  */
 export function SelfieCheckGate({
   roomId,
@@ -28,6 +32,7 @@ export function SelfieCheckGate({
   appId,
   onVerified,
   verified,
+  e2eBypass,
   className,
 }: SelfieCheckGateProps) {
   if (!appId) {
@@ -36,6 +41,38 @@ export function SelfieCheckGate({
         World Selfie Check isn’t configured yet (<code className="font-mono">WORLD_APP_ID</code>).
         One seat per side can’t be enforced until it is.
       </p>
+    );
+  }
+
+  // E2E ONLY (S3.4): a headless browser cannot drive the real World App, so when the
+  // server (which reads env at request time) passes `e2eBypass`, the gate is a plain
+  // button yielding a fixture proof. Runtime-gated, so one build serves demo AND E2E;
+  // the demo server never sets E2E_FAKE_WORLD. Never enable in a real deploy.
+  if (e2eBypass) {
+    return (
+      <button
+        type="button"
+        onClick={() =>
+          onVerified(
+            worldProofSchema.parse({
+              merkle_root: "0xe2e",
+              // Per-SIDE on purpose (D17): the fixture stands in for two different
+              // humans, and the seat registry now rejects one nullifier holding both
+              // seats. Make this per-room and every two-browser E2E run fails.
+              nullifier_hash: `0xe2e-${roomId}-${side}`,
+              proof: "0xe2e",
+              verification_level: "device",
+            }),
+          )
+        }
+        disabled={verified}
+        className={cn(
+          "min-h-11 rounded-full border border-input px-6 text-sm font-medium",
+          className,
+        )}
+      >
+        {verified ? "Verified (E2E)" : "Verify (E2E fixture)"}
+      </button>
     );
   }
 

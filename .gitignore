@@ -58,5 +58,9 @@ storybook-static
 # Claude Code worktrees (local working copies)
 .claude/worktrees/
 
+# Playwright E2E artifacts
+/test-results/
+/playwright-report/
+
 # Claude Code per-machine settings (local permissions) — agents/ and skills/ ARE tracked
 .claude/settings.local.json

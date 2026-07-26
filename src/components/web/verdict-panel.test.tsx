@@ -23,12 +23,43 @@ describe("VerdictPanel", () => {
 
   it("shows the gap count — never a dimension — when both sides opted in (D9 amended)", () => {
     render(<VerdictPanel verdict="gap:single" />);
-    expect(screen.getByText(/one issue blocks/i)).toBeInTheDocument();
+    expect(screen.getByText(/one issue is in the way/i)).toBeInTheDocument();
+  });
+});
+
+describe("VerdictPanel — gap copy claims no more than the enum guarantees (S3.18)", () => {
+  it("gap:multiple never says 'several': it is also the model's can't-attribute value", () => {
+    // D9 as amended: `gap:multiple` = several dimensions block OR too entangled to
+    // attribute to one. "More than one thing is in the way" is true in both cases;
+    // "several issues block" was not, and wrongly told the reader to walk away.
+    render(<VerdictPanel verdict="gap:multiple" />);
+    expect(screen.getByText(/more than one thing is in the way/i)).toBeInTheDocument();
+    expect(screen.queryByText(/several/i)).not.toBeInTheDocument();
   });
 
-  it("shows gap:multiple as several issues", () => {
-    render(<VerdictPanel verdict="gap:multiple" />);
-    expect(screen.getByText(/several issues block/i)).toBeInTheDocument();
+  it("both gap verdicts explain the restraint: the count was consented, the dimension never named", () => {
+    const { rerender } = render(<VerdictPanel verdict="gap:single" />);
+    expect(screen.getByText(/agreed to reveal how many/i)).toBeInTheDocument();
+    rerender(<VerdictPanel verdict="gap:multiple" />);
+    expect(screen.getByText(/never which/i)).toBeInTheDocument();
+  });
+
+  it("non-gap verdicts carry no consent subtitle — nothing was disclosed beyond the line", () => {
+    const { rerender } = render(<VerdictPanel verdict="workable" />);
+    expect(screen.queryByText(/agreed to reveal/i)).not.toBeInTheDocument();
+    rerender(<VerdictPanel verdict="not_workable" />);
+    expect(screen.queryByText(/agreed to reveal/i)).not.toBeInTheDocument();
+  });
+
+  it("gap:multiple is not visually identical to not_workable — it carries consented information", () => {
+    // Tone hierarchy (S3.18b): gap:single amber (the hopeful one), gap:multiple orange,
+    // not_workable neutral. Class assertions are deliberate here: the inversion WAS the bug.
+    const { rerender } = render(<VerdictPanel verdict="gap:multiple" />);
+    expect(screen.getByText(/more than one thing/i)).toHaveClass("text-orange-600");
+    rerender(<VerdictPanel verdict="gap:single" />);
+    expect(screen.getByText(/one issue is in the way/i)).toHaveClass("text-amber-600");
+    rerender(<VerdictPanel verdict="not_workable" />);
+    expect(screen.getByText(/no deal/i)).toHaveClass("text-foreground");
   });
 });
 

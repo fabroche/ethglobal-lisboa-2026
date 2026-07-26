@@ -1,7 +1,8 @@
 # World Selfie Check — testing documentation (S4.3)
 
-Status: 🟧 draft — developer half from the S1.5 integration record; **user half deliberately empty
-until S3.2 puts the live widget in front of real users**. Feedback here is lived, not invented.
+Status: 🟧 draft — developer half from the S1.5 integration record; user half (§B/§C) filled from
+the 25–26 Jul live runs, **still open for updates before submission**. Feedback here is lived,
+not invented.
 
 > Track requirement (Selfie Check Beta): document **developer friction** and **user friction**.
 > See `transversal/integration-worldid.md` §3.
@@ -70,16 +71,42 @@ still delivers: one real proof per human per `(room, side)`, enforced by World's
 it does not deliver: the face check itself. We say this here, in the body, on purpose: a beta
 track deserves honest reporting more than a hidden substitution.
 
-## B. User friction (to be filled from real runs — do not write ahead of testing)
+## B. User friction (from real runs, 25–26 Jul)
 
-Protocol: two-browser run (laptop + phone via QR), first-time users, Property demo room.
+Protocol: two-browser runs (laptop + two phones via QR), first-time users, Property demo room.
+Scope caveat: Selfie Check's own UI was unreachable for our app (4.x-only — §A.6), so this
+reports the **device-verification** flow users actually went through, not the selfie capture.
 
-- [ ] Time from tapping the gate to a verified nullifier: ___
-- [ ] Where a first-time user hesitates (World App install? camera permission? QR hand-off?): ___
-- [ ] Failure/retry behaviour observed and how confusing it was: ___
-- [ ] Device/permission prompts encountered (exact sequence): ___
-- [ ] Drop-off points / anything a judge stumbled on: ___
+- [x] **Time from tapping the gate to a verified nullifier:** ~1–2 min the first time, dominated
+  by the World App hand-off; **a few seconds** on repeat runs.
+- [x] **Where a first-time user hesitates:** (a) the **World App install requirement** — a party
+  invited by QR who doesn't have the app hits an install detour mid-flow; (b) the QR-inside-a-QR
+  moment: after scanning our room QR with the camera, IDKit presents *another* QR/deep-link into
+  World App, which reads as "didn't I just do this?"; (c) nothing in the default flow says *why*
+  an identity app is involved — we added our own explanatory copy.
+- [x] **Failure/retry behaviour:** the worst moment of our testing. World allows **one
+  verification per person per action** (deliberately — it is our one-seat-per-side control). When
+  the flow died after the in-app verification but before our server accepted it (the
+  `invalid_action` night, §A), the user's single verification was already **spent**: on retry
+  World answers "already verified" and refuses, with no explanation and no way forward — a
+  silent, permanent lock-out from the room, surfaced only as raw jargon. We reordered our server
+  checks so a submit doomed for other reasons is rejected **before** touching World, specifically
+  so it cannot burn someone's only attempt (S3.24c).
+- [x] **Device/permission prompts (sequence):** browser → deep-link/QR into World App → in-app
+  confirm → automatic return to the browser. The return hand-off worked every time, but there is
+  a beat of dead air where the browser shows nothing until the proof lands.
+- [x] **Drop-off points** (where a real user would give up): (1) the mid-flow app install for an
+  invited party; (2) the burned-verification dead-end — someone staring at "already verified"
+  with no path forward quits.
 
 ## C. What we'd tell the World team in one paragraph
 
-_(write last, after B)_
+We signed up to test Selfie Check and never reached it: Selfie Check requires the 4.x flow, and
+the verify path was blind to our (new-generation portal) app — v2 rejected it silently, and
+nothing surfaced that the incompatibility was generational rather than a bug in our code
+(§A.6–7). We
+shipped device verification instead, so the beta feature itself went untested by us, and §B above
+reports the flow we could reach. Three asks: (1) **human-readable errors in IDKit** —
+`invalid_action` told us nothing actionable; (2) **a documented compatibility story for
+new-generation apps** across the verify APIs; (3) **a recovery path when a failed flow consumes
+a user's single verification** — today it is a silent dead-end.

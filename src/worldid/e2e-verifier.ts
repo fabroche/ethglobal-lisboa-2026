@@ -1,4 +1,3 @@
-import "server-only";
 import { env } from "@/config/env";
 import { cloudWorldVerifier } from "./cloud-verifier";
 import type { WorldProof, WorldVerifier } from "./verify";

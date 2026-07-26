@@ -7,19 +7,17 @@ nothing is only in a chat window.
 
 ---
 
-## 🔴 START HERE — four defects found in live E2E on the night of 25→26 Jul
+## ✅ RESOLVED — the four defects from the live E2E (25→26 Jul) are all fixed
 
-All four are written up as **self-contained backlog rows** (`docs/backlog.md`): the evidence, the
-mechanism, the file to change and the fix. You should not need this conversation to implement them.
+**All four landed on `develop-frank` in the early hours of 26 Jul** (commits `6384c95`, `cfa4191`,
+`2c5516b`, `33f6ef3`), each with tests, backlog closure and an `ai-usage.md` entry. 418 tests green.
 
-**Do them in this order — the first is the only one that costs money.**
-
-| # | What | Why this order |
-|---|---|---|
-| **S3.21** | **⛔ P0 · concurrent reveals** — polls overlap AND there is no server-side lock, so one room ran the reveal **three times**: three enclave calls we paid for, three verdict messages on the topic. Proven on-chain, timestamps in the row. | It is a real spend and it pollutes the public record we point judges at |
-| **S3.22** | The verdict screen sits on **"Reveal due · now" forever** after resolving, because `publishedAt` is read off the topic and then thrown away | Visible in every demo take; the fix uses data we already have |
-| **S3.23** | The write screen **offers a form to a side that already committed**, so the user rewrites their whole position and is rejected at the last step with `seat … is already taken` | Wastes the user's work at the worst possible moment |
-| **S3.24** | The **"durable backstop"** against duplicate commitments named in a code comment **does not exist**. Part (a) is two lines and worth doing regardless | Data is currently safe by luck of ordering, not by design |
+| # | What was fixed |
+|---|---|
+| **S3.21** | Polls re-arm via `setTimeout` only after the previous call returns; `revealRoom` dedupes concurrent calls per room onto the same promise (`src/reveal/in-flight.ts`). Per-process only — the multi-instance caveat is documented, not hidden |
+| **S3.22** | `readVerdictAction` returns `{ verdict, publishedAt }`; a resolved room shows "Revealed 26 Jul 2026, 00:14 UTC" (UTC on purpose: hydration-safe and checkable against the topic) instead of a dead countdown |
+| **S3.23** | The write page reads the commitments and shows "You already sent your position" + a verdict link instead of a doomed form. First server-page RTL test in the repo |
+| **S3.24** | All three parts: vault never overwrites · `runReveal` binds to the oldest commitment per side (consent can be neither revoked nor granted by a duplicate) · the action checks the topic before any side effect, ahead of the World gate |
 
 Two related rows already exist and are **not** duplicates of the above:
 **S3.18** (the verdict copy asserts "several issues block" when `gap:multiple` also means *"can't

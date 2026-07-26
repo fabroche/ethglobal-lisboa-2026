@@ -17,7 +17,7 @@ disclosure.
 ## Concrete human decisions (not generic — each is traceable in the repo)
 
 - **The idea itself and the kill-test.** The pivot away from sponsor-first ideas to Overlap, and the
-  "each sponsor load-bearing or drop the idea" test — see `idea-brainstorm.md`. Humans set the
+  "each sponsor load-bearing or drop the idea" test — see `history/idea-brainstorm.md`. Humans set the
   design constraint; the AI worked inside it.
 - **The D9 amendment came from a human catching the AI's flaw** (25 Jul). Dylan spotted that
   "reveal the single blocking dimension" wrongly assumed a unique blocker, **rejected the AI's

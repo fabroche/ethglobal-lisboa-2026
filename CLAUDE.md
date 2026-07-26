@@ -19,7 +19,7 @@ these inputs and returned this verdict"* is supported and the pitch needs no rew
 highest-stakes open question (spec-03 §8.1) and it fell our way.
 
 Three things had to be understood, all of them non-obvious and all written up in
-`docs/handoff-open-threads.md` §1:
+`docs/handoffs/handoff-open-threads.md` §1:
 1. **The Router can never give a signature.** It pays the broker with its own wallet, so the broker's
    customer is the Router, not us. Only a **direct, on-chain-paid** call yields a verifiable response.
    One-time setup: `npm run og:setup` (ledger minimum is **3 0G** — an account-opening floor, not a
@@ -64,7 +64,7 @@ guessed position offline by comparing commitments — the probing attack from an
 control doesn't cover. A test enforces that two seals of the same text differ (spec-04 §1).
 
 ## 🧭 If you are a Claude working on this repo, read in this order
-0. **`docs/handoff-open-threads.md`** — what's blocked right now and what to pick up. Read it first.
+0. **`docs/handoffs/handoff-open-threads.md`** — what's blocked right now and what to pick up. Read it first.
 1. **This file** (context + hard rules).
 2. **`docs/branching-strategy.md`** — how we use Git (pull-based, no squash, commit every ~30 min).
 3. **`docs/backlog.md`** — claim the next item (commit the claim first) + the **Definition of Done**.

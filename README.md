@@ -15,6 +15,7 @@
   <img alt="Solidity" src="https://img.shields.io/badge/Solidity-none-8957e5" />
   <img alt="database" src="https://img.shields.io/badge/database-none-8957e5" />
   <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-000000" />
+  <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-3fb950" />
 </p>
 
 Overlap is a **sealed negotiation room**. Two sides write their terms in plain language; a model
@@ -37,6 +38,7 @@ possible — without either side, or the people who built this, ever seeing the 
 - [🚀 Getting started](#-getting-started)
 - [📚 Documentation](#-documentation)
 - [👥 Team & workflow](#-team--workflow)
+- [📄 License](#-license)
 
 ## 🎯 The problem
 
@@ -202,3 +204,7 @@ Two AI-assisted workstreams (`develop-frank`, `develop-dylan`) merging into `dev
 
 Every item ships tested, story'd where it has UI, and documented — a component is not done because
 it runs.
+
+## 📄 License
+
+[MIT](./LICENSE) © Frank A. Broche and Dydymoon.

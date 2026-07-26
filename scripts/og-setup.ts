@@ -1,6 +1,6 @@
 /**
  * `npm run og:setup` — the two one-time transactions that make a SIGNED 0G call
- * possible. See `docs/handoff-open-threads.md` §1.
+ * possible. See `docs/handoffs/handoff-open-threads.md` §1.
  *
  *   1. addLedger(amount)  — creates our compute account and funds it. Also
  *      creates the keypair the broker uses to sign our requests.

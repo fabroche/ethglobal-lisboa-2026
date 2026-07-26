@@ -5,7 +5,7 @@
 >  de premios, el test de "cada sponsor debe ser imprescindible" y las ideas que se mataron. Movido de
 >  la raíz a `agente/` en S4.7 para que nadie lo lea como vigente.
 >
->  El producto actual es **Seam** → `CLAUDE.md`, `docs/README.md`, `docs/idea-brainstorm.md`.
+>  El producto actual es **Seam** → `CLAUDE.md`, `docs/README.md`, `docs/history/idea-brainstorm.md`.
 >  Está en español a propósito (excepción a D2, como los espejos de `docs/ux/`).
 
 # ETHGlobal Lisboa 2026 — Memoria del proyecto
@@ -115,8 +115,8 @@ Reusa el stack casi 1:1, explota el edge del socio contador (dolor real y poco h
 
 ## 7. Entregables generados
 
-- `docs/ETHGlobal-Lisbon2026-Brainstorm-MVP.pdf` (ES) — en `~/Downloads`
-- `docs/ETHGlobal-Lisbonne2026-Brainstorming-MVP-FR.pdf` (FR) — en `~/Downloads`
+- `docs/history/ETHGlobal-Lisbon2026-Brainstorm-MVP.pdf` (ES) — en `~/Downloads`
+- `docs/history/ETHGlobal-Lisbonne2026-Brainstorming-MVP-FR.pdf` (FR) — en `~/Downloads`
   > Ambos con estética tipo home-os + paleta ETHGlobal (temporal).
 
 ---

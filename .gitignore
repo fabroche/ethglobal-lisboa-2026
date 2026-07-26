@@ -57,3 +57,6 @@ storybook-static
 
 # Claude Code worktrees (local working copies)
 .claude/worktrees/
+
+# Claude Code per-machine settings (local permissions) — agents/ and skills/ ARE tracked
+.claude/settings.local.json

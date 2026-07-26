@@ -61,3 +61,6 @@ storybook-static
 # Playwright E2E artifacts
 /test-results/
 /playwright-report/
+
+# Claude Code per-machine settings (local permissions) — agents/ and skills/ ARE tracked
+.claude/settings.local.json

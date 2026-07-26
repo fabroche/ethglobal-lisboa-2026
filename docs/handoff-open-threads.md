@@ -1,9 +1,38 @@
 # Open threads — pick up here
 
-Last updated: **2026-07-25, ~19:00 WEST** · written by frank (0G workstream) at end of session.
+Last updated: **2026-07-26, ~00:55 WEST** · frank. Everything below is committed and pushed;
+nothing is only in a chat window.
 
 > **Read this first if you are a Claude resuming work.** Then `CLAUDE.md`, then `docs/backlog.md`.
-> Everything below is committed and pushed; nothing is only in a chat window.
+
+---
+
+## ✅ RESOLVED — the four defects from the live E2E (25→26 Jul) are all fixed
+
+**All four landed on `develop-frank` in the early hours of 26 Jul** (commits `6384c95`, `cfa4191`,
+`2c5516b`, `33f6ef3`), each with tests, backlog closure and an `ai-usage.md` entry. 418 tests green.
+
+| # | What was fixed |
+|---|---|
+| **S3.21** | Polls re-arm via `setTimeout` only after the previous call returns; `revealRoom` dedupes concurrent calls per room onto the same promise (`src/reveal/in-flight.ts`). Per-process only — the multi-instance caveat is documented, not hidden |
+| **S3.22** | `readVerdictAction` returns `{ verdict, publishedAt }`; a resolved room shows "Revealed 26 Jul 2026, 00:14 UTC" (UTC on purpose: hydration-safe and checkable against the topic) instead of a dead countdown |
+| **S3.23** | The write page reads the commitments and shows "You already sent your position" + a verdict link instead of a doomed form. First server-page RTL test in the repo |
+| **S3.24** | All three parts: vault never overwrites · `runReveal` binds to the oldest commitment per side (consent can be neither revoked nor granted by a duplicate) · the action checks the topic before any side effect, ahead of the World gate |
+
+Two related rows already exist and are **not** duplicates of the above:
+**S3.18** (the verdict copy asserts "several issues block" when `gap:multiple` also means *"can't
+attribute to one"* — dylan's) and **S3.20** (the spinner from S3.19 has no terminal state, so a room
+that can never resolve spins forever).
+
+### Two things measured, so nobody re-derives them
+
+- **The evaluator is NOT the problem.** Four live probes against the real enclave with a single
+  genuine blocker — including asymmetric positions where one side omits a dimension — returned
+  `gap:single` every time. If a room reports `gap:multiple`, the model most likely judged the real
+  text that way, or the S3.18 copy made a correct verdict *read* wrong.
+- **Mirror Node indexes in ~3 s.** That is fast enough for the demo and **too slow to arbitrate a
+  race** — which is why S3.21(b) needs an in-process lock and why S3.24(c) cannot be sold as a full
+  fix.
 
 ---
 
@@ -20,31 +49,27 @@ recommended order and the reasoning behind it — read it before claiming anythi
 
 ---
 
-## 0. ⚡ START HERE — what to do with the remaining ~3h
+## 0. ⚡ START HERE — state as of 26 Jul ~01:50
 
-**The 0G gamble is won** (§1) and `evaluator` is live-verified. What is NOT done is the thing the pitch
-rests on:
+**Everything the pitch rests on is done and wired:** the 0G gamble is won (§1), `evaluator` is
+live-verified, **the attest gate is IN the publish path** (S2.3 landed via S2.9 — `runReveal`
+verifies the envelope and fails closed, every branch tested), the README is written (S4.4), and the
+four live-E2E defects plus S3.20 are fixed (see the top of this file). 427 tests green, pushed on
+`develop-frank`.
 
-### 🔴 First: `S2.3` — wire the attest gate into the publish path
+### 🔴 What actually remains, in order
 
-`attest` is built, has 30 unit tests, and **verifies a real enclave signature** (`npm run spike` exits
-0). But it is **not connected to the code that writes the verdict.** So "fail closed — no valid
-attestation, no verdict" is true of the module and not yet true of the system.
+1. **PR `develop-frank` → `develop`** (integrator) — everything above is sitting on the branch.
+2. **The video (S5.1)** — 2–4 min, 720p+, no AI voiceover. Feature-freeze first. This is the
+   critical path now.
+3. **Submit ~2h early (S5.2)** — re-read the sponsor pages first.
+4. Dylan's open items if he has cycles: **S3.18** (verdict copy overstates `gap:multiple`),
+   S3.13/S3.15/S4.8/S4.9.
 
-That is the single most valuable hour left. It touches `src/registry` (dylan's lane) — coordinate.
+### ⚪ Explicitly OK to cut
 
-### 🟠 Then: `S4.4` — the README
-
-The judges read it. Nothing else in the repo substitutes for it.
-
-### ⚪ Only if time remains
-
-`S3.12` (reach `/rooms` from the navbar — small, and a real gap), `S3.4` (two-browser E2E).
-
-### 📋 Blocked on dylan, both P0
-
-`S2.8` (per-side gap consent → evaluator) and `S3.7` (the position textarea leaks to the browser).
-Details in §2. **S3.7 blocks S3.2's merge** and is a privacy hole in the write screen.
+`S3.4` (two-browser E2E), `S3.14` (named tunnel), `S2.6` (topic versioning), `S4.6`. The demo
+scripts (`spike` / `eval:live` / `inspect` / `demo:naive`) already prove the claims live.
 
 ---
 

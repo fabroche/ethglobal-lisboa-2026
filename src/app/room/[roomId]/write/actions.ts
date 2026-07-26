@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { env, requireEnv } from "@/config/env";
-import { createRegistry, hederaTopicClient } from "@/registry";
+import { createReader, createRegistry, hederaMirrorClient, hederaTopicClient } from "@/registry";
 import {
   buildCommitmentMessage,
   sideSchema,
@@ -36,8 +36,9 @@ const inputSchema = z.object({
 export type SubmitCommitmentActionInput = z.input<typeof inputSchema>;
 
 // One seat per (room, side), per server process. No DB (D4): for the hackathon demo a
-// single server instance holds the seats; the topic's one-commitment-per-side rule is the
-// durable backstop.
+// single server instance holds the seats. The durable backstop is the topic check in
+// `submitCommitmentAction` (S3.24c) — with the honest caveat that Mirror indexes in ~3 s,
+// so it closes the restart/second-instance case, not a fast race.
 let seats: SeatRegistry = initSeatRegistry();
 
 // The sealed payloads await the reveal here — ciphertext only, keyed by (room, side).
@@ -75,7 +76,30 @@ export async function submitCommitmentAction(
       return { ok: false, message: "commitment does not match the sealed payload" };
     }
 
-    // 1. One seat per (room, side): server-side World verification, fail closed (M3).
+    // 1. S3.24(c) — the durable backstop: check the TOPIC for a commitment from this
+    // side before any side effect. The in-memory seat registry dies with the process, so
+    // after a restart (or on another instance) it would happily let a side commit twice.
+    // Mirror indexes in ~3 s: this closes the restart case, NOT a fast race — the seat
+    // claim below stays. Checked before the World gate on purpose: the action allows one
+    // verification per person, and a doomed submit must not consume it.
+    const topicId = requireEnv("HEDERA_TOPIC_ID");
+    try {
+      const view = await createReader(hederaMirrorClient()).readSession(topicId, {
+        roomId: input.roomId,
+      });
+      if (view.commitments.some((c) => c.side === input.side)) {
+        return {
+          ok: false,
+          message:
+            "this side already committed to this room — a position can't be rewritten once committed",
+        };
+      }
+    } catch {
+      // Mirror down or lagging: don't block the write path on the read path. The seat
+      // claim below is still the in-process guard.
+    }
+
+    // 2. One seat per (room, side): server-side World verification, fail closed (M3).
     const appId = requireEnv("WORLD_APP_ID");
     const claim = await claimSeat(
       { roomId: input.roomId, side: input.side, appId, proof: input.worldProof },
@@ -83,8 +107,14 @@ export async function submitCommitmentAction(
     );
     seats = claim.seats;
 
-    // 2. Park the ciphertext for the reveal (M6), then publish the commitment (M4).
-    sealedByRoom.set(vaultKey(input.roomId, input.side), input.sealedPayload);
+    // 3. Park the ciphertext for the reveal (M6), then publish the commitment (M4).
+    // S3.24(a): never overwrite. If a duplicate slips past every guard, the ciphertext
+    // must keep matching the FIRST commitment — the binding one (the reveal judges the
+    // oldest per side) — or the enclave would judge text the topic never committed to.
+    const key = vaultKey(input.roomId, input.side);
+    if (!sealedByRoom.has(key)) {
+      sealedByRoom.set(key, input.sealedPayload);
+    }
     const message = buildCommitmentMessage({
       roomId: input.roomId,
       side: input.side,

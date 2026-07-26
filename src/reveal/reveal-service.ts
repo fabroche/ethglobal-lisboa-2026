@@ -30,15 +30,26 @@ import { fetchSignatureEnvelope } from "@/evaluator/og-signature";
 import { getSealedPayloads } from "@/app/room/[roomId]/write/actions";
 
 import { runReveal, type RevealResult, type RevealTopicView } from "./run-reveal";
+import { createInFlight } from "./in-flight";
+
+// S3.21(b) · the in-process lock. Concurrent callers for the same room join the reveal
+// already in flight instead of paying for another enclave call and writing another
+// verdict message. Per-process only — see in-flight.ts for the honest limitation.
+const revealsInFlight = createInFlight<RevealResult>();
 
 /**
- * Run the reveal for a room with the real adapters.
+ * Run the reveal for a room with the real adapters. Concurrent calls for the same room
+ * share one run (S3.21) — the first caller executes, the rest await the same result.
  *
  * Throws only on missing configuration. Every operational failure comes back as a typed
  * `RevealResult` — the caller's next move is to show a user something, and an exception
  * there becomes a blank screen instead of "no verdict, and here is why".
  */
-export async function revealRoom(roomId: string): Promise<RevealResult> {
+export function revealRoom(roomId: string): Promise<RevealResult> {
+  return revealsInFlight.run(roomId, () => runRevealWithAdapters(roomId));
+}
+
+async function runRevealWithAdapters(roomId: string): Promise<RevealResult> {
   const topicId = requireEnv("HEDERA_TOPIC_ID");
   const pinnedKey = requireEnv("OG_ENCLAVE_PUBKEY");
   const demoSecretHex = requireEnv("OG_DEMO_SEAL_SECRET");

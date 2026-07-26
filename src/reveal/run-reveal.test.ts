@@ -266,3 +266,52 @@ describe("runReveal — legacy rooms", () => {
     expect(evaluate.mock.calls[0]?.[0]).toMatchObject({ useCase: "property" });
   });
 });
+
+describe("runReveal — a duplicate commitment cannot rewrite history (S3.24b)", () => {
+  it("binds consent to the OLDEST commitment per side; a later duplicate cannot revoke it", async () => {
+    const evaluate = vi.fn(async (_input: EvaluateArgs) => ({
+      ok: true as const,
+      verdict: "gap:single" as const,
+      gapWithheld: false,
+      model: "m",
+    }));
+    // Topic order: A consents, B consents, then a duplicate from A arrives un-consenting.
+    // The duplicate is not the binding commitment — it must not un-say what A already said.
+    const view: RevealTopicView = {
+      commitments: [commitment("A", true), commitment("B", true), commitment("A", false)],
+      useCase: "property",
+      hasExpiry: true,
+      hasVerdict: false,
+    };
+    await runReveal({ roomId: "r_1", now: NOW }, deps({ evaluate, readRoom: async () => view }));
+    expect(evaluate.mock.calls[0]?.[0]).toMatchObject({ consent: { a: true, b: true } });
+  });
+
+  it("a duplicate cannot GRANT consent either — the binding commitment declined", async () => {
+    const evaluate = vi.fn(async (_input: EvaluateArgs) => ({
+      ok: true as const,
+      verdict: "workable" as const,
+      gapWithheld: false,
+      model: "m",
+    }));
+    const view: RevealTopicView = {
+      commitments: [commitment("A", false), commitment("B", true), commitment("A", true)],
+      useCase: "property",
+      hasExpiry: true,
+      hasVerdict: false,
+    };
+    await runReveal({ roomId: "r_1", now: NOW }, deps({ evaluate, readRoom: async () => view }));
+    expect(evaluate.mock.calls[0]?.[0]).toMatchObject({ consent: { a: false, b: true } });
+  });
+
+  it("two commitments from the same side do not make a room complete", async () => {
+    const view: RevealTopicView = {
+      commitments: [commitment("A"), commitment("A")],
+      useCase: "property",
+      hasExpiry: true,
+      hasVerdict: false,
+    };
+    const result = await runReveal({ roomId: "r_1", now: NOW }, deps({ readRoom: async () => view }));
+    expect(result).toMatchObject({ ok: false, reason: "incomplete_commitments" });
+  });
+});

@@ -85,6 +85,8 @@ function fail(reason: RevealFailure, detail?: string): RevealResult {
 
 /** What the runner needs to read about a room. Satisfied by `registry.createReader`. */
 export interface RevealTopicView {
+  /** In topic order (ascending sequence number) — the reader guarantees it. The runner
+   * binds to the OLDEST commitment per side (S3.24b), so order is load-bearing. */
   commitments: CommitmentMessage[];
   useCase?: UseCaseId | undefined;
   hasExpiry: boolean;
@@ -132,15 +134,19 @@ export async function runReveal(
   if (room.hasVerdict) return fail("already_published");
   if (!room.hasExpiry) return fail("no_expiry");
 
-  const hasA = room.commitments.some((c) => c.side === "A");
-  const hasB = room.commitments.some((c) => c.side === "B");
-  if (!hasA || !hasB) {
-    return fail("incomplete_commitments", `A=${hasA} B=${hasB}`);
+  // S3.24(b) — the binding commitment is the OLDEST per side (`find` on topic order).
+  // A duplicate that slipped past the write-path guards can neither swap the judged
+  // position nor revoke a consent the other side already matched: whatever a later
+  // message says, the room is judged against the first thing each side committed to.
+  const bindingA = room.commitments.find((c) => c.side === "A");
+  const bindingB = room.commitments.find((c) => c.side === "B");
+  if (!bindingA || !bindingB) {
+    return fail("incomplete_commitments", `A=${Boolean(bindingA)} B=${Boolean(bindingB)}`);
   }
 
-  // Consent is derived from the two commitments on the topic — never from the create
-  // form, which is only Side A's prefill (S2.8). Absent ⇒ not consented.
-  const consent = consentFromCommitments(room.commitments);
+  // Consent is derived from the two binding commitments on the topic — never from the
+  // create form, which is only Side A's prefill (S2.8). Absent ⇒ not consented.
+  const consent = consentFromCommitments([bindingA, bindingB]);
 
   const sealed = await deps.sealedPayloads(input.roomId);
   if (!sealed.a || !sealed.b) {

@@ -49,6 +49,15 @@ enum verdict, model hash, attestation ref). See `00-overview/02-data-model.md`.
 `src/evaluator/og.ts` — the router call and enum constraint. Triggered by M5 on reveal. Output feeds
 M7 (`src/evaluator/attest.ts` boundary) before M4 writes it. See `transversal/integration-0g.md`.
 
+**Who actually calls this, in plain words (S2.10):** nothing calls the evaluator on a timer — there
+is no worker (D4). The **first reader** of the verdict screen after the public deadline triggers the
+whole chain (`revealRoom` → `runReveal` → `evaluate`), and every later reader finds the verdict
+already on the topic. There is no alarm clock: the first person to look at the clock after the
+deadline turns the lights on; everyone after walks into a lit room. It is safe because the deadline
+is public before anyone writes, the topic is first-writer-wins (N−1 readers get
+`already_published`), and the trigger carries no authority — the attestation gate applies no matter
+who tripped it. Full write-up: `M5-scheduler.md` §7 "The lazy reveal, in plain words".
+
 ## 7. Functionalities
 
 ### F-M6-1 · Sealed evaluation with constrained output

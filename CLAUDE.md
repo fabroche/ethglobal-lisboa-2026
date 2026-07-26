@@ -46,6 +46,12 @@ Consent is enforced **twice**: the `gap:*` vocabulary is never offered in the pr
 privacy boundary. `parseVerdict` refuses to extract an enum value out of prose, because recovering one
 would make the enum guarantee true in the types and false in reality.
 
+**D9.2 (26 Jul, owner-critical):** the gap count is of **direct contradictions between stated
+limits** only; doubt resolves to `gap:single` (a false *multiple* kills the phone call the product
+exists to provoke), and positions reach the model in **canonical byte order**, never seat order —
+the same texts measurably flipped single/multiple by seat before. Verified live 5/5 + `eval:live`
+GO. Details: `spec-02-evaluator.md` §D9.2, backlog S2.11.
+
 **One honest gap, D-M6-2:** `evaluate()` takes **plaintext**. The router is a chat API, so the enclave
 cannot run our ECIES decryption, and `OG_ENCLAVE_SEAL_PUBKEY` is still unanswered. Sealing in the
 browser and the ciphertext-only store are real and demonstrable; *"plaintext exists only inside the

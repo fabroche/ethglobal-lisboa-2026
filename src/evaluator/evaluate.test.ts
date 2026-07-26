@@ -74,7 +74,7 @@ describe("evaluate · the happy path", () => {
 
     const request = complete.mock.calls[0]![0];
     expect(request.system).toMatch(/EXACTLY ONE/u);
-    expect(request.user).toContain("<position_a>");
+    expect(request.user).toContain("<position_1>");
     // Positions must not leak into the system message.
     expect(request.system).not.toContain("400,000");
     expect(request.responseFormat).toMatchObject({ type: "json_schema" });

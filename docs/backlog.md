@@ -102,6 +102,14 @@
 | S5.1 | video | record 2:30, 720p+, no AI voiceover, feature freeze first | compliance | all | | ⬜ |
 | S5.2 | submit | re-read sponsor pages, submit ~2h early | integrator | S5.1 | | ⬜ |
 
+## Phase 6 — Post-hackathon / pushed back (Dylan, 26 Jul)
+> Not for submission — captured so they aren't lost. Real product directions after the event.
+| ID | Component | What | Sponsor | Depends on | Owner | Status |
+|----|-----------|------|---------|-----------|-------|:------:|
+| P6.1 | browser extension | Ship the flow as a browser extension so a party can open/join an Overlap room in-context (e.g. from a listing or an email thread) without leaving the page. Larger surface (extension manifest, background/content scripts, cross-origin messaging to our app) — post-event scope. | web | — | | ⬜ |
+| P6.2 | structured criteria + ranges instead of free text | The evaluator is a no-thinking model (D-M6-1) and we can't verify its reasoning, so free-form phrasing can be misjudged (drove S2.11/D9.2 and S3.26-era wrong verdicts). Direction: per use case, ask **fixed criteria with typed inputs / ranges** (e.g. property: price €, CPCV %, dates) instead of a plain-language box, so the comparison is deterministic where it can be and the model only judges the genuinely fuzzy parts. **Reverses part of D16** (free-form positions) — a real product decision, needs its own spec + ledger entry, not a hackathon patch. | 0G/web | S2.2 | | ⬜ |
+| P6.3 | show the announcement (`about`) on the verdict + rooms views | The context anchor (`about`, on the expiry message) is shown on write/share today but **not** on the verdict screen (the "workable / not workable" page) nor in the `/rooms` list. Surface it in both so a returning user sees *what* each room was about next to its outcome. Small, mostly-UI (verdict page already reads the expiry; `/rooms` reads bookmarks — may need the `about` threaded through, mind the shared-device privacy note on `useCase`). | web | S3.16 | | ⬜ |
+
 ---
 
 ## Critical path

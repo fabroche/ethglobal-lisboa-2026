@@ -191,6 +191,7 @@ npm run typecheck && npm run lint && npm run build
 
 | | |
 |---|---|
+| **The encyclopedia** — [EN](./docs/encyclopedia-overlap.html) · [ES](./docs/enciclopedia-overlap.es.html) | The whole system in one page: mental map, the walk-through step by step, what the data really looks like, the cryptography in detail, and **the hard questions** — the ones we'd ask if we were judging this. Start here if you only read one thing. |
 | **[docs/README.md](./docs/README.md)** | The index: vision, architecture, HCS data model, module specs (RF/RNF), sponsor integrations, security & privacy — and the decision ledger, which records the arguments we **rejected** and why. |
 | **[docs/ai-usage.md](./docs/ai-usage.md)** | AI attribution: which files were AI-assisted, and which judgement calls the AI made. |
 | **[CLAUDE.md](./CLAUDE.md)** | Working context for Claude Code — hard rules, guardrails, Definition of Done. |

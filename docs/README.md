@@ -36,8 +36,13 @@ is reused from `home-os`, minus Supabase.
   `ai-usage.md` (AI attribution — a track requirement), `world-testing.md` (World's testing
   doc — also a track requirement), `output-vocabulary.md`, `branching-strategy.md`,
   `video-script.md`.
-- **PRIMERS** — `web3-concepts.md` (for a web2 developer) and `seam-flow-example.md` (the
-  worked example: selling a house).
+- **PRIMERS** — start with **the encyclopedia**
+  ([EN](./encyclopedia-overlap.html) · [ES](./enciclopedia-overlap.es.html)): the whole system in
+  one page — mental map, the walk-through step by step, what the data really looks like, the
+  cryptography in detail, what we prove and what we don't, and **§10 the hard questions** (the
+  ones a judge will actually ask). Bilingual, like `ux/` — a deliberate exception to D2.
+  Then `web3-concepts.md` (for a web2 developer) and `seam-flow-example.md` (the worked example:
+  selling a house).
 - **HANDOFFS** (`handoffs/`) — session hand-over notes between the two workstreams. Written to
   be picked up cold; `handoff-open-threads.md` is the live one.
 - **HISTORY** (`history/`) — how we got here, kept because the reasoning is part of the
@@ -54,7 +59,8 @@ docs/
   transversal/{integration-0g,integration-hedera,integration-worldid,security-and-privacy,design-system,mobile-first,quality-and-testing,infra-devops}.md
   ux/{README,invite-message,screens-and-sitemap,screens-and-sitemap.es}.md
   handoffs/{handoff-open-threads,handoff-frank-validaciones.es,handoff-s2.7-canonical}.md
-  history/{idea-brainstorm,booth-questions,seam-brief,seam-updated}.md + encyclopedia .html + brainstorm .pdf
+  history/{idea-brainstorm,booth-questions,seam-brief,seam-updated}.md + brainstorm .pdf
+  encyclopedia-overlap.html · enciclopedia-overlap.es.html
   spec-01-session.md · spec-02-evaluator.md · spec-03-attest.md · spec-04-seal.md
   backlog.md · ai-usage.md · world-testing.md · output-vocabulary.md
   branching-strategy.md · video-script.md

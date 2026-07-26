@@ -1,8 +1,8 @@
 # 02 · Data model — there is no database
 
-Status: 🟧 draft · Last updated: 2026-07-24
+Status: 🟧 draft · Last updated: 2026-07-25
 
-Seam has **no relational database, no ORM, no server-side store of terms** (D4). The source of truth is
+Overlap has **no relational database, no ORM, no server-side store of terms** (D4). The source of truth is
 a single **Hedera Consensus Service (HCS) topic**: an append-only, consensus-ordered log. Each message
 gets a sequence number and a consensus timestamp and is never edited or deleted; a **gap in the sequence
 betrays tampering**. This document specifies the **message schemas** that live on that topic, plus the
@@ -22,6 +22,7 @@ classDiagram
   }
   class ExpiryEntry {
     +type = "expiry"
+    +string useCase  // "property" | "job" | "otc"
     +string deadline (ISO-8601)
     +string createdAt (ISO-8601)
   }
@@ -30,6 +31,7 @@ classDiagram
     +string side  // "A" | "B"
     +string commitment  // sha256(ciphertext), hex
     +string worldNullifier
+    +bool gapOptIn  // this side's consent (D9); missing = false
     +string submittedAt (ISO-8601)
   }
   class VerdictEntry {
@@ -45,31 +47,47 @@ classDiagram
 
 ### 1. Expiry entry — written **before anyone writes a word**
 ```json
-{ "v": 1, "type": "expiry", "roomId": "r_9f3a…", "deadline": "2026-07-26T08:00:00Z", "createdAt": "2026-07-26T06:00:00Z" }
+{ "v": 1, "type": "expiry", "roomId": "r_9f3a…", "useCase": "property", "deadline": "2026-07-26T08:00:00Z", "createdAt": "2026-07-26T06:00:00Z" }
 ```
 The clock is public before any position exists, so the opener can't use the deadline as leverage.
 
+`useCase` (`"property" | "job" | "otc"`, D16) is **public metadata**: both parties obviously know what
+*kind* of deal they are negotiating — only their positions are sealed. It selects the guidance preset
+(side labels, placeholder, checklist) and the evaluator's prompt hint (M6). It never carries terms.
+
+`about` (optional, ≤200 chars) is the **context anchor**: the announcement both parties already share
+— a listing/offer URL or one line. Same public-metadata class as `useCase` (it's how the two parties
+found each other); the create form states explicitly that it must **never contain a side's terms**.
+
 ### 2. Commitment entry — one per side, **before the reveal**
 ```json
-{ "v": 1, "type": "commitment", "roomId": "r_9f3a…", "side": "A", "commitment": "3b1f…c7", "worldNullifier": "0x8a…", "submittedAt": "2026-07-26T06:12:04Z" }
+{ "v": 1, "type": "commitment", "roomId": "r_9f3a…", "side": "A", "commitment": "3b1f…c7", "worldNullifier": "0x8a…", "gapOptIn": true, "submittedAt": "2026-07-26T06:12:04Z" }
 ```
 `commitment` is `sha256(ciphertext)`. `worldNullifier` proves one seat for `(room, side)` (M3). The
 plaintext and the ciphertext never touch the topic — only the hash.
+
+`gapOptIn` is **this side's** consent to gap disclosure (D9 as amended), declared at seal time. The
+evaluator may emit `gap:single`/`gap:multiple` only if **both** commitments carry `true`. The field
+is schema-defaulted, so a commitment without it reads as `false` — missing consent fails safe to the
+bare verdict, never to disclosure.
 
 ### 3. Verdict entry — written only after `attest` passes
 ```json
 { "v": 1, "type": "verdict", "roomId": "r_9f3a…", "verdict": "workable", "attestationRef": "att_…", "publishedAt": "2026-07-26T08:00:03Z" }
 ```
 
-**Verdict enum** (the only permitted values, D9):
+**Verdict enum** (the only permitted values, D9 as amended):
 
 | Value | When |
 |-------|------|
 | `workable` | always available |
 | `not_workable` | always available |
-| `gap:compensation` | only if **both** sides opted in |
-| `gap:timing` | only if **both** sides opted in |
-| `gap:scope` | only if **both** sides opted in |
+| `gap:single` | only if **both** sides opted in — exactly one dimension blocks (a deal is one issue away) |
+| `gap:multiple` | only if **both** sides opted in — several dimensions block, or they are too entangled to attribute to one |
+
+The gap values reveal **how many** dimensions block, never **which**. The three dimensions
+(compensation / timing / scope) exist only **inside the enclave** as the counting basis — they never
+appear in any published message.
 
 ## Client-side sealed payload (never leaves the browser un-sealed)
 

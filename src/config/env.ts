@@ -12,11 +12,30 @@ const envSchema = z.object({
   APP_URL: z.string().url().default("http://localhost:3000"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
-  // 0G — sealed inference (OpenAI-compatible router + independent attestation check)
+  // 0G — sealed inference (OpenAI-compatible router + independent attestation check).
+  // MAINNET by default (DA8): 0G testnet has no TeeML chat model, so the sealed
+  // evaluation cannot run there. Hedera stays on testnet — separate networks.
   OG_ROUTER_URL: z.string().url().default("https://router-api.0g.ai/v1"),
-  OG_KEY: z.string().optional(),
-  OG_MODEL: z.string().optional(), // pin an exact model, record its hash
-  OG_ENCLAVE_PUBKEY: z.string().optional(), // for independent attestation verification
+  OG_KEY: z.string().optional(), // Trust mode MUST be `Private` (TEE enclave)
+  // Pinned model (DA6). Single-provider on purpose so the enclave signing key
+  // cannot rotate out from under OG_ENCLAVE_PUBKEY.
+  OG_MODEL: z.string().optional(),
+  OG_ENCLAVE_PUBKEY: z.string().optional(), // signing key — verifies the attestation (M7)
+  // Enclave ENCRYPTION key for client sealing (spec-04 §2, M2) — distinct from
+  // the attestation key above: you cannot encrypt to a 20-byte signer address.
+  OG_ENCLAVE_SEAL_PUBKEY: z.string().optional(),
+  // The private half of OG_ENCLAVE_SEAL_PUBKEY, for the DEMO sealing path (S2.9).
+  //
+  // This exists because there is no 0G enclave encryption key to seal to (D-M6-2): the
+  // router is a chat API, so it cannot run our ECIES decryption inside the enclave. The
+  // server therefore unseals here, immediately before the enclave call. That is a real
+  // boundary and the demo says so out loud — with this set, "plaintext exists only inside
+  // the TEE" is NOT true of this build.
+  OG_DEMO_SEAL_SECRET: z.string().optional(),
+  // OUR operating wallet, never a user's (see agente/guardrails.md). Needed
+  // because the Router never makes us the broker's customer, so it cannot give
+  // us a signature to verify — the whole product rests on getting one.
+  OG_WALLET_PRIVATE_KEY: z.string().optional(),
 
   // Hedera — HCS topic (registry) + Schedule Service (clock) + Mirror Node (read)
   HEDERA_ACCOUNT_ID: z.string().optional(),
@@ -27,6 +46,13 @@ const envSchema = z.object({
   // World — Selfie Check (one seat per room per side)
   WORLD_APP_ID: z.string().optional(),
   WORLD_ACTION: z.string().optional(), // scoped per room at runtime
+
+  // E2E ONLY — a headless browser cannot produce a real World proof, so the Playwright
+  // suite (S3.4) accepts a fixture proof instead. It is a production BUILD (next start),
+  // so NODE_ENV can't distinguish it from a deploy; the real guard is that this flag is
+  // opt-in, warns loudly when active (below), lives in no deploy config, and its client
+  // half is a SEPARATE NEXT_PUBLIC flag the demo/prod build never sets. Never deploy with it.
+  E2E_FAKE_WORLD: z.enum(["1", "true"]).optional(),
 });
 
 // Treat empty strings ("") as absent so empty .env.example placeholders don't
@@ -44,6 +70,12 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 export type Env = typeof env;
+
+if (env.E2E_FAKE_WORLD) {
+  console.warn(
+    "\n⚠️  E2E_FAKE_WORLD is ON — World proofs are NOT verified. This must only ever be a test run.\n",
+  );
+}
 
 /** Require an optional variable to be present (use in modules that need it). */
 export function requireEnv<K extends keyof Env>(key: K): NonNullable<Env[K]> {

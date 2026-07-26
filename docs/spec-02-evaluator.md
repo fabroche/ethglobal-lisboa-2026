@@ -1,6 +1,6 @@
 # spec-02 · evaluator
 
-Status: 🟧 draft · backlog **S2.1 / S2.2** · sponsor **0G**.
+Status: 🟩 **implemented (S2.2, 25 Jul)** · backlog **S2.1 / S2.2** · sponsor **0G**.
 
 > Spec committed **before** the code (spec-driven-workflow rule). Implemented by module **M6 · evaluator**.
 
@@ -11,11 +11,48 @@ run a **pinned model at temperature 0**, and emit a **single enum verdict** — 
 ## Inputs / outputs
 | | Shape |
 |---|---|
-| **Input** | `{ ciphertextA, ciphertextB, gapOptIn: { a: boolean, b: boolean } }` |
-| **Output** | `{ verdict: "workable" \| "not_workable" \| "gap:compensation" \| "gap:timing" \| "gap:scope" }` |
+| **Input** | `{ ciphertextA, ciphertextB, useCase: "property" \| "job" \| "otc", gapOptIn: { a: boolean, b: boolean } }` |
+| **Output** | `{ verdict: "workable" \| "not_workable" \| "gap:single" \| "gap:multiple" }` |
 
 The enclave emits the **richest verdict both sides consented to**: a `gap:*` value is allowed **only if
 `gapOptIn.a && gapOptIn.b`**; otherwise the output is the bare `workable` / `not_workable`.
+The two consent booleans are read from the topic: each side declares `gapOptIn` on its **commitment
+message** at seal time (see `00-overview/02-data-model.md` §2); a commitment without the field counts
+as `false` (fail-safe).
+
+**Gap semantics (D9 as amended).** The gap values reveal **how many** dimensions block, never
+**which**. The counting basis is the three internal dimensions — compensation, timing, scope —
+assessed inside the enclave: emit `gap:single` iff exactly one dimension blocks and the model can
+attribute the failure to it cleanly; emit `gap:multiple` when several block **or** the positions are
+too entangled (tradeoffs across dimensions) to attribute to one. The dimension names never leave the
+enclave — "the single blocking dimension" as an output was rejected because it is ill-defined in
+those two cases, and a forced pick would fabricate an answer.
+
+**D9.2 — counting rules for a model that is not allowed to think (owner decision, 26 Jul).** Live
+probes showed the count inflating through *dependent* and *open* terms: buyer max 200k vs seller min
+250k, with a CPCV set as a **percentage of the (unagreed) price** and an open signing date, returned
+`gap:multiple` — while the same texts with an overlapping price return `workable`, proving nothing
+besides price blocks on its own. That inflation is a product failure, not a taste question:
+`gap:single` is the signal that says *"one issue away — worth a phone call"*, and overcounting kills
+exactly the impulse the product exists to create.
+
+The root constraint is D-M6-1: thinking is disabled on this call (receiving the chain of thought is
+already the breach), so the model **cannot execute a procedural analysis** — counterfactual rules
+("would it still block if the rest were resolved?") measurably did nothing. What worked, verified
+live 5/5 plus `eval:live` GO:
+
+1. **Categorical rule** — count ONLY direct contradictions between stated limits; a flexible or open
+   term (a range, an earliest date, an amount defined as a % of another) is never counted.
+2. **A worked example in the prompt** — load-bearing for a no-thinking model.
+3. **Doubt resolves to `gap:single`** — this amends the original can't-attribute ⇒ `gap:multiple`
+   fallback. The harm is asymmetric: a false *single* invites a phone call that discovers the truth;
+   a false *multiple* prevents the call that would have. `gap:multiple` is emitted only when two or
+   more separate contradictions are clearly found.
+4. **Positions reach the model in canonical byte order, not seat order** (`userPrompt` sorts;
+   delimiters are `<position_1>/<position_2>`). Measured, deterministic at temp 0: the same pair of
+   texts returned `gap:single` in one seat order and `gap:multiple` in the other. Which side created
+   the room must not influence the verdict — and after sorting, the enclave cannot tell creator from
+   joiner.
 
 ## Function signature (sketch)
 ```ts
@@ -29,12 +66,65 @@ async function evaluate(input: EvaluatorInput): Promise<Verdict> {
 ```
 - `OG_MODEL` is pinned to an exact model and its hash is recorded (see `transversal/integration-0g.md`).
 - Output is **constrained** to the enum (structured output / grammar) and re-validated with Zod (D11).
+- The prompt **prepends `usecases[useCase].evaluatorHint`** (D16, from `src/session/usecases.ts` —
+  shared with M1/M8), e.g. *"This is a property negotiation — judge workability on price, CPCV amount,
+  CPCV date, CPCV→deed timing."* The hint names dimensions, never terms; positions remain free-form
+  and the output enum is unchanged (D9).
 
-## Acceptance criteria
-- [ ] Output is **always** one of the enum values; free text is impossible/rejected.
-- [ ] `gap:*` appears **only** when both sides opted in; otherwise the bare verdict.
-- [ ] Plaintext exists **only** in enclave memory — never returned, logged, or persisted.
-- [ ] The call uses the pinned model hash and `temperature: 0`.
+## ⚠️ Reasoning tokens must be OFF (D-M6-1)
+
+The pinned model `0gm-1.0-35b-a3b` is described by 0G as *"thinking enabled by default"*, and its
+`default_parameters` are `{ temperature: 1, top_k: 20, top_p: 0.95 }` — **both defaults are wrong for us,
+and one of them is a privacy hole.**
+
+A reasoning model emits a chain of thought, and that chain **discusses both positions in detail**. If it
+comes back in the response, our server receives prose derived from both sides' terms — the operator can
+then learn what the threat model (`security-and-privacy.md` §a) promises they cannot. It does not matter
+that we never publish it; receiving it is already the breach. This is the enum rule (D9) defeated through
+a side channel rather than through the verdict field.
+
+Requirements, all Must:
+
+- **Disable thinking explicitly** via `reasoning_effort` and/or `chat_template_kwargs` (both are in the
+  model's `supported_parameters`). Never rely on a default.
+- **Assert the response carries no reasoning.** If `reasoning_content` — or any field other than the
+  enum — comes back non-empty, that is a **failure, not a verdict**: discard it and publish nothing
+  (same fail-closed posture as M7).
+- **Set `temperature: 0` explicitly.** The provider default is 1.
+- Use `response_format` (in `supported_parameters`, so the router supports constrained output) as the
+  first belt, Zod as the second (D11).
+
+## Acceptance criteria — met 25 Jul (S2.2)
+- [x] Output is **always** one of the enum values; free text is impossible/rejected.
+- [x] `gap:*` appears **only** when both sides opted in; otherwise the bare verdict.
+- [~] Plaintext exists **only** in enclave memory — **see D-M6-2 below.** The module never returns,
+      logs or persists a position, and off-enum failure details are truncated precisely because model
+      prose is derived from both positions. But the decryption boundary itself is **unresolved**.
+- [x] The call uses the pinned model and `temperature: 0` **explicitly** (provider default is 1).
+- [x] **No reasoning/thinking content is returned**; if any is, nothing is published (D-M6-1).
+- [x] A test asserts the response body contains no field carrying free text.
+
+Verified live with `npm run eval:live`: bare verdicts correct with no consent, and with two-sided
+consent the model returned `gap:multiple` when price *and* timing blocked and `gap:single` when only
+timing did — the counting semantics work in practice, not only on paper.
+
+## ⚠️ D-M6-2 · the decryption boundary is an open seam
+
+The spec above says the enclave decrypts. It should — but **it cannot, as things stand**, and the demo
+must not imply otherwise.
+
+The 0G router is a chat-completions API. There is no way to hand it a private key and have it run our
+ECIES decryption, and whether the enclave even exposes a separate **encryption** key is still
+unanswered — `OG_ENCLAVE_SEAL_PUBKEY` is empty (handoff §3.1). `teeSignerAddress` is a 20-byte address
+and you cannot encrypt to an address (spec-04 §2).
+
+**Decision.** `evaluate()` takes **plaintext** positions and the caller owns the boundary. The seam is
+explicit in the type documentation rather than hidden behind a `decrypt()` call that does not exist.
+
+**What is still true, and is what we should say:** positions are sealed in the browser, our store holds
+only ciphertext and hashes (demonstrable — `npm run inspect`), and the enclave's judgement is
+independently verifiable (`npm run spike`). **What is not yet true:** that plaintext exists *only*
+inside the TEE. Claiming that would be the kind of overstatement spec-03 §5 warns about.
 
 ## Non-goals
 - No attestation verification here — that is **spec-03** (the verdict is not published until it passes).

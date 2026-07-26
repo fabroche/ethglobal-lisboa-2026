@@ -25,8 +25,8 @@ Side A / Side B (two browsers) · the module libs behind Server Actions (M1–M4
 ## 3. Functional requirements (RF)
 | ID | Requirement | Priority |
 |----|-------------|:--------:|
-| RF-M8-001 | **Create screen:** set a deadline, create the room (M1), show a scannable QR + copyable link | Must |
-| RF-M8-002 | **Write+seal screen:** write a position, run Selfie Check (M3), seal in-browser (M2), submit the commitment (M4) | Must |
+| RF-M8-001 | **Create screen:** pick a **use case** (3-card picker, D16 — sets side labels + `useCase`), set a deadline, create the room (M1), show a scannable QR + copyable link | Must |
+| RF-M8-002 | **Write+seal screen:** write a free-form position (preset placeholder + **soft, non-blocking checklist**, D16/DA9), run Selfie Check (M3), seal in-browser (M2), submit the commitment (M4) | Must |
 | RF-M8-003 | **Verdict screen:** show a live countdown to the deadline, then the one-line verdict from Mirror Node (M4) | Must |
 | RF-M8-004 | Plaintext **never** leaves the browser (uses M2's client seal) | Must |
 | RF-M8-005 | Show the **identical** verdict to both sides | Must |
@@ -83,14 +83,143 @@ sequenceDiagram
 | Read | `readVerdict` | `{ roomId }` | `{ verdict }` \| pending | none | Mirror Node (M4) |
 
 ## 9. UI components (Definition of Done)
+
+> **Wireframes, sitemap, room state machine and the full component inventory live in
+> [`../ux/screens-and-sitemap.md`](../ux/screens-and-sitemap.md)** (ES mirror:
+> `../ux/screens-and-sitemap.es.md`). That document extends this table to 24 components across five
+> routes and marks which eight are on the demo critical path. The six below are the core of the three
+> screens; anything added there must be reflected here before it is built.
 | Component | Story | RTL test | Status |
 |-----------|:-----:|:--------:|--------|
-| `create-room-form` | ⬜ | ⬜ | 🟧 |
-| `room-qr` | ⬜ | ⬜ | 🟧 |
-| `seal-position-form` | ⬜ | ⬜ | 🟧 |
-| `selfie-check-gate` | ⬜ | ⬜ | 🟧 |
-| `countdown` | ⬜ | ⬜ | 🟧 |
-| `verdict-panel` | ⬜ | ⬜ | 🟧 |
+| `create-room-form` | ✅ | ✅ | 🟢 (S3.1) |
+| `room-qr` | ✅ | ✅ | 🟢 (S3.1 — scannable QR via `react-qr-code` + copy) |
+| `seal-position-form` | ✅ | ✅ | 🟢 (S3.2 — preset placeholder + checklist, D16; env-gated on the seal key) |
+| `use-case-picker` | ✅ | ✅ | 🟢 (S3.5 — 3 cards, radio-group semantics, sets labels + `useCase`) |
+| `position-checklist` | ✅ | ✅ | 🟢 (S3.2 — static guidance, never blocks sealing; heuristics = DA9 stretch) |
+| `selfie-check-gate` | ✅ | ✅ | 🟢 (S3.2 — per-room-per-side action; widget mocked in RTL) |
+| `countdown` | ✅ | ✅ | 🟢 (S3.3) |
+| `verdict-panel` | ✅ | ✅ | 🟢 (S3.3) |
+| `recent-rooms` | ✅ | ✅ | 🟢 (S3.9 · search S3.11 · `emptyState` S3.12) |
+| `site-header` | ✅ | ✅ | 🟢 (S3.10 — home + theme toggle; Rooms link S3.12) |
+
+### Implementation notes (S3.1 — create screen)
+Landed with co-located Storybook stories (CSF3) + RTL tests, tokenized via `globals.css` + `cn()`,
+mobile-first (full-width, ≥44px targets, theme-aware):
+- `src/components/web/create-room-form.tsx` — deadline input, future-deadline validation, calls the
+  injected `createRoom` action (M1); on success renders `RoomQr`.
+- `src/components/web/room-qr.tsx` — **scannable QR** (`react-qr-code`, self-contained SVG, no
+  external calls; on a fixed white plate for dark mode) + join link with one-tap copy.
+- `src/app/create/page.tsx` + `src/app/create/actions.ts` — the `/create` route wires the real
+  `createRoom` Server Action to M1 `session` + M4 `registry.write` (`hederaTopicClient`).
+
+**Deferred:** arming the scheduled reveal in the action (M5 `armReveal` — needs the reveal tx from
+M6/M7). Screen S3.2 (write+seal) remains (blocked on M2 seal).
+
+### Implementation notes (S3.5 — use-case picker)
+- `src/components/web/use-case-picker.tsx` — three preset cards (`property` / `job` / `otc`) fed
+  from `src/session/usecases.ts` (D16); `role="radiogroup"`, `type="button"` (a pick never submits),
+  ≥44px targets. Story + RTL.
+- `create-room-form` defaults to `property` and passes the pick to `createRoomAction`, which
+  Zod-parses it and records it on the expiry message (M1). The write screen's preset placeholder +
+  `position-checklist` remain **S3.2**.
+
+### Implementation notes (S3.2 — write+seal screen)
+`/room/[roomId]/write?side=A|B`, linked from the join landing (link only exists with a valid side).
+The server page reads the room's expiry from Mirror (no expiry ⇒ "nothing can be written" —
+RNF-M1-001 surfaces in UX) and resolves the D16 preset (`useCase`, legacy rooms → property).
+- `seal-position-form` — free-form textarea (preset placeholder), `position-checklist` (guidance,
+  never blocks), per-side **gap consent** checkbox (D9 amended), Selfie-Check-then-seal ordering
+  enforced in-component. Plaintext lives only in component state; `seal()` runs in-browser.
+- `selfie-check-gate` — mounts `IDKitWidget` with action `overlap-<roomId>-<side>` (RF-M3-001);
+  proof passes up, verification stays server-side. RTL mocks the widget module.
+- `submitCommitmentAction` — recomputes the commitment from the ciphertext (client untrusted),
+  `claimSeat` (fail closed) **before** any write, parks the sealed payload in an in-memory
+  ciphertext store (`getSealedPayloads(roomId)` — the M6 hand-off), then publishes the versioned
+  commitment. Seats are per-process (no DB, D4); the topic's one-per-side rule is the backstop.
+- **Env-gated**: without `OG_ENCLAVE_SEAL_PUBKEY` the form drafts but won't seal (clear notice);
+  without `WORLD_APP_ID` the gate explains itself. Both light up on config alone.
+
+### Implementation notes (role declaration + context anchor — live-testing fixes, Sat night)
+Found by Dylan in the first real two-human run: the creator's side was silently hardwired to A, so a
+Buyer-creator used the B link themselves and **both humans entered side B**; and the success screen
+never said which of its two links the QR encodes. Fix (his design):
+- **Create form asks "You are the…"** — two options whose labels follow the selected preset
+  (Seller/Buyer ↔ Employer/Candidate); plus an optional **"What's this about?"** context anchor
+  (announcement URL or one line; public-class like `useCase`, "never your terms" stated inline).
+- The creator's side + anchor ride the creator's own redirect (`/share?uc=…&me=…&about=…`); the
+  share screen maps links by role and `RememberRoom` saves the DECLARED side, not "A".
+- `RoomQr` gains an optional role-framed layout: "For the ⟨their role⟩ — have them scan this" (QR
+  explicitly = that link) and "You — the ⟨your role⟩" with a direct **Write your position** CTA.
+  With no labels passed it renders the old positional layout unchanged (share deep-links, tests).
+- `about` persists on the expiry message (see `02-data-model.md`) and shows on the write screen.
+
+### Implementation notes (S3.3 — verdict screen)
+`/room/[roomId]/verdict` reads the room's expiry + verdict from Mirror Node (M4 `registry.read`) at
+load, then the client polls for the verdict until it lands:
+- `src/components/web/countdown.tsx` — live time-to-reveal (`formatRemaining` pure helper; tick starts
+  post-mount so no hydration mismatch; "Reveal due" past the deadline). Story + RTL.
+- `src/components/web/verdict-panel.tsx` — pending (sealed) → `workable` / `not_workable` (neutral, not
+  alarming) / `gap:*`. Story + RTL. Uses Tailwind emerald/amber/neutral until the semantic verdict
+  tokens (`--workable`/`--not-workable`/`--pending`) are added to `globals.css`.
+- `src/components/web/verdict-view.tsx` — composes them and polls `readVerdict` while pending.
+- `src/app/room/[roomId]/verdict/{page,actions}.ts` — server read + `readVerdict` Server Action.
+
+Works end-to-end **now** with a live countdown + pending state; real verdicts render once M6/M7 write
+them to the topic. RF-M8-003 (countdown → verdict via Mirror) satisfied for the read side.
+
+**Navigation:** `/room/[roomId]/share` is a stable QR/share view (reuses `room-qr`, rebuilds the join
+URL from the id) so the QR — which otherwise only lives in the create page's state — has a permanent
+URL. The verdict screen has a **"← Back to QR"** link to it; the share view links on to the verdict
+screen. Round-trip: create → verdict ⇄ share.
+
+### UI ↔ backend audit
+Where the UI reflects the backend, and where it doesn't yet.
+
+**Fixed (UI now reflects the backend):**
+- **Gap opt-in** — the create form surfaces `gapOptIn` (was accepted by `createRoom` but never shown).
+- **Commitment count** — the verdict screen shows `n of 2 sides committed` from `registry.read`.
+- **Room existence** — the verdict screen shows "Room not found" when nothing for the id is on the
+  topic, instead of a fake countdown.
+
+**Gated (UI implies more than the backend delivers — blocked on other work):**
+- **The reveal never fires** — the countdown promises a verdict, but `createRoomAction` doesn't arm
+  the reveal (`scheduler.armReveal` needs the verdict tx) and nothing writes a verdict. Gated on
+  **M6 evaluator + M7 attest** (Frank) and wiring `armReveal`.
+- **No write/seal/commit UI (S3.2)** — gated on `OG_ENCLAVE_SEAL_PUBKEY` (enclave *encryption* key,
+  distinct from the attestation `OG_ENCLAVE_PUBKEY`) + `WORLD_APP_ID`.
+- **World Selfie Check invisible** — part of S3.2; the IDKit widget needs `WORLD_APP_ID`.
+- **Verdict colours are placeholders** — Tailwind emerald/amber until the semantic tokens
+  (`--workable`/`--not-workable`/`--pending`) are added to `globals.css` (integrator-only).
+- Note: consent is now **per-side on the commitment message** (`gapOptIn`, D9 as amended — schema +
+  builder landed with the B-side-consent change). The create form's toggle becomes Side A's *prefill*
+  for their own seal-time choice; the write screen (S3.2) must surface the toggle per side and pass
+  it to `buildCommitmentMessage`. Enclave-side enforcement remains **S4.6**.
+
+### Implementation notes (S3.12 — reaching `/rooms`)
+`/rooms` shipped in S3.11 with essentially no way in: the only link was "See all N rooms" on the
+landing page, which renders **only when the list is truncated**, so with one to three rooms the route
+existed and could not be reached short of typing the URL.
+
+Two calls the backlog asked to be made explicitly rather than assumed:
+
+- **The Rooms link is unconditional.** Showing it only when this device has bookmarks looked like the
+  considerate option — no dead end for a first-time visitor — but it makes the header *itself* report
+  that someone here has negotiations open, on every page and in every screenshot, to a person who
+  cannot see the list. The word "Rooms" says nothing; its presence or absence would. Same reasoning as
+  the S3.10 no-room-id rule, one step further out. It also keeps `site-header` a **server component** —
+  a conditional link would need the client store and would flicker in after hydration.
+- **No count.** For the same reason: "Rooms (4)" is exactly the fact the room id was withheld to
+  protect, in aggregate.
+
+The consequence is that a first-time visitor can now land on an empty `/rooms`, which previously was
+unreachable, so `RecentRooms` gained an optional **`emptyState`**. It renders only once the store has
+answered — `null` (unread) stays distinct from `[]` (read, empty), or "no rooms yet" would flash at
+everyone including people who have plenty. The landing page passes none and keeps rendering nothing.
+
+Verified in a real browser against `npm run start`, not only in RTL (the handoff records three
+occasions where green unit tests coexisted with a broken page): link visible with an empty store,
+click navigates, empty state appears, list replaces it once a bookmark exists, and the header's text
+is byte-identical with and without rooms — `"Overlap\nRooms"`, no digits, no id.
 
 ## 10. Module acceptance criteria
 - [ ] The two-browser E2E passes with QR join (S3.4).

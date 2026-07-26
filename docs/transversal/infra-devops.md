@@ -2,7 +2,7 @@
 
 > Status: 🟧 draft · **Deploy TBD (D15).** Two paths; pick based on hackathon time.
 
-**Key difference from home-os:** Seam has **no worker and no database** (D4). Storage *is* the HCS
+**Key difference from home-os:** Overlap has **no worker and no database** (D4). Storage *is* the HCS
 topic; there is no `ai_jobs` queue and no headless runner. The app is a **stateless Next.js app** that
 calls 0G (sealed inference), Hedera (HCS · Schedule · Mirror) and World. That makes the Vercel path
 cleaner than it was for home-os.
@@ -17,7 +17,7 @@ cleaner than it was for home-os.
 ## Option B — Hostinger VPS + Dokploy + Docker (like home-os)
 - **Hostinger VPS** with **Dokploy** (PaaS over Docker) deploying a single `app` service
   (Next.js standalone, `Dockerfile`) — port 3000, healthcheck.
-- Domain + TLS via Dokploy (Traefik). More control, but more setup for a hackathon, and Seam gains
+- Domain + TLS via Dokploy (Traefik). More control, but more setup for a hackathon, and Overlap gains
   little from it because there is no background process to run.
 
 ```mermaid

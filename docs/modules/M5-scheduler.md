@@ -6,7 +6,7 @@
 | Field | Value |
 |-------|-------|
 | **ID** | M5 |
-| **Status** | 🟧 draft |
+| **Status** | 🟡 wip (S2.4 — arm/fire logic landed) |
 | **Backlog** | S2.4 |
 | **Sponsor** | Hedera |
 | **Depends on** | M1 (`session` — arms the reveal at room creation) |
@@ -62,8 +62,50 @@ flowchart TD
   D --> E[Trigger evaluator M6]
 ```
 **Acceptance criteria:**
-- [ ] The scheduled tx is armed at room creation, before any commitment.
-- [ ] When the deadline is reached, evaluation is triggered exactly once.
+- [x] The scheduled tx is armed at room creation, before any commitment. _(armReveal, future-only; wired by M1/web)_
+- [x] When the deadline is reached, evaluation is triggered exactly once. _(onRevealFired idempotent — unit-tested)_
+
+### Implementation notes (S2.4 — arm/fire logic)
+Landed in `src/scheduler/` with co-located Vitest tests:
+- `service.ts` — the `ScheduleService` port (`arm`, `status`).
+- `reveal.ts` — `armReveal` (validates a **future** deadline via `@/session` `assertFutureDeadline`,
+  then arms), `onRevealFired` (idempotent trigger ⇒ evaluation fires **exactly once**, RF-M5-003),
+  `isDeadlineReached` (the **DA5 fallback** server-side timer that still honours the committed deadline).
+- `hedera-schedule.ts` — the only file importing the SDK, `server-only`. Uses a long-term scheduled
+  transaction (`expirationTime = deadline`, `waitForExpiry(true)`) so Hedera enforces the reveal time
+  (RNF-M5-001). The transaction that fires (the verdict write) is **injected** once M6/M7 exist.
+
+**Deferred:** wiring `armReveal` into `session.createRoom`/the web create flow, and supplying the real
+reveal transaction (needs M6/M7). **Open decision DA5** (scheduled-tx signature never arrives) is
+confirmed at the Hedera booth; `isDeadlineReached` is the committed fallback. Real adapter covered by
+E2E/manual (no live calls in units).
+
+### The lazy reveal, in plain words (S2.10)
+
+There is **no alarm clock** in Overlap. Nothing wakes up at the deadline to run the evaluation —
+there is no worker and no database (D4), and on serverless hosting there is no always-on process to
+be woken. Instead, **the first person to look at the clock after the deadline is the one who turns
+the lights on** — and everyone who looks after them finds the lights already on.
+
+Concretely: when someone opens the verdict screen, the screen asks the server "is there a verdict
+yet?". If the publicly committed deadline has passed and there is none, **that read triggers the
+reveal** (unseal → enclave → attest → publish). Every later reader just finds the verdict on the
+topic and reads it.
+
+Why this is safe, in three facts:
+
+1. **The deadline is public before anyone writes** (RNF-M1-001). It is on the topic, so no reader's
+   opinion of "now" matters — the server only honours the committed clock, never a client's.
+2. **First-writer-wins.** The topic is the durable truth: `runReveal` refuses when a verdict is
+   already there, so N simultaneous readers produce one verdict and N−1 get `already_published`.
+   (Within one server process, concurrent readers don't even race — they join the same in-flight
+   reveal and share its result, S3.21.)
+3. **Nobody special is needed.** Either side, or any observer with the link, can be "the first
+   reader" — the trigger carries no authority, because everything the reveal does is checked
+   (attestation verified, fail closed) regardless of who tripped it.
+
+**One line for the demo narration:** *"There's no alarm clock — the first person to check after the
+deadline is the one who flips the switch; everyone else walks into a lit room."*
 
 ## 8. Endpoints / Server Actions / Integrations / Jobs
 | Type | Name | Input | Output | Auth | Notes |

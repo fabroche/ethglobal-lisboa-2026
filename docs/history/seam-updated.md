@@ -1,4 +1,4 @@
-# Seam
+# Overlap
 
 Sealed two-party negotiation. Two sides write their terms in plain language; a
 model inside sealed hardware reads both and returns one line — whether a deal is
@@ -14,8 +14,8 @@ Two people need to agree on terms and neither wants to name theirs first (a
 candidate and a company). Each writes their position into a sealed session;
 neither sees the other's, and neither do we, because the comparison runs inside
 a TEE that no one — including the operator — can look into. The verdict is one
-line: `workable` or `not_workable`, optionally with the single blocking
-dimension if both sides opted in.
+line: `workable` or `not_workable`, optionally with whether one issue or
+several block (never which) if both sides opted in.
 
 Why it can't be built normally: a plain server would see both positions, so no
 counterparty would trust it. The sealed enclave is the whole reason this is
@@ -67,7 +67,7 @@ Nine modules, no database, no smart contract. Four are reused, five are ours.
 
 | Module | Does | Owner |
 |---|---|---|
-| `graph` — n/a | not used in Seam | — |
+| `graph` — n/a | not used in Overlap | — |
 | `session` | create room, publish deadline, issue link | us |
 | `seal` (client) | encrypt position in-browser to enclave key | us |
 | `worldid` | Selfie Check, one nullifier per room per side | reuse + us |

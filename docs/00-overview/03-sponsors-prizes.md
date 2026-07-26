@@ -2,7 +2,7 @@
 
 Status: 🟧 draft · Last updated: 2026-07-24
 
-The star document of the hackathon. Seam targets **three partner tracks — the maximum allowed per
+The star document of the hackathon. Overlap targets **three partner tracks — the maximum allowed per
 project** — and every one is **load-bearing** (remove it and the product breaks).
 
 ## Targeted tracks
@@ -30,7 +30,7 @@ Hedera appears **three times** in the flow: it sets the clock, locks the papers,
 ## What we are NOT reaching for
 
 Hedera's **agentic-payments** track is a bigger pool (~$6,000) but requires an actual **payment or token
-transfer** on testnet. **Seam moves no money.** Do **not** bolt a payment on to reach for it — it would
+transfer** on testnet. **Overlap moves no money.** Do **not** bolt a payment on to reach for it — it would
 be a contrived addition that weakens the story and risks the no-money-needed clarity of the design.
 
 ## Workshop questions to confirm (Friday)

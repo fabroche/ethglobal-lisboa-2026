@@ -46,6 +46,13 @@ const envSchema = z.object({
   // World — Selfie Check (one seat per room per side)
   WORLD_APP_ID: z.string().optional(),
   WORLD_ACTION: z.string().optional(), // scoped per room at runtime
+
+  // E2E ONLY — a headless browser cannot produce a real World proof, so the Playwright
+  // suite (S3.4) accepts a fixture proof instead. It is a production BUILD (next start),
+  // so NODE_ENV can't distinguish it from a deploy; the real guard is that this flag is
+  // opt-in, warns loudly when active (below), lives in no deploy config, and its client
+  // half is a SEPARATE NEXT_PUBLIC flag the demo/prod build never sets. Never deploy with it.
+  E2E_FAKE_WORLD: z.enum(["1", "true"]).optional(),
 });
 
 // Treat empty strings ("") as absent so empty .env.example placeholders don't
@@ -63,6 +70,12 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 export type Env = typeof env;
+
+if (env.E2E_FAKE_WORLD) {
+  console.warn(
+    "\n⚠️  E2E_FAKE_WORLD is ON — World proofs are NOT verified. This must only ever be a test run.\n",
+  );
+}
 
 /** Require an optional variable to be present (use in modules that need it). */
 export function requireEnv<K extends keyof Env>(key: K): NonNullable<Env[K]> {

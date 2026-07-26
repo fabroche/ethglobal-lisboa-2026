@@ -78,6 +78,7 @@ export default async function WritePage({
             preset={USE_CASES[useCase]}
             enclaveSealKey={env.OG_ENCLAVE_SEAL_PUBKEY ?? null}
             worldAppId={env.WORLD_APP_ID ?? null}
+            {...(env.E2E_FAKE_WORLD ? { e2eBypass: true } : {})}
             submitCommitment={submitCommitmentAction}
           />
         </>

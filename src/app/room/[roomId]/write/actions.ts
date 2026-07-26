@@ -10,11 +10,11 @@ import {
 import { sealedPayloadSchema, commitmentOf, type SealedPayload } from "@/seal";
 import {
   claimSeat,
-  cloudWorldVerifier,
   initSeatRegistry,
   worldProofSchema,
   type SeatRegistry,
 } from "@/worldid";
+import { worldVerifierForRequest } from "@/worldid/e2e-verifier";
 
 /**
  * `submitCommitment` Server Action (M8 / M2+M3+M4, S3.2).
@@ -79,7 +79,7 @@ export async function submitCommitmentAction(
     const appId = requireEnv("WORLD_APP_ID");
     const claim = await claimSeat(
       { roomId: input.roomId, side: input.side, appId, proof: input.worldProof },
-      { verifier: cloudWorldVerifier(), seats },
+      { verifier: worldVerifierForRequest(), seats },
     );
     seats = claim.seats;
 

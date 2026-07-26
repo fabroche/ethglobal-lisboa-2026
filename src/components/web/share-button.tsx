@@ -49,7 +49,11 @@ export function ShareButton({ url, roleLabel, deadlineIso, className }: ShareBut
     },
     {
       name: "Telegram",
-      href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encoded}`,
+      // Telegram appends the `url` param itself — the text must NOT also contain
+      // the link, or the composed message shows it twice (live-testing find).
+      href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(
+        buildInviteText({ roleLabel, url, omitLink: true, ...(deadlineIso ? { deadlineIso } : {}) }),
+      )}`,
       bg: "#229ED9",
       glyph: (
         // Paper plane.

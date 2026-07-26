@@ -11,6 +11,12 @@ export function buildInviteText(input: {
   roleLabel: string;
   url: string;
   deadlineIso?: string;
+  /**
+   * Skip the trailing link line. For share endpoints that take the URL as their own
+   * parameter and append it themselves (Telegram's t.me/share), keeping the line
+   * in the text makes the link appear twice in the composed message.
+   */
+  omitLink?: boolean;
 }): string {
   const deadline = input.deadlineIso
     ? new Date(input.deadlineIso).toLocaleString(undefined, {
@@ -27,7 +33,8 @@ export function buildInviteText(input: {
     "Here's why it's safe: we each write our position privately, and yours is sealed in your browser before it ever leaves your device. I never see your terms, and you never see mine. The comparison runs inside secure hardware, and the only thing that ever comes out is a single line: whether a deal looks possible. No figures are revealed to either of us.",
     "",
     `If it comes back not workable, nothing is lost. If it looks workable, we know it's worth a real conversation. It takes about a minute (there's a quick check that you're a real person, to keep it fair)${deadline ? `, and the deadline is ${deadline}` : ""}.`,
-    "",
-    `Your link (you'd be the ${input.roleLabel}): ${input.url}`,
+    ...(input.omitLink
+      ? [`(You'd be the ${input.roleLabel}. The link follows.)`]
+      : ["", `Your link (you'd be the ${input.roleLabel}): ${input.url}`]),
   ].join("\n");
 }

@@ -18,13 +18,20 @@ describe("ShareButton (icon row of per-app share links)", () => {
     expect(screen.getByText(/send the invite to the seller/i)).toBeInTheDocument();
   });
 
-  it("EVERY app carries the same full invite text (the Telegram short-text bug)", () => {
+  it("EVERY app carries the full invite text (the Telegram short-text bug)", () => {
     render(<ShareButton url={URL_} roleLabel="Seller" />);
     for (const name of [/whatsapp/i, /telegram/i, /email/i]) {
-      const href = hrefOf(name);
-      expect(href).toContain("I'd like to check whether there's a deal here at all");
-      expect(href).toContain(`Your link (you'd be the Seller): ${URL_}`);
+      expect(hrefOf(name)).toContain("I'd like to check whether there's a deal here at all");
     }
+  });
+
+  it("the link appears exactly ONCE per composed message (the double-link bug)", () => {
+    render(<ShareButton url={URL_} roleLabel="Seller" />);
+    // WhatsApp/Email carry it in the text; Telegram carries it ONLY in its url param
+    // (Telegram appends that itself — text with the link would show it twice).
+    expect(hrefOf(/whatsapp/i).split(URL_).length - 1).toBe(1);
+    expect(hrefOf(/email/i).split(URL_).length - 1).toBe(1);
+    expect(hrefOf(/telegram/i).split(URL_).length - 1).toBe(1);
   });
 
   it("weaves the room's public deadline into the message when known", () => {

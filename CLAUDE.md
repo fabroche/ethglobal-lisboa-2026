@@ -103,7 +103,8 @@ npm run demo:naive # demo Act 3: same product without the enclave leaks (S4.2)
 - **Storage IS the HCS topic.** Three versioned message types per session (expiry, commitments, verdict).
 - **Flow**: open room (pick use case: `property`/`job`/`otc`, D16 — guidance presets, positions stay
   free-form) → publish deadline + `useCase` to Hedera before anyone writes → both write + seal in-browser
-  to the enclave key → World Selfie Check (one seat/side) → commitments (`sha256(ciphertext)`) to HCS →
+  to the enclave key → World ID gate (**one seat per person per room**, D17) → commitments
+  (`sha256(ciphertext)`) to HCS →
   scheduled reveal → sealed eval in 0G (pinned model, temp 0, use-case prompt hint, enum output) →
   verify attestation (**fail closed**) → verdict to topic → both read via Mirror Node.
 
@@ -128,7 +129,7 @@ in `docs/backlog.md`.
 | Track | Pool (approx) | Why it can't be removed |
 |---|---|---|
 | 0G — Best AI Product | $6,000 | Sealed inference IS the product |
-| World — Selfie Check Beta | $3,500 | One seat per side; kills the probing attack |
+| World — Selfie Check Beta | $3,500 | One seat per **person** per room; kills the probing attack. ⚠️ Shipping **device-level IDKit v2** today, not Selfie Check (4.x-only, blocked by the portal — M3 §A.6) |
 | Hedera — No Solidity Allowed | $3,000 | HCS + Schedule + Mirror Node, zero Solidity |
 
 ## Event rules (do not break — they disqualify)

@@ -54,7 +54,9 @@ export function SelfieCheckGate({
   return (
     <IDKitWidget
       app_id={appId as `app_${string}`}
-      action={roomActionId(roomId, side)}
+      // Room-scoped, NOT per side (D17): both seats compete for one nullifier, so the
+      // same person cannot verify for A and then for B — World refuses the second one.
+      action={roomActionId(roomId)}
       verification_level={VerificationLevel.Device}
       onSuccess={(result: ISuccessResult) => {
         onVerified(worldProofSchema.parse(result));

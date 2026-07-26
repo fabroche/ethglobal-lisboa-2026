@@ -5,9 +5,13 @@ import { reserveSeat, type SeatRegistry } from "./seats";
 
 /**
  * `claimSeat` (M3 · Server Action `claimSeat`) — the orchestrator behind one seat per side.
- * It verifies the Selfie Check proof server-side (**fail closed**: a failed proof throws and no
- * seat is reserved) and then reserves the `(room, side)` seat, rejecting a second claim. Returns
- * the opaque nullifier ref that M4 stamps onto the commitment.
+ * It verifies the World proof server-side (**fail closed**: a failed proof throws and no seat is
+ * reserved) and then reserves the `(room, side)` seat, rejecting a second claim — and, since
+ * D17, rejecting a person who already holds the other seat of the room. Returns the opaque
+ * nullifier ref that M4 stamps onto the commitment.
+ *
+ * The action is room-scoped, so the proof the widget produced is for `overlap-<roomId>` and the
+ * same person verifying twice is refused by World before it ever reaches us.
  */
 export interface ClaimSeatInput {
   roomId: string;
@@ -33,7 +37,7 @@ export async function claimSeat(
 ): Promise<ClaimSeatResult> {
   const side = sideSchema.parse(input.side);
   const proof = worldProofSchema.parse(input.proof);
-  const action = roomActionId(input.roomId, side);
+  const action = roomActionId(input.roomId);
 
   const result = await deps.verifier.verify(proof, { appId: input.appId, action, signal: input.signal });
   // Fail closed: no valid proof ⇒ no seat.

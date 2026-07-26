@@ -19,7 +19,7 @@ these inputs and returned this verdict"* is supported and the pitch needs no rew
 highest-stakes open question (spec-03 §8.1) and it fell our way.
 
 Three things had to be understood, all of them non-obvious and all written up in
-`docs/handoff-open-threads.md` §1:
+`docs/handoffs/handoff-open-threads.md` §1:
 1. **The Router can never give a signature.** It pays the broker with its own wallet, so the broker's
    customer is the Router, not us. Only a **direct, on-chain-paid** call yields a verifiable response.
    One-time setup: `npm run og:setup` (ledger minimum is **3 0G** — an account-opening floor, not a
@@ -64,7 +64,7 @@ guessed position offline by comparing commitments — the probing attack from an
 control doesn't cover. A test enforces that two seals of the same text differ (spec-04 §1).
 
 ## 🧭 If you are a Claude working on this repo, read in this order
-0. **`docs/handoff-open-threads.md`** — what's blocked right now and what to pick up. Read it first.
+0. **`docs/handoffs/handoff-open-threads.md`** — what's blocked right now and what to pick up. Read it first.
 1. **This file** (context + hard rules).
 2. **`docs/branching-strategy.md`** — how we use Git (pull-based, no squash, commit every ~30 min).
 3. **`docs/backlog.md`** — claim the next item (commit the claim first) + the **Definition of Done**.
@@ -103,7 +103,8 @@ npm run demo:naive # demo Act 3: same product without the enclave leaks (S4.2)
 - **Storage IS the HCS topic.** Three versioned message types per session (expiry, commitments, verdict).
 - **Flow**: open room (pick use case: `property`/`job`/`otc`, D16 — guidance presets, positions stay
   free-form) → publish deadline + `useCase` to Hedera before anyone writes → both write + seal in-browser
-  to the enclave key → World Selfie Check (one seat/side) → commitments (`sha256(ciphertext)`) to HCS →
+  to the enclave key → World ID gate (**one seat per person per room**, D17) → commitments
+  (`sha256(ciphertext)`) to HCS →
   scheduled reveal → sealed eval in 0G (pinned model, temp 0, use-case prompt hint, enum output) →
   verify attestation (**fail closed**) → verdict to topic → both read via Mirror Node.
 
@@ -128,7 +129,7 @@ in `docs/backlog.md`.
 | Track | Pool (approx) | Why it can't be removed |
 |---|---|---|
 | 0G — Best AI Product | $6,000 | Sealed inference IS the product |
-| World — Selfie Check Beta | $3,500 | One seat per side; kills the probing attack |
+| World — Selfie Check Beta | $3,500 | One seat per **person** per room; kills the probing attack. ⚠️ Shipping **device-level IDKit v2** today, not Selfie Check (4.x-only, blocked by the portal — M3 §A.6) |
 | Hedera — No Solidity Allowed | $3,000 | HCS + Schedule + Mirror Node, zero Solidity |
 
 ## Event rules (do not break — they disqualify)

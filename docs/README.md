@@ -31,7 +31,19 @@ is reused from `home-os`, minus Supabase.
   discussion between the two workstreams. **Bilingual** (EN canonical + ES mirror) — the one
   deliberate exception to D2.
 - **SPECS** (`spec-0x-*.md`) — short spec stubs committed **before** the code (spec-driven rule).
-- **COMPLIANCE & PRIMERS** — `ai-usage.md`, `web3-concepts.md`, `seam-flow-example.md`.
+  Four of them: session, evaluator, attest, seal.
+- **PLANNING & COMPLIANCE** — `backlog.md` (the single source of truth for who is on what),
+  `ai-usage.md` (AI attribution — a track requirement), `world-testing.md` (World's testing
+  doc — also a track requirement), `output-vocabulary.md`, `branching-strategy.md`,
+  `video-script.md`.
+- **PRIMERS** — `web3-concepts.md` (for a web2 developer) and `seam-flow-example.md` (the
+  worked example: selling a house).
+- **HANDOFFS** (`handoffs/`) — session hand-over notes between the two workstreams. Written to
+  be picked up cold; `handoff-open-threads.md` is the live one.
+- **HISTORY** (`history/`) — how we got here, kept because the reasoning is part of the
+  submission: the idea brainstorm, the booth question list, the two pre-rename product briefs,
+  the encyclopedia pages and the original brainstorm PDFs. **Nothing here is current** — read
+  the root `README.md` for what the product is today.
 - **TEMPLATES** (`_templates/`) — base for new modules and features.
 
 ```
@@ -40,9 +52,13 @@ docs/
   00-overview/{00-vision-scope,01-architecture,02-data-model,03-sponsors-prizes,04-conventions,05-open-decisions}.md
   modules/{M1-session,M2-seal,M3-worldid,M4-registry,M5-scheduler,M6-evaluator,M7-attest,M8-web}.md
   transversal/{integration-0g,integration-hedera,integration-worldid,security-and-privacy,design-system,mobile-first,quality-and-testing,infra-devops}.md
-  ux/{README,screens-and-sitemap,screens-and-sitemap.es}.md
-  spec-01-session.md · spec-02-evaluator.md · spec-03-attest.md
-  ai-usage.md · web3-concepts.md · seam-flow-example.md
+  ux/{README,invite-message,screens-and-sitemap,screens-and-sitemap.es}.md
+  handoffs/{handoff-open-threads,handoff-frank-validaciones.es,handoff-s2.7-canonical}.md
+  history/{idea-brainstorm,booth-questions,seam-brief,seam-updated}.md + encyclopedia .html + brainstorm .pdf
+  spec-01-session.md · spec-02-evaluator.md · spec-03-attest.md · spec-04-seal.md
+  backlog.md · ai-usage.md · world-testing.md · output-vocabulary.md
+  branching-strategy.md · video-script.md
+  web3-concepts.md · seam-flow-example.md
   _templates/{module,feature}.md
 ```
 
@@ -97,6 +113,7 @@ docs/
 | D13 | **Mermaid diagrams** | All diagrams embedded as Mermaid, versioned per PR. |
 | D14 | **date-fns** | Deadlines / consensus timestamps handled with date-fns (no Moment). |
 | D15 | **Deploy TBD — Vercel vs VPS** | Vercel is fast for the hackathon; a Hostinger VPS + Dokploy path exists as the fallback. No worker, no DB either way. See `transversal/infra-devops.md`. |
+| D17 | **The World action is scoped per ROOM, not per side** | The nullifier is `f(app_id, action, person)`. Until 26 Jul the action carried the side (`overlap-<roomId>-<side>`), so the same human got a **different valid nullifier for each side** and **one phone could take both seats** — found live by the owner. Now `overlap-<roomId>`: both seats derive from one action, so World's own `max_verifications: 1` refuses the second verification (server-side, and it survives our process restarting), and any reader of the topic can compare the two published nullifiers — equal ⇒ one human played both sides. Rooms stay unlinkable from each other, which is what per-side scoping was protecting. **Cost:** a room needs two distinct World identities, so there is no solo demo. |
 | D16 | **Free-form positions + use-case guidance presets** | Positions stay plain language in one sealed blob — no structured criteria, no parsing (a parser can't live client-side reliably or server-side privately, and fully structured input would reduce the sealed model to arithmetic). A **use-case preset** (`property` \| `job` \| `otc`) sets side labels, placeholder text, a **non-blocking** checklist on the write screen, and a per-use-case hint in the enclave prompt. `useCase` is public metadata in the expiry message; the sealed payload and commitment path are unchanged (D12). Presets live in `src/session/usecases.ts` (single source for M1/M6/M8). |
 
 ---

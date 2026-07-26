@@ -39,7 +39,10 @@ describe("SelfieCheckGate", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("passes the proof up with the action scoped per room per side (RF-M3-001)", () => {
+  it("passes the proof up with the action scoped per ROOM, side excluded (RF-M3-001, D12)", () => {
+    // The mock derives the nullifier from the action string, so this assertion is really
+    // about which action the widget mounts. It must carry no side: with a per-side action
+    // the same person got a valid nullifier for each seat and could hold both (D12).
     const onVerified = vi.fn();
     render(
       <SelfieCheckGate
@@ -52,8 +55,28 @@ describe("SelfieCheckGate", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /run selfie check/i }));
     expect(onVerified).toHaveBeenCalledWith(
-      expect.objectContaining({ nullifier_hash: "0xnull-overlap-r_1-B" }),
+      expect.objectContaining({ nullifier_hash: "0xnull-overlap-r_1" }),
     );
+  });
+
+  it("mounts the SAME action for both sides — that is what makes the seats compete (D12)", () => {
+    const seen: string[] = [];
+    for (const side of ["A", "B"] as const) {
+      const onVerified = vi.fn();
+      const { unmount } = render(
+        <SelfieCheckGate
+          roomId="r_1"
+          side={side}
+          appId="app_demo"
+          verified={false}
+          onVerified={onVerified}
+        />,
+      );
+      fireEvent.click(screen.getByRole("button", { name: /run selfie check/i }));
+      seen.push(onVerified.mock.calls[0]![0].nullifier_hash);
+      unmount();
+    }
+    expect(seen[0]).toBe(seen[1]);
   });
 
   it("shows the reserved-seat state once verified", () => {

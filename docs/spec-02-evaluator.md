@@ -28,6 +28,32 @@ too entangled (tradeoffs across dimensions) to attribute to one. The dimension n
 enclave — "the single blocking dimension" as an output was rejected because it is ill-defined in
 those two cases, and a forced pick would fabricate an answer.
 
+**D9.2 — counting rules for a model that is not allowed to think (owner decision, 26 Jul).** Live
+probes showed the count inflating through *dependent* and *open* terms: buyer max 200k vs seller min
+250k, with a CPCV set as a **percentage of the (unagreed) price** and an open signing date, returned
+`gap:multiple` — while the same texts with an overlapping price return `workable`, proving nothing
+besides price blocks on its own. That inflation is a product failure, not a taste question:
+`gap:single` is the signal that says *"one issue away — worth a phone call"*, and overcounting kills
+exactly the impulse the product exists to create.
+
+The root constraint is D-M6-1: thinking is disabled on this call (receiving the chain of thought is
+already the breach), so the model **cannot execute a procedural analysis** — counterfactual rules
+("would it still block if the rest were resolved?") measurably did nothing. What worked, verified
+live 5/5 plus `eval:live` GO:
+
+1. **Categorical rule** — count ONLY direct contradictions between stated limits; a flexible or open
+   term (a range, an earliest date, an amount defined as a % of another) is never counted.
+2. **A worked example in the prompt** — load-bearing for a no-thinking model.
+3. **Doubt resolves to `gap:single`** — this amends the original can't-attribute ⇒ `gap:multiple`
+   fallback. The harm is asymmetric: a false *single* invites a phone call that discovers the truth;
+   a false *multiple* prevents the call that would have. `gap:multiple` is emitted only when two or
+   more separate contradictions are clearly found.
+4. **Positions reach the model in canonical byte order, not seat order** (`userPrompt` sorts;
+   delimiters are `<position_1>/<position_2>`). Measured, deterministic at temp 0: the same pair of
+   texts returned `gap:single` in one seat order and `gap:multiple` in the other. Which side created
+   the room must not influence the verdict — and after sorting, the enclave cannot tell creator from
+   joiner.
+
 ## Function signature (sketch)
 ```ts
 // runs inside the enclave via the 0G router (OpenAI-compatible)

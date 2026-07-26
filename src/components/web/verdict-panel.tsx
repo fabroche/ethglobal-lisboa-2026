@@ -21,8 +21,8 @@ import { Spinner } from "./spinner";
  * may be one entangled issue and a phone call. "More than one thing is in the way" is true
  * in BOTH cases the enum covers, without asserting which.
  *
- * The subtitle states the restraint (both sides consented to the count — the dimension is
- * never named), so the terseness reads as protective rather than evasive.
+ * No consent subtitle on the gap verdicts — considered and removed by the owner (26 Jul):
+ * the one line is the product, and annotating it dilutes it.
  *
  * Tone hierarchy runs emerald → amber → orange → neutral: `gap:single` (amber) is the
  * hopeful outcome — one issue away, worth a call — and must read warmer than
@@ -30,20 +30,16 @@ import { Spinner } from "./spinner";
  * (neutral): it carries information both sides had to agree to reveal. Existing Tailwind
  * values on purpose — the semantic tokens belong to S4.8, not here.
  */
-const GAP_SUBTITLE = "Both sides agreed to reveal how many. Never which.";
-
-const VERDICT_META: Record<Verdict, { label: string; tone: string; sub?: string }> = {
+const VERDICT_META: Record<Verdict, { label: string; tone: string }> = {
   workable: { label: "Workable — a deal is possible", tone: "text-emerald-600 dark:text-emerald-400" },
   not_workable: { label: "Not workable — no deal", tone: "text-foreground" },
   "gap:single": {
     label: "No deal — one issue is in the way",
     tone: "text-amber-600 dark:text-amber-400",
-    sub: GAP_SUBTITLE,
   },
   "gap:multiple": {
     label: "No deal — more than one thing is in the way",
     tone: "text-orange-600 dark:text-orange-400",
-    sub: GAP_SUBTITLE,
   },
 };
 
@@ -161,10 +157,7 @@ export function VerdictPanel({ verdict, blocked, deadlineReached, className }: V
       )}
     >
       {meta ? (
-        <>
-          <p className={cn("text-xl font-semibold tracking-tight", meta.tone)}>{meta.label}</p>
-          {meta.sub ? <p className="text-sm text-muted-foreground">{meta.sub}</p> : null}
-        </>
+        <p className={cn("text-xl font-semibold tracking-tight", meta.tone)}>{meta.label}</p>
       ) : blockedMeta ? (
         <>
           <p

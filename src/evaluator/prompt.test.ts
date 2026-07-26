@@ -51,8 +51,23 @@ describe("systemPrompt", () => {
     const withConsent = systemPrompt({ ...INPUT, consent: BOTH });
     expect(withConsent).toContain("gap:single");
     expect(withConsent).toMatch(/NEVER name a dimension/u);
-    // Entangled positions must fall to gap:multiple rather than a fabricated pick.
-    expect(withConsent).toMatch(/cannot cleanly attribute.*gap:multiple/su);
+  });
+
+  it("counts direct contradictions only, and doubt resolves to gap:single (D9.2)", () => {
+    // Proven live (26 Jul): a CPCV set as a percentage of an unagreed price, and open
+    // date ranges, turned ONE blocker into gap:multiple. gap:single is the "one issue
+    // away — worth a phone call" signal; overcounting kills exactly the impulse the
+    // product exists to create, so the harm is asymmetric: a false single invites a
+    // call that discovers the truth, a false multiple prevents it. The rules are
+    // categorical, not procedural — thinking is disabled on this call (D-M6-1), so the
+    // model can only pattern-match.
+    const withConsent = systemPrompt({ ...INPUT, consent: BOTH });
+    expect(withConsent).toMatch(/ONLY direct contradictions between stated limits/u);
+    expect(withConsent).toMatch(/contradicts nothing by itself and is NEVER counted/u);
+    // The tie-break points at single, never at multiple:
+    expect(withConsent).toMatch(/unsure about the rest.*gap:single/su);
+    // The worked example is load-bearing for a no-thinking model:
+    expect(withConsent).toMatch(/The count is one: gap:single/u);
   });
 
   it("forbids explanation and reasoning explicitly", () => {
@@ -78,18 +93,31 @@ describe("systemPrompt", () => {
 });
 
 describe("userPrompt", () => {
-  it("delimits and labels both positions verbatim", () => {
+  it("delimits both positions verbatim", () => {
     const prompt = userPrompt(INPUT);
-    expect(prompt).toContain("<position_a>");
-    expect(prompt).toContain("</position_b>");
+    expect(prompt).toContain("<position_1>");
+    expect(prompt).toContain("</position_2>");
     expect(prompt).toContain(INPUT.positionA);
     expect(prompt).toContain(INPUT.positionB);
   });
 
-  it("keeps A before B, so side labels cannot silently swap", () => {
+  it("orders positions canonically by content, NOT by seat (D9.2)", () => {
+    // Measured live (26 Jul, temp 0, twice each): the same pair of texts returned
+    // gap:single in one seat order and gap:multiple in the other. Which side created
+    // the room must not influence the verdict — so seat order must not reach the model.
     const prompt = userPrompt(INPUT);
-    expect(prompt.indexOf("<position_a>")).toBeLessThan(prompt.indexOf("<position_b>"));
-    expect(prompt.indexOf(INPUT.positionA)).toBeLessThan(prompt.indexOf(INPUT.positionB));
+    const swapped = userPrompt({
+      ...INPUT,
+      positionA: INPUT.positionB,
+      positionB: INPUT.positionA,
+    });
+    expect(swapped).toBe(prompt);
+  });
+
+  it("places the byte-wise smaller position first, deterministically", () => {
+    const prompt = userPrompt(INPUT);
+    const [first, second] = [INPUT.positionA, INPUT.positionB].sort();
+    expect(prompt.indexOf(first!)).toBeLessThan(prompt.indexOf(second!));
   });
 });
 

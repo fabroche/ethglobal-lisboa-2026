@@ -37,18 +37,12 @@ describe("VerdictPanel — gap copy claims no more than the enum guarantees (S3.
     expect(screen.queryByText(/several/i)).not.toBeInTheDocument();
   });
 
-  it("both gap verdicts explain the restraint: the count was consented, the dimension never named", () => {
+  it("gap verdicts carry the one line only — the consent subtitle was removed by owner decision", () => {
+    // Considered in S3.18, removed 26 Jul: the one line is the product; annotating it dilutes it.
     const { rerender } = render(<VerdictPanel verdict="gap:single" />);
-    expect(screen.getByText(/agreed to reveal how many/i)).toBeInTheDocument();
+    expect(screen.queryByText(/agreed to reveal/i)).not.toBeInTheDocument();
     rerender(<VerdictPanel verdict="gap:multiple" />);
-    expect(screen.getByText(/never which/i)).toBeInTheDocument();
-  });
-
-  it("non-gap verdicts carry no consent subtitle — nothing was disclosed beyond the line", () => {
-    const { rerender } = render(<VerdictPanel verdict="workable" />);
-    expect(screen.queryByText(/agreed to reveal/i)).not.toBeInTheDocument();
-    rerender(<VerdictPanel verdict="not_workable" />);
-    expect(screen.queryByText(/agreed to reveal/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/never which/i)).not.toBeInTheDocument();
   });
 
   it("gap:multiple is not visually identical to not_workable — it carries consented information", () => {

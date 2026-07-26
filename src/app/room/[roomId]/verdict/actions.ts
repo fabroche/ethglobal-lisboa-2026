@@ -6,16 +6,24 @@ import type { Verdict } from "@/session";
 import { isDeadlineReached } from "@/scheduler";
 import { revealRoom } from "@/reveal/reveal-service";
 
+/** What the verdict screen needs from a landed verdict: the line itself, and when (S3.22). */
+export interface VerdictReading {
+  verdict: Verdict;
+  /** `publishedAt` from the verdict message — verifiable against the topic. */
+  publishedAt: string;
+}
+
 /**
  * `readVerdict` (M8 / M4 read path). Reads the room's verdict from the HCS topic via Mirror
  * Node. Returns `null` while the reveal hasn't fired (or Mirror hasn't indexed it yet), so the
  * verdict screen can keep polling and show a pending state.
  */
-export async function readVerdictAction(roomId: string): Promise<Verdict | null> {
+export async function readVerdictAction(roomId: string): Promise<VerdictReading | null> {
   const topicId = requireEnv("HEDERA_TOPIC_ID");
   try {
     const view = await createReader(hederaMirrorClient()).readSession(topicId, { roomId });
-    if (view.verdict) return view.verdict.verdict;
+    if (view.verdict)
+      return { verdict: view.verdict.verdict, publishedAt: view.verdict.publishedAt };
 
     // S2.9 — the reveal has to be run by SOMEBODY, and with no worker and no database
     // (D4) the first reader past the deadline is who runs it. Safe to do from a poll:
@@ -30,7 +38,9 @@ export async function readVerdictAction(roomId: string): Promise<Verdict | null>
     if (!deadline || !isDeadlineReached(deadline, new Date())) return null;
 
     const result = await revealRoom(roomId);
-    return result.ok ? result.message.verdict : null;
+    return result.ok
+      ? { verdict: result.message.verdict, publishedAt: result.message.publishedAt }
+      : null;
   } catch {
     return null;
   }

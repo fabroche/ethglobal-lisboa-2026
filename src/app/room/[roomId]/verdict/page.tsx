@@ -19,6 +19,7 @@ export default async function VerdictPage({
 
   let deadlineIso: string | undefined;
   let initialVerdict: Verdict | null = null;
+  let publishedAtIso: string | undefined;
   let committedCount = 0;
   let found = false;
   try {
@@ -26,6 +27,9 @@ export default async function VerdictPage({
     const view = await createReader(hederaMirrorClient()).readSession(topicId, { roomId });
     deadlineIso = view.expiry?.deadline;
     initialVerdict = view.verdict?.verdict ?? null;
+    // S3.22 — keep the verdict's publish time instead of throwing it away; the screen
+    // shows it in place of a countdown that would otherwise sit on "due · now" forever.
+    publishedAtIso = view.verdict?.publishedAt;
     committedCount = view.commitments.length;
     // The room exists on the topic iff it has any message for this id.
     found = Boolean(view.expiry ?? view.verdict) || committedCount > 0;
@@ -52,6 +56,7 @@ export default async function VerdictPage({
           <VerdictView
             deadlineIso={deadlineIso}
             initialVerdict={initialVerdict}
+            publishedAtIso={publishedAtIso}
             pollVerdict={readVerdictAction.bind(null, roomId)}
           />
         </>

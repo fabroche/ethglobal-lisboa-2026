@@ -25,12 +25,18 @@ export default async function WritePage({
   let useCase: UseCaseId = "property";
   let about: string | undefined;
   let roomFound = false;
+  let alreadyCommitted = false;
   try {
     const topicId = requireEnv("HEDERA_TOPIC_ID");
     const view = await createReader(hederaMirrorClient()).readSession(topicId, { roomId });
     roomFound = Boolean(view.expiry);
     useCase = view.expiry?.useCase ?? "property";
     about = view.expiry?.about;
+    // S3.23 — a side that already committed must not be offered a blank form: they would
+    // rewrite their whole position, pass the Selfie Check, seal — and only then be
+    // rejected by the seat claim. The commitment on the topic is binding; say so up front.
+    alreadyCommitted =
+      side.success && view.commitments.some((c) => c.side === side.data);
   } catch {
     // Env missing / Mirror lag — render the not-found guidance below.
   }
@@ -58,6 +64,24 @@ export default async function WritePage({
           must be public before any position exists. If the room was just created, Mirror Node
           may still be catching up; retry in a few seconds.
         </p>
+      ) : alreadyCommitted ? (
+        <div className="flex w-full max-w-md flex-col gap-3 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+          <h1 className="text-lg font-semibold tracking-tight">
+            You already sent your position
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            A sealed commitment for side {side.success ? side.data : ""} is on the public
+            record for this room, and a position can&apos;t be rewritten once committed —
+            that guarantee is what makes the verdict mean something. There is nothing left
+            to do here but wait for the reveal.
+          </p>
+          <Link
+            href={`/room/${roomId}/verdict`}
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Go to the verdict →
+          </Link>
+        </div>
       ) : (
         <>
           {about ? (

@@ -18,6 +18,10 @@ export interface VerdictViewProps {
 /**
  * M8 verdict screen body: countdown + the one-line verdict. Polls Mirror Node for the verdict
  * while it's still pending (Mirror lag / reveal not fired), then stops once it lands.
+ *
+ * Owns one piece of state the panel needs but cannot compute: whether the deadline has passed
+ * (S3.19). Before it does, nothing is running and the countdown is the honest indicator; after
+ * it does, the lazy reveal is genuinely working and the panel shows a spinner.
  */
 export function VerdictView({
   deadlineIso,
@@ -27,6 +31,9 @@ export function VerdictView({
   className,
 }: VerdictViewProps) {
   const [verdict, setVerdict] = useState<Verdict | null>(initialVerdict);
+  // `null` until the client has a clock. The server has no business guessing "now" — and
+  // rendering a spinner on the server that the client then removes is a hydration mismatch.
+  const [nowMs, setNowMs] = useState<number | null>(null);
 
   useEffect(() => {
     if (verdict || !pollVerdict) return;
@@ -41,10 +48,25 @@ export function VerdictView({
     };
   }, [verdict, pollVerdict, pollMs]);
 
+  // Ticks only while it still matters: once a verdict is in, or with no deadline to watch,
+  // there is nothing for this timer to change.
+  useEffect(() => {
+    if (verdict || !deadlineIso) return;
+    const tick = () => setNowMs(Date.now());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [verdict, deadlineIso]);
+
+  const deadlineReached =
+    deadlineIso === undefined || nowMs === null
+      ? undefined
+      : nowMs >= new Date(deadlineIso).getTime();
+
   return (
     <div className={className}>
       {deadlineIso ? <Countdown deadlineIso={deadlineIso} className="mb-6" /> : null}
-      <VerdictPanel verdict={verdict} />
+      <VerdictPanel verdict={verdict} deadlineReached={deadlineReached} />
     </div>
   );
 }

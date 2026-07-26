@@ -23,3 +23,30 @@ describe("VerdictView", () => {
     expect(await screen.findByText(/no deal/i)).toBeInTheDocument();
   });
 });
+
+describe("VerdictView — deriving which wait we are in (S3.19)", () => {
+  it("stays quiet while the deadline is in the future", async () => {
+    render(<VerdictView deadlineIso="2099-01-01T00:00:00Z" initialVerdict={null} />);
+    await waitFor(() => expect(screen.getByText(/reveal in/i)).toBeInTheDocument());
+    expect(screen.queryByTestId("spinner")).not.toBeInTheDocument();
+  });
+
+  it("switches to the revealing state once the deadline has passed", async () => {
+    render(<VerdictView deadlineIso="2020-01-01T00:00:00Z" initialVerdict={null} />);
+    expect(await screen.findByTestId("spinner")).toBeInTheDocument();
+    expect(screen.getByText(/revealing/i)).toBeInTheDocument();
+  });
+
+  it("does not spin when there is no deadline to reason about", async () => {
+    // Mirror lag or a room that never published an expiry: we do not know, so we do not claim.
+    render(<VerdictView initialVerdict={null} />);
+    await waitFor(() => expect(screen.getByText(/sealed/i)).toBeInTheDocument());
+    expect(screen.queryByTestId("spinner")).not.toBeInTheDocument();
+  });
+
+  it("shows the verdict, not a spinner, on a past-deadline room that already resolved", async () => {
+    render(<VerdictView deadlineIso="2020-01-01T00:00:00Z" initialVerdict="gap:single" />);
+    await waitFor(() => expect(screen.getByText(/one issue/i)).toBeInTheDocument());
+    expect(screen.queryByTestId("spinner")).not.toBeInTheDocument();
+  });
+});

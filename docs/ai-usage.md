@@ -51,6 +51,20 @@ disclosure.
   where the creator's side was silently hardwired, which Dylan exposed in live testing (both
   parties entered as "Buyer") and redesigned himself: role declaration at creation plus a context
   anchor (the announcement link) — the AI implemented his design.
+- **The final night (26 Jul, pre-submission) added five more, all owner-caught:** (1) after
+  merging Frank's overnight work the AI reported the branch state and stopped — the demo server
+  was still serving the pre-merge build; the owner's "did you restart to test?" exposed it
+  (verified restart, build-ID check). (2) After a later full stack restart the AI implied
+  currency; the owner asked "did you run a fresh build?" and the true answer was no — the restart
+  script never rebuilds. The build happened to contain all shipped code (verified commit-by-commit),
+  but the claim was ahead of the evidence; the owner ordered a fresh build regardless. (3) Told to
+  "fix items 2 and 4, explain 1 and 3" on the S4.7 tail, the AI additionally closed S4.7 as done —
+  rejected mid-commit ("it's not closed"), reverted to open. (4) On the World friction notes the
+  owner caught the draft's §C burying the single most important piece of beta feedback — that
+  Selfie Check itself was never reachable — and had it promoted to the lead sentence; he also cut
+  a needless self-own ("it took hours") in favour of pointing at the missing error surface.
+  (5) The AI told the owner to mark S4.3 done; the owner kept it open for pre-submission updates —
+  status follows the human's intent, not task completion.
 
 ## Attribution table
 | File / Area | AI-assisted? | Notes |

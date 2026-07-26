@@ -74,3 +74,51 @@ describe("VerdictPanel — the two waits are not the same wait (S3.19)", () => {
     expect(screen.getByText(/no verdict is written at all/i)).toBeInTheDocument();
   });
 });
+
+describe("VerdictPanel — blocked states (S3.20)", () => {
+  it("says an invalid attestation out loud: it is fail-closed working, not a hang", () => {
+    render(
+      <VerdictPanel verdict={null} deadlineReached blocked={{ blocked: "attestation_invalid" }} />,
+    );
+    expect(screen.getByText(/attestation failed/i)).toBeInTheDocument();
+    expect(screen.getByText(/no valid attestation, no verdict/i)).toBeInTheDocument();
+    // Terminal: nothing is running, so nothing may spin.
+    expect(screen.queryByTestId("spinner")).not.toBeInTheDocument();
+  });
+
+  it("terminal reasons beat the revealing spinner even after the deadline", () => {
+    render(
+      <VerdictPanel
+        verdict={null}
+        deadlineReached
+        blocked={{ blocked: "missing_sealed_payload" }}
+      />,
+    );
+    expect(screen.getByText(/can't resolve/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^revealing$/i)).not.toBeInTheDocument();
+  });
+
+  it("a transient reason keeps the spinner and names what failed", () => {
+    render(
+      <VerdictPanel verdict={null} deadlineReached blocked={{ blocked: "publish_failed" }} />,
+    );
+    expect(screen.getByTestId("spinner")).toBeInTheDocument();
+    expect(screen.getByText(/topic write failed/i)).toBeInTheDocument();
+  });
+
+  it("an incomplete room waits without a spinner — nothing is running", () => {
+    render(
+      <VerdictPanel verdict={null} deadlineReached blocked={{ blocked: "incomplete_commitments" }} />,
+    );
+    expect(screen.getByText(/waiting for the other side/i)).toBeInTheDocument();
+    expect(screen.queryByTestId("spinner")).not.toBeInTheDocument();
+  });
+
+  it("a verdict always wins over a stale blocked reason", () => {
+    render(
+      <VerdictPanel verdict="workable" blocked={{ blocked: "attestation_invalid" }} />,
+    );
+    expect(screen.getByText(/a deal is possible/i)).toBeInTheDocument();
+    expect(screen.queryByText(/attestation failed/i)).not.toBeInTheDocument();
+  });
+});

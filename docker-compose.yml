@@ -1,18 +1,26 @@
-# Despliegue app + worker (tentativo — para hackathon quizá Vercel sea más rápido).
-# Ver docs/transversal/infra-devops.md.
+# Despliegue en VPS/Dokploy — UN solo servicio.
+#
+# Overlap no tiene worker ni base de datos (D4): el estado ES el topic de HCS y
+# las tres llamadas a sponsors ocurren en Server Actions bajo demanda. Aquí hubo
+# un servicio `worker` heredado de plantilla que apuntaba a un `worker/index.ts`
+# inexistente; se eliminó porque en Dokploy habría reiniciado en bucle.
+#
+# Ver docs/transversal/infra-devops.md (opción B).
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file: .env
+    # En Dokploy las variables se inyectan desde el panel, no desde un .env del repo.
+    env_file:
+      - path: .env
+        required: false
     ports:
       - "3000:3000"
     restart: unless-stopped
-
-  worker:
-    build:
-      context: .
-      dockerfile: worker.Dockerfile
-    env_file: .env
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

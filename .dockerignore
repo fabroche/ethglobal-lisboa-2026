@@ -1,0 +1,36 @@
+# Build context for the Dokploy image. Keep it small and, above all, keep host
+# artefacts out: a Windows-built `node_modules` copied into an Alpine image is a
+# silent way to get native bindings that cannot load.
+node_modules
+.next
+out
+build
+
+# Secrets never travel in the image — env comes from the deploy panel.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.github
+
+# Tests, stories and docs add weight and nothing else at runtime.
+e2e
+test-results
+playwright-report
+coverage
+storybook-static
+.storybook
+docs
+agente
+branding
+.claude
+.agents
+.idea
+.vscode
+
+*.log
+*.tsbuildinfo
+Thumbs.db
+.DS_Store

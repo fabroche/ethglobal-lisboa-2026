@@ -12,11 +12,39 @@ import { Spinner } from "./spinner";
  * (`--workable` / `--not-workable` / `--pending`) aren't defined in globals.css yet. Migrate to
  * those tokens once the integrator adds them.
  */
-const VERDICT_META: Record<Verdict, { label: string; tone: string }> = {
+/**
+ * S3.18 — the gap sentences must not claim more than the enum guarantees.
+ *
+ * `gap:multiple` is ALSO the model's "I can't cleanly attribute this to one dimension"
+ * value (D9 as amended, `spec-02-evaluator.md`), so "several issues block" asserted a fact
+ * the enum does not carry — in a negotiation, that wrongly says "walk away" when the truth
+ * may be one entangled issue and a phone call. "More than one thing is in the way" is true
+ * in BOTH cases the enum covers, without asserting which.
+ *
+ * The subtitle states the restraint (both sides consented to the count — the dimension is
+ * never named), so the terseness reads as protective rather than evasive.
+ *
+ * Tone hierarchy runs emerald → amber → orange → neutral: `gap:single` (amber) is the
+ * hopeful outcome — one issue away, worth a call — and must read warmer than
+ * `gap:multiple` (orange), which in turn must not be visually identical to `not_workable`
+ * (neutral): it carries information both sides had to agree to reveal. Existing Tailwind
+ * values on purpose — the semantic tokens belong to S4.8, not here.
+ */
+const GAP_SUBTITLE = "Both sides agreed to reveal how many. Never which.";
+
+const VERDICT_META: Record<Verdict, { label: string; tone: string; sub?: string }> = {
   workable: { label: "Workable — a deal is possible", tone: "text-emerald-600 dark:text-emerald-400" },
   not_workable: { label: "Not workable — no deal", tone: "text-foreground" },
-  "gap:single": { label: "No deal — one issue blocks", tone: "text-amber-600 dark:text-amber-400" },
-  "gap:multiple": { label: "No deal — several issues block", tone: "text-foreground" },
+  "gap:single": {
+    label: "No deal — one issue is in the way",
+    tone: "text-amber-600 dark:text-amber-400",
+    sub: GAP_SUBTITLE,
+  },
+  "gap:multiple": {
+    label: "No deal — more than one thing is in the way",
+    tone: "text-orange-600 dark:text-orange-400",
+    sub: GAP_SUBTITLE,
+  },
 };
 
 /** Why the reveal produced no verdict, as the poll reported it (S3.20). */
@@ -133,7 +161,10 @@ export function VerdictPanel({ verdict, blocked, deadlineReached, className }: V
       )}
     >
       {meta ? (
-        <p className={cn("text-xl font-semibold tracking-tight", meta.tone)}>{meta.label}</p>
+        <>
+          <p className={cn("text-xl font-semibold tracking-tight", meta.tone)}>{meta.label}</p>
+          {meta.sub ? <p className="text-sm text-muted-foreground">{meta.sub}</p> : null}
+        </>
       ) : blockedMeta ? (
         <>
           <p

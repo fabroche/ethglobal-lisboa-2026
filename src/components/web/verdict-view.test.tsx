@@ -24,6 +24,37 @@ describe("VerdictView", () => {
   });
 });
 
+describe("VerdictView — polls must not overlap (S3.21a)", () => {
+  it("does not fire a second poll while the previous one is still in flight", async () => {
+    // The poll triggers the lazy reveal server-side, which takes much longer than pollMs.
+    // A setInterval fires again mid-flight and stacks concurrent reveals — three enclave
+    // calls for one room, proven on the topic. The loop must re-arm only after returning.
+    let resolveFirst!: (v: "workable" | null) => void;
+    const pollVerdict = vi
+      .fn<() => Promise<"workable" | null>>()
+      .mockImplementationOnce(() => new Promise((r) => (resolveFirst = r)))
+      .mockResolvedValue("workable");
+    render(<VerdictView initialVerdict={null} pollVerdict={pollVerdict} pollMs={10} />);
+
+    // Long enough for an interval-based poll to have fired several more times.
+    await new Promise((r) => setTimeout(r, 80));
+    expect(pollVerdict).toHaveBeenCalledTimes(1);
+
+    resolveFirst(null);
+    await waitFor(() => expect(pollVerdict).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText(/a deal is possible/i)).toBeInTheDocument();
+  });
+
+  it("keeps polling after a transient poll failure instead of stranding the screen", async () => {
+    const pollVerdict = vi
+      .fn<() => Promise<"workable" | null>>()
+      .mockRejectedValueOnce(new Error("network hiccup"))
+      .mockResolvedValue("workable");
+    render(<VerdictView initialVerdict={null} pollVerdict={pollVerdict} pollMs={10} />);
+    expect(await screen.findByText(/a deal is possible/i)).toBeInTheDocument();
+  });
+});
+
 describe("VerdictView — deriving which wait we are in (S3.19)", () => {
   it("stays quiet while the deadline is in the future", async () => {
     render(<VerdictView deadlineIso="2099-01-01T00:00:00Z" initialVerdict={null} />);

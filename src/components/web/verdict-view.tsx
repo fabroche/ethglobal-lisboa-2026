@@ -38,13 +38,26 @@ export function VerdictView({
   useEffect(() => {
     if (verdict || !pollVerdict) return;
     let active = true;
-    const id = setInterval(async () => {
-      const next = await pollVerdict();
-      if (active && next) setVerdict(next);
-    }, pollMs);
+    // S3.21(a): a self-rescheduling timeout, NOT setInterval. The poll triggers the lazy
+    // reveal server-side, which takes far longer than pollMs (enclave call + attestation +
+    // topic write) — an interval fires again mid-flight and stacks concurrent reveals.
+    // The next poll is armed only after the previous one has fully returned.
+    let id: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      let next: Awaited<ReturnType<typeof pollVerdict>> = null;
+      try {
+        next = await pollVerdict();
+      } catch {
+        // Transient network failure — keep polling; stopping would strand the screen.
+      }
+      if (!active) return;
+      if (next) setVerdict(next);
+      else id = setTimeout(poll, pollMs);
+    };
+    id = setTimeout(poll, pollMs);
     return () => {
       active = false;
-      clearInterval(id);
+      clearTimeout(id);
     };
   }, [verdict, pollVerdict, pollMs]);
 

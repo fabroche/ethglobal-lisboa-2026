@@ -133,6 +133,22 @@ export async function submitCommitmentAction(
   }
 }
 
+/**
+ * Has the room's expiry been indexed by Mirror yet? (S3.26.) A freshly created room
+ * reaches Hedera consensus instantly but Mirror's REST index lags ~3–10 s, so the write
+ * page's first read can miss it. The client polls this and refreshes once it flips true,
+ * instead of the user retrying by hand. Best-effort: any read error reads as "not yet".
+ */
+export async function roomHasExpiry(roomId: string): Promise<boolean> {
+  try {
+    const topicId = requireEnv("HEDERA_TOPIC_ID");
+    const view = await createReader(hederaMirrorClient()).readSession(topicId, { roomId });
+    return Boolean(view.expiry);
+  } catch {
+    return false;
+  }
+}
+
 /** Expose whether sealing is configured without leaking anything else to the client. */
 export async function sealingConfig(): Promise<{
   enclaveSealKey: string | null;

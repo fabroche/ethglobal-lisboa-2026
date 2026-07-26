@@ -38,8 +38,8 @@ export function SelfieCheckGate({
   if (!appId) {
     return (
       <p className={cn("rounded-lg bg-muted p-3 text-sm text-muted-foreground", className)}>
-        World Selfie Check isn’t configured yet (<code className="font-mono">WORLD_APP_ID</code>).
-        One seat per side can’t be enforced until it is.
+        World ID isn’t configured yet (<code className="font-mono">WORLD_APP_ID</code>).
+        One seat per person can’t be enforced until it is.
       </p>
     );
   }
@@ -82,7 +82,7 @@ export function SelfieCheckGate({
         role="status"
         className={cn("rounded-lg bg-muted p-3 text-sm", className)}
       >
-        <span className="font-medium text-primary">Selfie Check passed</span> — your seat for side{" "}
+        <span className="font-medium text-primary">World ID verified</span> — your seat for side{" "}
         {side} is reserved when you seal.
       </p>
     );
@@ -109,7 +109,7 @@ export function SelfieCheckGate({
             className,
           )}
         >
-          Run Selfie Check (one seat per side)
+          Verify with World ID (one seat per person)
         </button>
       )}
     </IDKitWidget>

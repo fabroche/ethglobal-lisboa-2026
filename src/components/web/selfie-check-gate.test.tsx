@@ -53,7 +53,7 @@ describe("SelfieCheckGate", () => {
         onVerified={onVerified}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /run selfie check/i }));
+    fireEvent.click(screen.getByRole("button", { name: /verify with world id/i }));
     expect(onVerified).toHaveBeenCalledWith(
       expect.objectContaining({ nullifier_hash: "0xnull-overlap-r_1" }),
     );
@@ -72,7 +72,7 @@ describe("SelfieCheckGate", () => {
           onVerified={onVerified}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /run selfie check/i }));
+      fireEvent.click(screen.getByRole("button", { name: /verify with world id/i }));
       seen.push(onVerified.mock.calls[0]![0].nullifier_hash);
       unmount();
     }
@@ -83,6 +83,6 @@ describe("SelfieCheckGate", () => {
     render(
       <SelfieCheckGate roomId="r_1" side="A" appId="app_demo" verified onVerified={vi.fn()} />,
     );
-    expect(screen.getByRole("status")).toHaveTextContent(/selfie check passed/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/world id verified/i);
   });
 });

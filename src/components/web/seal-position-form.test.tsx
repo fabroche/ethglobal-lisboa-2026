@@ -82,7 +82,7 @@ describe("SealPositionForm", () => {
   it("submits an incomplete position fine after Selfie Check (checklist is not validation)", async () => {
     const { submitCommitment } = renderForm();
     fireEvent.change(screen.getByRole("textbox", { name: /^position$/i }), { target: { value: "400k. that's it" } });
-    fireEvent.click(screen.getByRole("button", { name: /run selfie check/i }));
+    fireEvent.click(screen.getByRole("button", { name: /verify with world id/i }));
     fireEvent.click(screen.getByRole("button", { name: /seal and commit/i }));
     await waitFor(() => expect(submitCommitment).toHaveBeenCalledTimes(1));
   });
@@ -99,7 +99,7 @@ describe("SealPositionForm", () => {
     const { submitCommitment } = renderForm();
     fireEvent.change(screen.getByRole("textbox", { name: /^position$/i }), { target: { value: "my terms" } });
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByRole("button", { name: /run selfie check/i }));
+    fireEvent.click(screen.getByRole("button", { name: /verify with world id/i }));
     fireEvent.click(screen.getByRole("button", { name: /seal and commit/i }));
     await waitFor(() =>
       expect(submitCommitment).toHaveBeenCalledWith(expect.objectContaining({ gapOptIn: true })),
@@ -116,7 +116,7 @@ describe("SealPositionForm", () => {
   it("shows the sealed state with the commitment after success", async () => {
     renderForm();
     fireEvent.change(screen.getByRole("textbox", { name: /^position$/i }), { target: { value: "my terms" } });
-    fireEvent.click(screen.getByRole("button", { name: /run selfie check/i }));
+    fireEvent.click(screen.getByRole("button", { name: /verify with world id/i }));
     fireEvent.click(screen.getByRole("button", { name: /seal and commit/i }));
     expect(await screen.findByText(/sealed and committed/i)).toBeInTheDocument();
     expect(screen.getByText(new RegExp("c".repeat(16)))).toBeInTheDocument();
@@ -138,7 +138,7 @@ describe("SealPositionForm", () => {
       />,
     );
     fireEvent.change(screen.getByRole("textbox", { name: /^position$/i }), { target: { value: "my terms" } });
-    fireEvent.click(screen.getByRole("button", { name: /run selfie check/i }));
+    fireEvent.click(screen.getByRole("button", { name: /verify with world id/i }));
     fireEvent.click(screen.getByRole("button", { name: /seal and commit/i }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/seat already taken/i);
   });

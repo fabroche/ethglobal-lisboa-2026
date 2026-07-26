@@ -57,6 +57,19 @@ two-browser flow, per-side action strings)._
    origin; pending team go-ahead on public tunnel exposure. Note: our own `seal()` needs WebCrypto
    too — the same origin problem would have bitten the sealing step next.
 
+## What we ship, stated plainly
+
+**This submission uses World ID device-level verification, not Selfie Check.** We attempted the
+Selfie Check integration in earnest: the credential is only reachable through the World ID 4.0
+stack (`selfieCheckLegacy`, IDKit 4.x), and the portal's "Enable World ID 4.0" wizard blocked us
+with the undocumented "RP registration is not active" error (§A.6), with no booth available to
+unstick it. The 4.x migration path is fully specified in `transversal/integration-worldid.md` §5
+and the server half (v4 verification) already runs in production here. What the device-level flow
+still delivers: one real proof per human per `(room, side)`, enforced by World's
+`max_verifications: 1` and our seat registry — the anti-probing property the product needs. What
+it does not deliver: the face check itself. We say this here, in the body, on purpose: a beta
+track deserves honest reporting more than a hidden substitution.
+
 ## B. User friction (to be filled from real runs — do not write ahead of testing)
 
 Protocol: two-browser run (laptop + phone via QR), first-time users, Property demo room.

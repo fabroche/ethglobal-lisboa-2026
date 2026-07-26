@@ -26,6 +26,8 @@ export interface SealPositionFormProps {
   enclaveSealKey: string | null;
   /** `WORLD_APP_ID`; `null` gates the Selfie Check. */
   worldAppId: string | null;
+  /** E2E ONLY: forwarded to the gate to swap the widget for a fixture-proof button. */
+  e2eBypass?: boolean;
   /** Server Action (M3 claimSeat + M4 publishCommitment). Injected for tests/stories.
    * Typed result — thrown errors get digest-masked by Next in production. */
   submitCommitment: (
@@ -46,6 +48,7 @@ export function SealPositionForm({
   preset,
   enclaveSealKey,
   worldAppId,
+  e2eBypass,
   submitCommitment,
   className,
 }: SealPositionFormProps) {
@@ -194,6 +197,7 @@ export function SealPositionForm({
         appId={worldAppId}
         verified={proof != null}
         onVerified={setProof}
+        {...(e2eBypass ? { e2eBypass: true } : {})}
       />
 
       {!sealReady ? (

@@ -19,7 +19,11 @@ vi.mock("@/registry", () => ({
   createReader: () => ({ readSession }),
   hederaMirrorClient: () => ({}),
 }));
-vi.mock("./actions", () => ({ submitCommitmentAction: vi.fn() }));
+vi.mock("./actions", () => ({
+  submitCommitmentAction: vi.fn(),
+  roomHasExpiry: vi.fn(async () => false),
+}));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 import WritePage from "./page";
 
@@ -84,9 +88,9 @@ describe("WritePage — side already committed (S3.23)", () => {
     expect(screen.getByRole("textbox")).toBeInTheDocument();
   });
 
-  it("keeps the no-deadline guidance ahead of the commitment check", async () => {
-    // A room with commitments but no readable expiry is Mirror lag or a broken room —
-    // the "clock must be public" message stays the truthful one.
+  it("shows the catching-up state (not the form) when the expiry isn't readable yet", async () => {
+    // No readable expiry = Mirror lag on a fresh room (S3.26): the page shows the
+    // auto-retrying "catching up" state, never the blank form or the already-committed view.
     readSession.mockResolvedValue({
       expiry: undefined,
       commitments: [commitmentFor("A")],
@@ -94,7 +98,7 @@ describe("WritePage — side already committed (S3.23)", () => {
     });
     await renderPage("A");
 
-    expect(screen.getByText(/no deadline is on the topic/i)).toBeInTheDocument();
+    expect(screen.getByText(/network is catching up/i)).toBeInTheDocument();
     expect(screen.queryByText(/already sent your position/i)).not.toBeInTheDocument();
   });
 });

@@ -10,11 +10,11 @@ import {
 import { sealedPayloadSchema, commitmentOf, type SealedPayload } from "@/seal";
 import {
   claimSeat,
-  cloudWorldVerifier,
   initSeatRegistry,
   worldProofSchema,
   type SeatRegistry,
 } from "@/worldid";
+import { worldVerifierForRequest } from "@/worldid/e2e-verifier";
 
 /**
  * `submitCommitment` Server Action (M8 / M2+M3+M4, S3.2).
@@ -103,7 +103,7 @@ export async function submitCommitmentAction(
     const appId = requireEnv("WORLD_APP_ID");
     const claim = await claimSeat(
       { roomId: input.roomId, side: input.side, appId, proof: input.worldProof },
-      { verifier: cloudWorldVerifier(), seats },
+      { verifier: worldVerifierForRequest(), seats },
     );
     seats = claim.seats;
 
@@ -130,6 +130,22 @@ export async function submitCommitmentAction(
     // Client gets the typed message; the server log keeps the stack (digest hides it otherwise).
     console.error("[submitCommitment]", err);
     return { ok: false, message: err instanceof Error ? err.message : "could not submit" };
+  }
+}
+
+/**
+ * Has the room's expiry been indexed by Mirror yet? (S3.26.) A freshly created room
+ * reaches Hedera consensus instantly but Mirror's REST index lags ~3–10 s, so the write
+ * page's first read can miss it. The client polls this and refreshes once it flips true,
+ * instead of the user retrying by hand. Best-effort: any read error reads as "not yet".
+ */
+export async function roomHasExpiry(roomId: string): Promise<boolean> {
+  try {
+    const topicId = requireEnv("HEDERA_TOPIC_ID");
+    const view = await createReader(hederaMirrorClient()).readSession(topicId, { roomId });
+    return Boolean(view.expiry);
+  } catch {
+    return false;
   }
 }
 

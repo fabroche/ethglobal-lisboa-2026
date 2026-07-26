@@ -1,74 +1,53 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import "@testing-library/jest-dom";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { ShareButton } from "./share-button";
 
 const URL_ = "https://overlap.app/room/r_1?side=A";
 
-function withNativeShare(share = vi.fn().mockResolvedValue(undefined)) {
-  Object.defineProperty(navigator, "share", { value: share, configurable: true });
-  return share;
-}
+const hrefOf = (name: RegExp) =>
+  decodeURIComponent(screen.getByRole("link", { name }).getAttribute("href")!);
 
-function withoutNativeShare() {
-  Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
-}
-
-afterEach(() => {
-  withoutNativeShare();
-});
-
-describe("ShareButton", () => {
-  it("uses the native share sheet when the Web Share API exists", async () => {
-    const share = withNativeShare();
+describe("ShareButton (icon row of per-app share links)", () => {
+  it("shows the three apps side by side, each with an accessible name", () => {
     render(<ShareButton url={URL_} roleLabel="Seller" />);
-
-    fireEvent.click(await screen.findByRole("button", { name: /send to the seller/i }));
-
-    await waitFor(() =>
-      expect(share).toHaveBeenCalledWith({
-        title: "Overlap room",
-        text: `Join our Overlap room as the Seller: ${URL_}`,
-        url: URL_,
-      }),
-    );
+    expect(screen.getByRole("link", { name: /share via whatsapp/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /share via telegram/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /share via email/i })).toBeInTheDocument();
+    expect(screen.getByText(/send the invite to the seller/i)).toBeInTheDocument();
   });
 
-  it("survives the user closing the sheet (no error surfaced)", async () => {
-    withNativeShare(vi.fn().mockRejectedValue(new Error("AbortError")));
+  it("EVERY app carries the full invite text (the Telegram short-text bug)", () => {
     render(<ShareButton url={URL_} roleLabel="Seller" />);
-    fireEvent.click(await screen.findByRole("button", { name: /send to the seller/i }));
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    for (const name of [/whatsapp/i, /telegram/i, /email/i]) {
+      expect(hrefOf(name)).toContain("I'd like to check whether there's a deal here at all");
+    }
   });
 
-  it("falls back to a direct-link menu without the API", async () => {
-    withoutNativeShare();
+  it("the link appears exactly ONCE per composed message (the double-link bug)", () => {
+    render(<ShareButton url={URL_} roleLabel="Seller" />);
+    // WhatsApp/Email carry it in the text; Telegram carries it ONLY in its url param
+    // (Telegram appends that itself — text with the link would show it twice).
+    expect(hrefOf(/whatsapp/i).split(URL_).length - 1).toBe(1);
+    expect(hrefOf(/email/i).split(URL_).length - 1).toBe(1);
+    expect(hrefOf(/telegram/i).split(URL_).length - 1).toBe(1);
+  });
+
+  it("weaves the room's public deadline into the message when known", () => {
+    render(<ShareButton url={URL_} roleLabel="Seller" deadlineIso="2026-07-26T08:00:00Z" />);
+    expect(hrefOf(/whatsapp/i)).toContain("the deadline is");
+  });
+
+  it("targets each app's official share endpoint", () => {
     render(<ShareButton url={URL_} roleLabel="Candidate" />);
-
-    const toggle = await screen.findByRole("button", { name: /send to the candidate/i });
-    fireEvent.click(toggle);
-
-    expect(screen.getByRole("link", { name: /whatsapp/i })).toHaveAttribute(
-      "href",
-      expect.stringContaining("wa.me"),
-    );
-    expect(screen.getByRole("link", { name: /telegram/i })).toHaveAttribute(
-      "href",
-      expect.stringContaining("t.me/share"),
-    );
-    expect(screen.getByRole("link", { name: /email/i })).toHaveAttribute(
-      "href",
-      expect.stringContaining("mailto:"),
-    );
+    expect(hrefOf(/whatsapp/i)).toContain("wa.me");
+    expect(hrefOf(/telegram/i)).toContain("t.me/share");
+    expect(hrefOf(/email/i)).toContain("mailto:");
   });
 
-  it("the prefilled text carries role + link, never a deal type", async () => {
-    withoutNativeShare();
+  it("the message never carries the deal type", () => {
     render(<ShareButton url={URL_} roleLabel="Seller" />);
-    fireEvent.click(await screen.findByRole("button", { name: /send to the seller/i }));
-    const wa = screen.getByRole("link", { name: /whatsapp/i }).getAttribute("href")!;
-    expect(decodeURIComponent(wa)).toContain("as the Seller");
-    expect(decodeURIComponent(wa)).not.toMatch(/property|job|otc/i);
+    expect(hrefOf(/whatsapp/i)).not.toMatch(/property|job offer|otc/i);
   });
 });

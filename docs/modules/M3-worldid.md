@@ -1,7 +1,7 @@
 # M3 · `worldid`
 
-> One seat per side. World Selfie Check as an **abuse signal, not a login** — the thing that stops
-> a probing attack from reconstructing the other side's number.
+> One seat per **person**, per room. World ID as an **abuse signal, not a login** — the thing that
+> stops a probing attack from reconstructing the other side's number.
 
 | Field | Value |
 |-------|-------|
@@ -13,27 +13,47 @@
 | **Used by** | M4 (`registry.write` gates a commitment on a valid, unused nullifier), M8 (write+seal screen runs Selfie Check) |
 
 ## 1. Purpose & scope
-Issue **one nullifier per room per side** via World Selfie Check (D7), so each side can submit exactly
-once per room. This closes the probing/Sybil attack: without it, one person opens twenty rooms (or
-resubmits) with slightly varied positions and reconstructs the counterparty's number. Selfie Check is
-used as an **anti-abuse signal, not authentication**. **Out of scope:** identity, login, KYC.
+Issue **one nullifier per person per room** via World (D7, D17), so each side submits exactly once and
+the two seats belong to two different humans. This closes the probing/Sybil attack: without it, one
+person re-submits slightly varied positions against a counterparty's committed position and
+reconstructs their number — or simply plays both sides. The check is an **anti-abuse signal, not
+authentication**. **Out of scope:** identity, login, KYC.
 
 ## 2. Actors
-Side A / Side B (complete a Selfie Check) · World (issues a nullifier scoped to `WORLD_ACTION`, set
-per room at runtime) · our server (records that a `(room, side)` nullifier has been used).
+Side A / Side B (each complete a World check) · World (issues a nullifier scoped to the room action,
+built at runtime) · our server (records which nullifier holds which seat).
 
 ## 3. Functional requirements (RF)
 | ID | Requirement | Priority |
 |----|-------------|:--------:|
-| RF-M3-001 | Run World Selfie Check with an action **scoped per room per side** (`WORLD_ACTION` set at runtime) | Must |
-| RF-M3-002 | Derive/receive a **nullifier** and treat it as one seat for that `(room, side)` | Must |
-| RF-M3-003 | Reject a **second** commitment for the same `(room, side)` nullifier | Must |
+| RF-M3-001 | Run the World check with an action **scoped per room** (`overlap-<roomId>`), never per side and never app-wide | Must |
+| RF-M3-002 | Derive/receive a **nullifier** and treat it as one seat in that room | Must |
+| RF-M3-003 | Reject a **second** commitment for the same `(room, side)` | Must |
 | RF-M3-004 | Never expose or store user identity — only the opaque nullifier | Must |
+| **RF-M3-005** | **Reject the same person taking BOTH seats of a room** (D17) | Must |
+
+> **D17 — the action is scoped per ROOM, not per side (26 Jul, owner-found).** The nullifier is
+> `f(app_id, action, person)`. With a per-*side* action (`overlap-<roomId>-<side>`) the same human
+> got a **different, valid nullifier for each side**, so one phone could take both seats — verified
+> live by the owner. Per-side scoping was chosen to avoid an app-wide "one use of Overlap ever"
+> nullifier; scoping per **room** achieves that just as well and closes the hole:
+>
+> - **World itself enforces it.** `max_verifications: 1` on `overlap-<roomId>` means one
+>   verification per person per room, checked at World's servers — a stronger guarantee than our
+>   in-process seat registry, which a restart would forget.
+> - **Anyone can audit it.** Both commitments now carry nullifiers from the *same* action, so a
+>   reader of the topic can compare them: equal ⇒ one human played both sides. Under per-side
+>   scoping the two were incomparable by construction.
+> - **No cross-room linkage.** Each room is still its own action, so a person negotiating many
+>   rooms is unlinkable across them, which is what the original per-side design was protecting.
+>
+> Cost, stated plainly: a room now needs **two distinct World identities**, so a solo demo is no
+> longer possible.
 
 ## 4. Non-functional requirements (RNF)
 | ID | Requirement | Metric / criterion |
 |----|-------------|--------------------|
-| RNF-M3-001 | **Scope correctness** | Nullifier scoped per room per side, not app-wide (a person can negotiate many rooms, submit once each) |
+| RNF-M3-001 | **Scope correctness** | Nullifier scoped **per room** — not app-wide (a person can negotiate many rooms) and not per side (one person must not hold both seats, D17) |
 | RNF-M3-002 | Privacy | No identity revealed; only the opaque nullifier is handled |
 | RNF-M3-003 | Track compliance | A **testing doc** (developer + user friction) exists — see `transversal/integration-worldid.md` |
 
@@ -64,8 +84,8 @@ is valid and unused.
 **Flow / activity:**
 ```mermaid
 flowchart TD
-  A([Side wants to submit]) --> B[Selfie Check, action = room+side]
-  B --> C{nullifier already used for room+side?}
+  A([Side wants to submit]) --> B[World check, action = room]
+  B --> C{seat taken, or this person already holds one?}
   C -- Yes --> D[/Reject: seat taken/]
   C -- No --> E[Mark seat used]
   E --> F[Allow commitment M4]
@@ -79,12 +99,13 @@ flowchart TD
 
 ### Implementation notes (S1.5 — verify + seat logic)
 Landed in `src/worldid/` with co-located Vitest tests:
-- `action.ts` — `roomActionId(roomId, side)` = `overlap-<roomId>-<side>`: the action scoped **per room
-  per side** (RF-M3-001, RNF-M3-001) so the nullifier isn't app-wide.
+- `action.ts` — `roomActionId(roomId)` = `overlap-<roomId>`: the action scoped **per room**
+  (RF-M3-001, RNF-M3-001, D17) — not app-wide, and not per side.
 - `verify.ts` — `WorldProof` (+ Zod) and the `WorldVerifier` port. Only the opaque
   `nullifier_hash` is handled — never identity (RNF-M3-002).
-- `seats.ts` — pure seat registry: **one seat per `(room, side)`** (`reserveSeat` throws on a
-  taken seat, RF-M3-003); scoped per room.
+- `seats.ts` — pure seat registry, two rules: **one seat per `(room, side)`** (RF-M3-003) and
+  **one seat per person per room** (`holdsSeatInRoom`, RF-M3-005/D17). `reserveSeat` throws on
+  either.
 - `claim.ts` — `claimSeat` orchestrator: verifies server-side and **fails closed** (a failed proof
   throws, no seat reserved), then reserves the seat; returns the `nullifierRef` M4 stamps on the
   commitment.
@@ -98,7 +119,7 @@ mount in the web write+seal screen (M8 / S3.2); the **World testing doc** is its
 ## 8. Endpoints / Server Actions / Integrations / Jobs
 | Type | Name | Input | Output | Auth | Notes |
 |------|------|-------|--------|------|-------|
-| Action | `claimSeat` | `{ roomId, side, worldProof }` | `{ nullifierRef }` | World proof | scopes action per room+side |
+| Action | `claimSeat` | `{ roomId, side, worldProof }` | `{ nullifierRef }` | World proof | scopes the action per room (D17) |
 | Integration | World Selfie Check | in-browser widget | proof | `WORLD_APP_ID` | `WORLD_ACTION` per room |
 
 ## 9. UI components (Definition of Done)
@@ -108,7 +129,7 @@ mount in the web write+seal screen (M8 / S3.2); the **World testing doc** is its
 
 ## 10. Module acceptance criteria
 - [ ] A single side can submit only once per room (RF-M3-003).
-- [ ] The nullifier is scoped per room per side, never app-wide (RNF-M3-001).
+- [ ] The nullifier is scoped per room — never app-wide, never per side (RNF-M3-001).
 - [ ] The World testing doc exists and covers developer + user friction (RNF-M3-003).
 
 ## 11. Module closure DoD

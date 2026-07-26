@@ -37,11 +37,13 @@ export default async function SharePage({
   // Durable context from the topic; query params cover the Mirror-lag window.
   let topicUseCase: UseCaseId | undefined;
   let topicAbout: string | undefined;
+  let topicDeadline: string | undefined;
   try {
     const topicId = requireEnv("HEDERA_TOPIC_ID");
     const view = await createReader(hederaMirrorClient()).readSession(topicId, { roomId });
     topicUseCase = view.expiry?.useCase;
     topicAbout = view.expiry?.about;
+    topicDeadline = view.expiry?.deadline;
   } catch {
     // Env missing / Mirror lag — fall back to the redirect query below.
   }
@@ -66,6 +68,7 @@ export default async function SharePage({
         urlB={urlB}
         {...(labels ? { labels } : {})}
         {...(aboutText ? { about: aboutText } : {})}
+        {...(topicDeadline ? { deadlineIso: topicDeadline } : {})}
         {...(queryMe.success ? { queryMe: queryMe.data } : {})}
         {...(label.success ? { bookmarkLabel: label.data } : {})}
       />

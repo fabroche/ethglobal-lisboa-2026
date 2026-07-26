@@ -26,7 +26,7 @@ function verifier(result: Awaited<ReturnType<WorldVerifier["verify"]>>): WorldVe
 const APP = "app_123";
 
 describe("claimSeat", () => {
-  it("verifies with the per-room-per-side action and reserves the seat", async () => {
+  it("verifies with the per-ROOM action (D17) and reserves the seat", async () => {
     const v = verifier({ success: true, nullifierHash: "0xnull_a" });
     const res = await claimSeat(
       { roomId: "r_1", side: "A", appId: APP, proof: PROOF },
@@ -35,7 +35,25 @@ describe("claimSeat", () => {
 
     expect(res.nullifierRef).toBe("0xnull_a");
     expect(isSeatTaken(res.seats, "r_1", "A")).toBe(true);
-    expect(v.calls[0]).toEqual({ action: "overlap-r_1-A", appId: APP });
+    // No side in the action: both seats must compete for one nullifier, or the same
+    // person gets a valid one for each side and can hold the whole room.
+    expect(v.calls[0]).toEqual({ action: "overlap-r_1", appId: APP });
+  });
+
+  it("refuses the person who already holds the other seat of the room (D17)", async () => {
+    // World refuses this first (max_verifications: 1 on the room action) — this is the
+    // backstop for when it does not, e.g. an action created with a different limit.
+    const v = verifier({ success: true, nullifierHash: "0xsame_person" });
+    const first = await claimSeat(
+      { roomId: "r_1", side: "A", appId: APP, proof: PROOF },
+      { verifier: v, seats: initSeatRegistry() },
+    );
+    await expect(
+      claimSeat(
+        { roomId: "r_1", side: "B", appId: APP, proof: PROOF },
+        { verifier: v, seats: first.seats },
+      ),
+    ).rejects.toThrow(/already holds a seat/);
   });
 
   it("fails closed: a failed proof throws and reserves no seat", async () => {

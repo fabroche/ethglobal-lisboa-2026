@@ -29,7 +29,7 @@ machine's own owner cannot look into, and it may only answer with **one word fro
 ```
 Side A opens a room       → deadline published to Hedera BEFORE anyone writes
 Both sides write + seal   → ECIES-encrypted in the browser; plaintext never travels
-One seat per side         → World Selfie Check, one nullifier per room per side
+One seat per person       → World ID, one nullifier per room: the two sides are two humans
 Commitments locked        → sha256(ciphertext) + timestamp to an HCS topic
 Sealed evaluation         → pinned model, temperature 0, inside a 0G TEE
 Attestation verified      → FAILS CLOSED: no valid signature ⇒ no verdict, ever
@@ -123,7 +123,7 @@ Remove any one and the product stops working — not "gets worse".
 |---|---|---|
 | **0G** — sealed inference | The referee no operator can look into, and the signature that proves it ran | the privacy dies; you are trusting us again |
 | **Hedera** — HCS + Schedule + Mirror | Commitments and a deadline neither party controls, published before anyone writes | the clock dies; the last to write wins by waiting |
-| **World** — Selfie Check | One seat per side per room | probing kills it: open ten rooms, binary-search the other side's number |
+| **World** — World ID | One seat per **person** per room: a side submits once, and one human cannot hold both seats | probing kills it: re-submit against your counterparty's committed position and binary-search their number |
 
 Three native Hedera services, **zero Solidity**.
 

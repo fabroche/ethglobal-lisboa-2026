@@ -3,7 +3,8 @@ import { env, requireEnv } from "@/config/env";
 import { createReader, hederaMirrorClient } from "@/registry";
 import { sideSchema, USE_CASES, type UseCaseId } from "@/session";
 import { SealPositionForm } from "@/components/web/seal-position-form";
-import { submitCommitmentAction } from "./actions";
+import { PendingRoom } from "@/components/web/pending-room";
+import { submitCommitmentAction, roomHasExpiry } from "./actions";
 
 /**
  * Write+seal screen (M8 / S3.2): `/room/<roomId>/write?side=A|B`. Reads the room's expiry
@@ -59,11 +60,10 @@ export default async function WritePage({
           side (A or B) and nothing else.
         </p>
       ) : !roomFound ? (
-        <p className="w-full max-w-md rounded-xl border bg-card p-6 text-sm text-muted-foreground">
-          No deadline is on the topic for this room yet, so nothing can be written — the clock
-          must be public before any position exists. If the room was just created, Mirror Node
-          may still be catching up; retry in a few seconds.
-        </p>
+        // S3.26 — the first server read can beat Mirror's index on a just-created room.
+        // Poll and auto-refresh instead of making the user retry; terminal message only
+        // after the cap (by then a real wrong-link/outage, not indexing lag).
+        <PendingRoom roomId={roomId} checkExpiry={roomHasExpiry} />
       ) : alreadyCommitted ? (
         <div className="flex w-full max-w-md flex-col gap-3 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
           <h1 className="text-lg font-semibold tracking-tight">
@@ -102,6 +102,7 @@ export default async function WritePage({
             preset={USE_CASES[useCase]}
             enclaveSealKey={env.OG_ENCLAVE_SEAL_PUBKEY ?? null}
             worldAppId={env.WORLD_APP_ID ?? null}
+            {...(env.E2E_FAKE_WORLD ? { e2eBypass: true } : {})}
             submitCommitment={submitCommitmentAction}
           />
         </>

@@ -2,25 +2,29 @@ import { describe, it, expect } from "vitest";
 import { roomActionId } from "./action";
 
 describe("roomActionId", () => {
-  it("scopes the action to room AND side (not app-wide)", () => {
-    expect(roomActionId("r_9f3a", "A")).toBe("overlap-r_9f3a-A");
-    expect(roomActionId("r_9f3a", "B")).toBe("overlap-r_9f3a-B");
+  it("scopes the action to the room — not app-wide", () => {
+    // App-wide would mean one use of Overlap ever, per person. People negotiate more than once.
+    expect(roomActionId("r_9f3a")).toBe("overlap-r_9f3a");
   });
 
-  it("differs across rooms and across sides", () => {
-    const a1 = roomActionId("r_1", "A");
-    const a2 = roomActionId("r_2", "A");
-    const b1 = roomActionId("r_1", "B");
-    expect(new Set([a1, a2, b1]).size).toBe(3);
+  it("does NOT encode the side (D17 — the hole that let one phone take both seats)", () => {
+    // The nullifier is f(app_id, action, person). A per-side action gave the same human a
+    // different valid nullifier for each side, so one phone could hold A and B. Both seats
+    // must derive from ONE action for them to compete.
+    const action = roomActionId("r_9f3a");
+    expect(action).not.toMatch(/-[AB]$/u);
+    expect(action.endsWith("r_9f3a")).toBe(true);
+  });
+
+  it("differs across rooms, so rooms stay unlinkable from each other", () => {
+    expect(roomActionId("r_1")).not.toBe(roomActionId("r_2"));
   });
 
   it("is deterministic (client and server derive the same action)", () => {
-    expect(roomActionId("r_9f3a", "A")).toBe(roomActionId("r_9f3a", "A"));
+    expect(roomActionId("r_9f3a")).toBe(roomActionId("r_9f3a"));
   });
 
-  it("rejects an empty roomId and an invalid side", () => {
-    expect(() => roomActionId("", "A")).toThrow();
-    // @ts-expect-error — "C" is not a valid side
-    expect(() => roomActionId("r_1", "C")).toThrow();
+  it("rejects an empty roomId", () => {
+    expect(() => roomActionId("")).toThrow();
   });
 });

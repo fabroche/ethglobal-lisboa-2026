@@ -49,31 +49,27 @@ recommended order and the reasoning behind it — read it before claiming anythi
 
 ---
 
-## 0. ⚡ START HERE — what to do with the remaining ~3h
+## 0. ⚡ START HERE — state as of 26 Jul ~01:50
 
-**The 0G gamble is won** (§1) and `evaluator` is live-verified. What is NOT done is the thing the pitch
-rests on:
+**Everything the pitch rests on is done and wired:** the 0G gamble is won (§1), `evaluator` is
+live-verified, **the attest gate is IN the publish path** (S2.3 landed via S2.9 — `runReveal`
+verifies the envelope and fails closed, every branch tested), the README is written (S4.4), and the
+four live-E2E defects plus S3.20 are fixed (see the top of this file). 427 tests green, pushed on
+`develop-frank`.
 
-### 🔴 First: `S2.3` — wire the attest gate into the publish path
+### 🔴 What actually remains, in order
 
-`attest` is built, has 30 unit tests, and **verifies a real enclave signature** (`npm run spike` exits
-0). But it is **not connected to the code that writes the verdict.** So "fail closed — no valid
-attestation, no verdict" is true of the module and not yet true of the system.
+1. **PR `develop-frank` → `develop`** (integrator) — everything above is sitting on the branch.
+2. **The video (S5.1)** — 2–4 min, 720p+, no AI voiceover. Feature-freeze first. This is the
+   critical path now.
+3. **Submit ~2h early (S5.2)** — re-read the sponsor pages first.
+4. Dylan's open items if he has cycles: **S3.18** (verdict copy overstates `gap:multiple`),
+   S3.13/S3.15/S4.8/S4.9.
 
-That is the single most valuable hour left. It touches `src/registry` (dylan's lane) — coordinate.
+### ⚪ Explicitly OK to cut
 
-### 🟠 Then: `S4.4` — the README
-
-The judges read it. Nothing else in the repo substitutes for it.
-
-### ⚪ Only if time remains
-
-`S3.12` (reach `/rooms` from the navbar — small, and a real gap), `S3.4` (two-browser E2E).
-
-### 📋 Blocked on dylan, both P0
-
-`S2.8` (per-side gap consent → evaluator) and `S3.7` (the position textarea leaks to the browser).
-Details in §2. **S3.7 blocks S3.2's merge** and is a privacy hole in the write screen.
+`S3.4` (two-browser E2E), `S3.14` (named tunnel), `S2.6` (topic versioning), `S4.6`. The demo
+scripts (`spike` / `eval:live` / `inspect` / `demo:naive`) already prove the claims live.
 
 ---
 
